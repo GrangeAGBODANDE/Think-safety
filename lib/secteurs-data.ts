@@ -1,3 +1,5 @@
+// lib/secteurs-data.ts
+
 export const SECTEURS = [
   { slug: 'construction-btp', nom: 'Construction & BTP', description: 'Sécurité sur les chantiers, EPI, travail en hauteur, engins de chantier et manutention.', icon: '🏗️', couleur: '#FF6B35', nb_contenus: 48, risques: ['Chute de hauteur', 'Effondrement', 'Électrocution', 'Bruit'] },
   { slug: 'industrie-manufacturiere', nom: 'Industrie Manufacturière', description: 'Protection machines, risques chimiques, ergonomie et sécurité des lignes de production.', icon: '⚙️', couleur: '#6C63FF', nb_contenus: 42, risques: ['Écrasement', 'Coupure', 'Exposition chimique', 'Chaleur'] },
@@ -29,3 +31,6 @@ export const PAYS_AFRIQUE_OUEST = [
   'Bénin', 'Togo', 'Burkina Faso', "Côte d'Ivoire", 'Ghana',
   'Nigeria', 'Niger', 'Mali', 'Sénégal', 'Guinée',
 ];
+
+// ✅ Force TypeScript à reconnaître ce fichier comme module
+export {}
