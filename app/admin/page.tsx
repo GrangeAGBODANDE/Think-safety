@@ -171,11 +171,3 @@ export default function AdminPage() {
     </div>
   )
 }
-```
-
----
-
-### FICHIER 24 — tape `.env.local.example`
-```
-NEXT_PUBLIC_SUPABASE_URL=https://uattwwcdchfxxpjfqdtm.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVhdHR3d2NkY2hmeHhwamZxZHRtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNTA0MTgsImV4cCI6MjA4OTkyNjQxOH0.dXWzt1rsfGR6U850x49A6l5jqL0G9GLCkfUQ6IK1dTc
