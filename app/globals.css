@@ -253,3 +253,36 @@ body {
   .no-print { display: none !important; }
   body { background: white; color: black; }
 }
+
+
+/* Fix: champs avec icone a gauche */
+.input-field {
+  background: var(--navy-700);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: var(--text-primary);
+  border-radius: 8px;
+  padding: 0.625rem 1rem;
+  width: 100%;
+  font-size: 0.9rem;
+  transition: border-color 0.2s;
+  outline: none;
+  display: block;
+}
+
+/* Fix responsive mobile general */
+@media (max-width: 768px) {
+  .section-title { font-size: 1.6rem; }
+  .stat-number { font-size: 1.8rem; }
+  .btn-primary, .btn-secondary {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+  }
+  /* Eviter overflow horizontal */
+  .max-w-7xl { padding-left: 1rem; padding-right: 1rem; }
+}
+
+@media (max-width: 480px) {
+  .section-title { font-size: 1.4rem; }
+  .hero-bg { padding-top: 5rem; padding-bottom: 3rem; }
+  .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
