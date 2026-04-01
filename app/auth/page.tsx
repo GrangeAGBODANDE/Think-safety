@@ -3,22 +3,36 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { Shield, Mail, Lock, Eye, EyeOff, User, LogIn } from 'lucide-react'
+import { Shield, Mail, Lock, Eye, EyeOff, User, LogIn, Building2, ChevronRight, ChevronLeft } from 'lucide-react'
+import { SECTEURS } from '@/lib/secteurs-data'
+
+type Step = 'type' | 'form'
+type UserType = 'apprenant' | 'entreprise' | null
 
 export default function AuthPage() {
   const router = useRouter()
   const [tab, setTab] = useState<'login' | 'register'>('login')
+  const [step, setStep] = useState<Step>('type')
+  const [userType, setUserType] = useState<UserType>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [show, setShow] = useState(false)
+  const [success, setSuccess] = useState('')
+
   const [loginData, setLoginData] = useState({ email: '', password: '' })
-  const [regData, setRegData] = useState({ prenom: '', nom: '', email: '', password: '' })
+  const [regData, setRegData] = useState({
+    prenom: '', nom: '', email: '', password: '',
+    entreprise_nom: '', domaine_activite: '', telephone: '', localisation: '',
+  })
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
     setError('')
-    const { error: err } = await supabase.auth.signInWithPassword({ email: loginData.email, password: loginData.password })
+    const { error: err } = await supabase.auth.signInWithPassword({
+      email: loginData.email,
+      password: loginData.password,
+    })
     if (err) setError(err.message)
     else router.push('/dashboard')
     setLoading(false)
@@ -28,34 +42,68 @@ export default function AuthPage() {
     e.preventDefault()
     setLoading(true)
     setError('')
-    const { error: err } = await supabase.auth.signUp({
+
+    const { data, error: err } = await supabase.auth.signUp({
       email: regData.email,
       password: regData.password,
-      options: { data: { prenom: regData.prenom, nom: regData.nom } },
+      options: {
+        data: { prenom: regData.prenom, nom: regData.nom },
+        emailRedirectTo: `${window.location.origin}/auth`,
+      },
     })
-    if (err) setError(err.message)
-    else router.push('/dashboard')
+
+    if (err) {
+      setError(err.message)
+      setLoading(false)
+      return
+    }
+
+    // Si c'est une entreprise, creer le profil vendeur
+    if (userType === 'entreprise' && data.user) {
+      // Attendre que le profil soit cree par le trigger
+      await new Promise(r => setTimeout(r, 1500))
+
+      await supabase.from('profiles').update({
+        is_seller: true,
+        secteur_activite: regData.domaine_activite,
+      }).eq('id', data.user.id)
+
+      await supabase.from('seller_profiles').insert({
+        user_id: data.user.id,
+        entreprise_nom: regData.entreprise_nom,
+        domaine_activite: regData.domaine_activite,
+        telephone: regData.telephone,
+        localisation: regData.localisation,
+        email_contact: regData.email,
+      })
+    }
+
+    setSuccess('Compte cree ! Verifiez votre email pour confirmer votre compte, puis connectez-vous.')
     setLoading(false)
   }
 
   return (
     <main className="min-h-screen bg-navy-900 flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
+
+        {/* Logo */}
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2 mb-6">
+          <Link href="/" className="inline-flex items-center gap-2 mb-4">
             <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'var(--orange)' }}>
               <Shield size={22} className="text-white" fill="white" />
             </div>
-            <span className="font-display text-xl font-bold text-white">THINK <span style={{ color: 'var(--orange)' }}>SAFETY</span></span>
+            <span className="font-display text-xl font-bold text-white">
+              THINK <span style={{ color: 'var(--orange)' }}>SAFETY</span>
+            </span>
           </Link>
-          <h1 className="text-2xl font-bold font-display text-white">{tab === 'login' ? 'Connexion' : 'Creer un compte'}</h1>
-          <p className="text-white/50 text-sm mt-1">{tab === 'login' ? 'Acces a votre espace formation' : 'Gratuit, sans engagement'}</p>
         </div>
 
         <div className="bg-navy-800 border border-white/5 rounded-2xl p-8">
+
+          {/* Tabs */}
           <div className="flex gap-1 mb-6 bg-navy-700 rounded-xl p-1">
             {(['login', 'register'] as const).map((t) => (
-              <button key={t} onClick={() => { setTab(t); setError('') }}
+              <button key={t} onClick={() => { setTab(t); setError(''); setStep('type'); setUserType(null); setSuccess('') }}
                 className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${tab === t ? 'bg-navy-800 text-white shadow-sm' : 'text-white/50 hover:text-white'}`}>
                 {t === 'login' ? 'Se connecter' : "S'inscrire"}
               </button>
@@ -63,14 +111,21 @@ export default function AuthPage() {
           </div>
 
           {error && <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm">{error}</div>}
+          {success && (
+            <div className="mb-4 p-4 bg-green-500/10 border border-green-500/20 rounded-xl text-green-400 text-sm">
+              <p className="font-medium mb-1">✅ {success}</p>
+              <button onClick={() => setTab('login')} className="text-green-300 underline text-xs">Aller a la connexion</button>
+            </div>
+          )}
 
-          {tab === 'login' ? (
+          {/* LOGIN */}
+          {tab === 'login' && (
             <form onSubmit={handleLogin} className="space-y-4">
               <div>
                 <label className="input-label">Email</label>
                 <div className="relative">
                   <Mail size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
-                  <input type="email" required value={loginData.email} onChange={(e) => setLoginData({ ...loginData, email: e.target.value })} placeholder="votre@email.com" className="input-field pl-9" />
+                  <input type="email" required value={loginData.email} onChange={e => setLoginData({ ...loginData, email: e.target.value })} placeholder="votre@email.com" className="input-field pl-9" />
                 </div>
               </div>
               <div>
@@ -80,7 +135,7 @@ export default function AuthPage() {
                 </div>
                 <div className="relative">
                   <Lock size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
-                  <input type={show ? 'text' : 'password'} required value={loginData.password} onChange={(e) => setLoginData({ ...loginData, password: e.target.value })} placeholder="Votre mot de passe" className="input-field pl-9 pr-10" />
+                  <input type={show ? 'text' : 'password'} required value={loginData.password} onChange={e => setLoginData({ ...loginData, password: e.target.value })} placeholder="Votre mot de passe" className="input-field pl-9 pr-10" />
                   <button type="button" onClick={() => setShow(!show)} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white">
                     {show ? <EyeOff size={15} /> : <Eye size={15} />}
                   </button>
@@ -90,47 +145,119 @@ export default function AuthPage() {
                 <LogIn size={16} />{loading ? 'Connexion...' : 'Se connecter'}
               </button>
             </form>
-          ) : (
+          )}
+
+          {/* REGISTER - ETAPE 1 : choisir le type */}
+          {tab === 'register' && step === 'type' && !success && (
+            <div className="space-y-3">
+              <p className="text-white/60 text-sm text-center mb-5">Quel est votre profil ?</p>
+              <button
+                onClick={() => { setUserType('apprenant'); setStep('form') }}
+                className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all text-left ${userType === 'apprenant' ? 'border-orange-500/60 bg-orange-500/10' : 'border-white/10 hover:border-white/20'}`}
+              >
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(255,107,53,0.15)' }}>
+                  <User size={22} style={{ color: 'var(--orange)' }} />
+                </div>
+                <div>
+                  <p className="text-white font-medium">Je veux apprendre</p>
+                  <p className="text-white/40 text-xs mt-0.5">Acces gratuit a toutes les formations securite</p>
+                </div>
+                <ChevronRight size={16} className="text-white/30 ml-auto flex-shrink-0" />
+              </button>
+
+              <button
+                onClick={() => { setUserType('entreprise'); setStep('form') }}
+                className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all text-left ${userType === 'entreprise' ? 'border-orange-500/60 bg-orange-500/10' : 'border-white/10 hover:border-white/20'}`}
+              >
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(33,150,243,0.15)' }}>
+                  <Building2 size={22} className="text-blue-400" />
+                </div>
+                <div>
+                  <p className="text-white font-medium">Je suis une entreprise</p>
+                  <p className="text-white/40 text-xs mt-0.5">Vente de materiel securite, EPI, formations certifiantes</p>
+                </div>
+                <ChevronRight size={16} className="text-white/30 ml-auto flex-shrink-0" />
+              </button>
+            </div>
+          )}
+
+          {/* REGISTER - ETAPE 2 : formulaire */}
+          {tab === 'register' && step === 'form' && !success && (
             <form onSubmit={handleRegister} className="space-y-4">
+              <button type="button" onClick={() => setStep('type')} className="flex items-center gap-2 text-white/40 hover:text-white text-sm mb-2 transition-colors">
+                <ChevronLeft size={14} />Retour
+              </button>
+
+              <div className="flex items-center gap-2 p-3 rounded-xl border mb-4" style={{ borderColor: userType === 'entreprise' ? 'rgba(33,150,243,0.3)' : 'rgba(255,107,53,0.3)', background: userType === 'entreprise' ? 'rgba(33,150,243,0.08)' : 'rgba(255,107,53,0.08)' }}>
+                {userType === 'entreprise' ? <Building2 size={16} className="text-blue-400" /> : <User size={16} style={{ color: 'var(--orange)' }} />}
+                <span className="text-sm text-white/70">{userType === 'entreprise' ? 'Profil Entreprise / Vendeur' : 'Profil Apprenant'}</span>
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="input-label">Prenom</label>
-                  <div className="relative">
-                    <User size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
-                    <input type="text" required value={regData.prenom} onChange={(e) => setRegData({ ...regData, prenom: e.target.value })} placeholder="Jean" className="input-field pl-9" />
-                  </div>
+                  <label className="input-label">Prenom *</label>
+                  <input type="text" required value={regData.prenom} onChange={e => setRegData({ ...regData, prenom: e.target.value })} placeholder="Jean" className="input-field" />
                 </div>
                 <div>
-                  <label className="input-label">Nom</label>
-                  <input type="text" required value={regData.nom} onChange={(e) => setRegData({ ...regData, nom: e.target.value })} placeholder="Dupont" className="input-field" />
+                  <label className="input-label">Nom *</label>
+                  <input type="text" required value={regData.nom} onChange={e => setRegData({ ...regData, nom: e.target.value })} placeholder="Dupont" className="input-field" />
                 </div>
               </div>
+
+              {userType === 'entreprise' && (
+                <>
+                  <div>
+                    <label className="input-label">Nom de l&apos;entreprise *</label>
+                    <input type="text" required value={regData.entreprise_nom} onChange={e => setRegData({ ...regData, entreprise_nom: e.target.value })} placeholder="SafeEquip SARL" className="input-field" />
+                  </div>
+                  <div>
+                    <label className="input-label">Domaine d&apos;activite *</label>
+                    <select required value={regData.domaine_activite} onChange={e => setRegData({ ...regData, domaine_activite: e.target.value })} className="input-field">
+                      <option value="">Choisir un domaine</option>
+                      {SECTEURS.map(s => <option key={s.slug} value={s.slug}>{s.icon} {s.nom}</option>)}
+                      <option value="multi">Materiel securite general (tous secteurs)</option>
+                    </select>
+                    <p className="text-white/30 text-xs mt-1">Une entreprise est specialisee dans un seul domaine.</p>
+                  </div>
+                  <div>
+                    <label className="input-label">Telephone</label>
+                    <input type="tel" value={regData.telephone} onChange={e => setRegData({ ...regData, telephone: e.target.value })} placeholder="+229 97 XX XX XX" className="input-field" />
+                  </div>
+                  <div>
+                    <label className="input-label">Localisation</label>
+                    <input type="text" value={regData.localisation} onChange={e => setRegData({ ...regData, localisation: e.target.value })} placeholder="Cotonou, Benin" className="input-field" />
+                  </div>
+                </>
+              )}
+
               <div>
-                <label className="input-label">Email</label>
+                <label className="input-label">Email *</label>
                 <div className="relative">
                   <Mail size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
-                  <input type="email" required value={regData.email} onChange={(e) => setRegData({ ...regData, email: e.target.value })} placeholder="votre@email.com" className="input-field pl-9" />
+                  <input type="email" required value={regData.email} onChange={e => setRegData({ ...regData, email: e.target.value })} placeholder="votre@email.com" className="input-field pl-9" />
                 </div>
               </div>
               <div>
-                <label className="input-label">Mot de passe</label>
+                <label className="input-label">Mot de passe *</label>
                 <div className="relative">
                   <Lock size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
-                  <input type={show ? 'text' : 'password'} required minLength={8} value={regData.password} onChange={(e) => setRegData({ ...regData, password: e.target.value })} placeholder="Minimum 8 caracteres" className="input-field pl-9 pr-10" />
+                  <input type={show ? 'text' : 'password'} required minLength={8} value={regData.password} onChange={e => setRegData({ ...regData, password: e.target.value })} placeholder="Minimum 8 caracteres" className="input-field pl-9 pr-10" />
                   <button type="button" onClick={() => setShow(!show)} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white">
                     {show ? <EyeOff size={15} /> : <Eye size={15} />}
                   </button>
                 </div>
               </div>
               <button type="submit" disabled={loading} className="btn-primary w-full justify-center py-3 mt-2">
-                <Shield size={16} />{loading ? 'Creation...' : 'Creer mon compte - Gratuit'}
+                <Shield size={16} />{loading ? 'Creation...' : 'Creer mon compte'}
               </button>
             </form>
           )}
+
           <p className="text-center text-white/30 text-xs mt-5">
             En continuant, vous acceptez nos <Link href="/cgu" className="hover:text-white underline">CGU</Link>
           </p>
         </div>
+
         <p className="text-center text-white/40 text-sm mt-5">
           <Link href="/" className="hover:text-white transition-colors">&larr; Retour au site</Link>
         </p>
