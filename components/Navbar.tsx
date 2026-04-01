@@ -3,7 +3,11 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { Shield, Bell, Menu, X, ChevronDown, LogIn, LogOut, User, Settings, LayoutDashboard, BookOpen, ShoppingBag, AlertTriangle, Home, Search } from 'lucide-react'
+import {
+  Shield, Bell, Menu, X, LogIn, LogOut,
+  User, Settings, LayoutDashboard, BookOpen,
+  ShoppingBag, AlertTriangle, Home, Search, ChevronDown
+} from 'lucide-react'
 
 export default function Navbar() {
   const router = useRouter()
@@ -32,6 +36,13 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
+  // Fermer les menus quand on clique ailleurs
+  useEffect(() => {
+    const close = () => setUserMenuOpen(false)
+    document.addEventListener('click', close)
+    return () => document.removeEventListener('click', close)
+  }, [])
+
   async function fetchProfile(userId: string) {
     const { data } = await supabase.from('profiles').select('*').eq('id', userId).single()
     if (data) setProfile(data)
@@ -41,6 +52,7 @@ export default function Navbar() {
     await supabase.auth.signOut()
     router.push('/')
     setUserMenuOpen(false)
+    setMenuOpen(false)
   }
 
   const navLinks = [
@@ -50,109 +62,212 @@ export default function Navbar() {
     { href: '/alertes', label: 'Alertes', icon: AlertTriangle },
   ]
 
+  const isActive = (href: string) => pathname === href
+
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'bg-navy-900/95 backdrop-blur-md shadow-lg border-b border-white/5' : 'bg-transparent'}`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+    <>
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        scrolled ? 'bg-navy-900/98 backdrop-blur-md shadow-lg border-b border-white/5' : 'bg-transparent'
+      }`}>
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex items-center justify-between h-16 gap-4">
 
-          <Link href="/" className="flex items-center gap-2 flex-shrink-0">
-            <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: 'var(--orange)' }}>
-              <Shield size={20} className="text-white" fill="white" />
-            </div>
-            <div>
-              <div className="font-display text-lg font-bold text-white tracking-wide leading-none">
-                THINK <span style={{ color: 'var(--orange)' }}>SAFETY</span>
+            {/* Logo */}
+            <Link href="/" className="flex items-center gap-2 flex-shrink-0">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--orange)' }}>
+                <Shield size={18} className="text-white" fill="white" />
               </div>
-              <div className="font-mono text-[9px] text-white/30 tracking-widest">FORMATION SECURITE</div>
-            </div>
-          </Link>
-
-          <div className="hidden md:flex items-center gap-1">
-            {navLinks.map((link) => (
-              <Link key={link.href} href={link.href}
-                className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${pathname === link.href ? 'text-white bg-white/10' : 'text-white/60 hover:text-white hover:bg-white/5'}`}
-                style={pathname === link.href ? { color: 'var(--orange)' } : {}}>
-                {link.label}
-              </Link>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Link href="/recherche" className="hidden sm:flex items-center justify-center w-9 h-9 rounded-lg text-white/50 hover:text-white hover:bg-white/5 transition-all">
-              <Search size={18} />
-            </Link>
-            <Link href="/alertes" className="relative flex items-center justify-center w-9 h-9 rounded-lg text-white/50 hover:text-white hover:bg-white/5 transition-all">
-              <Bell size={18} />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+              <div className="hidden sm:block">
+                <div className="font-display text-base font-bold text-white leading-none">
+                  THINK <span style={{ color: 'var(--orange)' }}>SAFETY</span>
+                </div>
+              </div>
             </Link>
 
-            {user ? (
-              <div className="relative">
-                <button onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className="flex items-center gap-2 bg-navy-700 border border-white/10 rounded-lg px-3 py-1.5 transition-all hover:bg-navy-600">
-                  <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,107,53,0.2)' }}>
-                    <User size={12} style={{ color: 'var(--orange)' }} />
-                  </div>
-                  <span className="text-sm text-white/80 hidden sm:block max-w-[100px] truncate">{profile?.prenom || 'Profil'}</span>
-                  <ChevronDown size={14} className="text-white/40" />
-                </button>
-                {userMenuOpen && (
-                  <div className="absolute right-0 top-full mt-2 w-52 bg-navy-800 border border-white/10 rounded-xl shadow-xl overflow-hidden z-50">
-                    <div className="p-3 border-b border-white/5">
-                      <div className="text-sm font-medium text-white">{profile?.prenom} {profile?.nom}</div>
-                      <div className="text-xs text-white/40">{user.email}</div>
-                    </div>
-                    <div className="p-1">
-                      <Link href="/dashboard" onClick={() => setUserMenuOpen(false)} className="sidebar-link"><LayoutDashboard size={16} />Tableau de bord</Link>
-                      {profile?.role === 'admin' && (
-                        <Link href="/admin" onClick={() => setUserMenuOpen(false)} className="sidebar-link"><Settings size={16} />Administration</Link>
-                      )}
-                    </div>
-                    <div className="p-1 border-t border-white/5">
-                      <button onClick={handleLogout} className="sidebar-link text-red-400 hover:bg-red-500/10"><LogOut size={16} />Deconnexion</button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <Link href="/auth" className="btn-primary text-sm py-2 px-4 hidden sm:flex">
-                <LogIn size={16} />Connexion
-              </Link>
-            )}
+            {/* Nav desktop - centré */}
+            <div className="hidden md:flex items-center gap-1 flex-1 justify-center">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="px-3 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap"
+                  style={isActive(link.href)
+                    ? { color: 'var(--orange)', background: 'rgba(255,107,53,0.1)' }
+                    : { color: 'rgba(255,255,255,0.6)' }
+                  }
+                  onMouseEnter={e => { if (!isActive(link.href)) e.currentTarget.style.color = 'white' }}
+                  onMouseLeave={e => { if (!isActive(link.href)) e.currentTarget.style.color = 'rgba(255,255,255,0.6)' }}
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </div>
 
-            <button className="md:hidden flex items-center justify-center w-9 h-9 rounded-lg text-white/60 hover:text-white hover:bg-white/5" onClick={() => setMenuOpen(!menuOpen)}>
-              {menuOpen ? <X size={20} /> : <Menu size={20} />}
-            </button>
+            {/* Actions droite */}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {/* Search - desktop only */}
+              <Link href="/recherche"
+                className="hidden md:flex items-center justify-center w-9 h-9 rounded-lg transition-all"
+                style={{ color: 'rgba(255,255,255,0.5)' }}
+              >
+                <Search size={18} />
+              </Link>
+
+              {/* Bell */}
+              <Link href="/alertes"
+                className="relative flex items-center justify-center w-9 h-9 rounded-lg transition-all"
+                style={{ color: 'rgba(255,255,255,0.5)' }}
+              >
+                <Bell size={18} />
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
+              </Link>
+
+              {/* User menu ou Connexion */}
+              {user ? (
+                <div className="relative" onClick={e => e.stopPropagation()}>
+                  <button
+                    onClick={() => setUserMenuOpen(!userMenuOpen)}
+                    className="flex items-center gap-1.5 bg-navy-700 border border-white/10 rounded-lg px-2.5 py-1.5 transition-all hover:bg-navy-600"
+                  >
+                    <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(255,107,53,0.25)' }}>
+                      <User size={12} style={{ color: 'var(--orange)' }} />
+                    </div>
+                    <span className="text-sm text-white/80 hidden sm:block max-w-[80px] truncate">
+                      {profile?.prenom || '...'}
+                    </span>
+                    <ChevronDown size={12} className="text-white/40 hidden sm:block" />
+                  </button>
+
+                  {userMenuOpen && (
+                    <div className="absolute right-0 top-full mt-2 w-52 bg-navy-800 border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50">
+                      <div className="p-3 border-b border-white/5">
+                        <div className="text-sm font-medium text-white truncate">{profile?.prenom} {profile?.nom}</div>
+                        <div className="text-xs text-white/40 truncate">{user.email}</div>
+                        <span className={`badge text-[10px] mt-1 ${
+                          profile?.role === 'superadmin' ? 'badge-danger' :
+                          profile?.role === 'admin' ? 'badge-orange' :
+                          profile?.role === 'moderateur' ? 'badge-info' : 'badge-safe'
+                        }`}>{profile?.role}</span>
+                      </div>
+                      <div className="p-1">
+                        <Link href="/dashboard" onClick={() => setUserMenuOpen(false)} className="sidebar-link text-sm py-2">
+                          <LayoutDashboard size={15} />Mon espace
+                        </Link>
+                        {(profile?.role === 'admin' || profile?.role === 'superadmin') && (
+                          <Link href="/admin" onClick={() => setUserMenuOpen(false)} className="sidebar-link text-sm py-2">
+                            <Settings size={15} />Administration
+                          </Link>
+                        )}
+                      </div>
+                      <div className="p-1 border-t border-white/5">
+                        <button onClick={handleLogout} className="sidebar-link text-sm py-2 text-red-400 hover:bg-red-500/10 w-full">
+                          <LogOut size={15} />Deconnexion
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <Link href="/auth" className="btn-primary text-xs py-2 px-3 whitespace-nowrap">
+                  <LogIn size={14} />
+                  <span className="hidden sm:inline">Connexion</span>
+                </Link>
+              )}
+
+              {/* Burger mobile */}
+              <button
+                className="md:hidden flex items-center justify-center w-9 h-9 rounded-lg text-white/60 hover:text-white hover:bg-white/5 transition-all"
+                onClick={() => setMenuOpen(!menuOpen)}
+              >
+                {menuOpen ? <X size={20} /> : <Menu size={20} />}
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      </nav>
 
+      {/* Menu mobile — plein écran overlay */}
       {menuOpen && (
-        <div className="md:hidden bg-navy-800 border-t border-white/5">
-          <div className="px-4 py-3 space-y-1">
-            {navLinks.map((link) => {
-              const Icon = link.icon
-              return (
-                <Link key={link.href} href={link.href} onClick={() => setMenuOpen(false)}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-white/70 hover:text-white hover:bg-white/5 transition-all">
-                  <Icon size={18} />{link.label}
-                </Link>
-              )
-            })}
-            <div className="pt-2 border-t border-white/5">
+        <div className="fixed inset-0 z-40 md:hidden">
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-black/60" onClick={() => setMenuOpen(false)} />
+
+          {/* Panel */}
+          <div className="absolute top-0 right-0 h-full w-72 bg-navy-800 border-l border-white/5 flex flex-col shadow-2xl">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-white/5">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--orange)' }}>
+                  <Shield size={16} className="text-white" fill="white" />
+                </div>
+                <span className="font-display font-bold text-white">Think Safety</span>
+              </div>
+              <button onClick={() => setMenuOpen(false)} className="text-white/40 hover:text-white p-1">
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Nav links */}
+            <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+              {navLinks.map((link) => {
+                const Icon = link.icon
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setMenuOpen(false)}
+                    className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-medium"
+                    style={isActive(link.href)
+                      ? { background: 'rgba(255,107,53,0.12)', color: 'var(--orange)', border: '1px solid rgba(255,107,53,0.25)' }
+                      : { color: 'rgba(255,255,255,0.7)' }
+                    }
+                  >
+                    <Icon size={18} />
+                    {link.label}
+                  </Link>
+                )
+              })}
+
+              <Link href="/recherche" onClick={() => setMenuOpen(false)}
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all"
+                style={{ color: 'rgba(255,255,255,0.7)' }}>
+                <Search size={18} />Rechercher
+              </Link>
+            </nav>
+
+            {/* Bottom - user */}
+            <div className="p-4 border-t border-white/5">
               {user ? (
-                <button onClick={handleLogout} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-red-400 w-full hover:bg-red-500/10">
-                  <LogOut size={18} />Deconnexion
-                </button>
+                <div className="space-y-2">
+                  <div className="px-4 py-3 bg-navy-700 rounded-xl">
+                    <p className="text-white text-sm font-medium">{profile?.prenom} {profile?.nom}</p>
+                    <p className="text-white/40 text-xs truncate">{user.email}</p>
+                  </div>
+                  <Link href="/dashboard" onClick={() => setMenuOpen(false)}
+                    className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-white/70 hover:text-white hover:bg-white/5 transition-all">
+                    <LayoutDashboard size={16} />Mon espace
+                  </Link>
+                  {(profile?.role === 'admin' || profile?.role === 'superadmin') && (
+                    <Link href="/admin" onClick={() => setMenuOpen(false)}
+                      className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm hover:bg-white/5 transition-all"
+                      style={{ color: 'var(--orange)' }}>
+                      <Settings size={16} />Administration
+                    </Link>
+                  )}
+                  <button onClick={handleLogout}
+                    className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-red-400 hover:bg-red-500/10 transition-all w-full">
+                    <LogOut size={16} />Deconnexion
+                  </button>
+                </div>
               ) : (
-                <Link href="/auth" onClick={() => setMenuOpen(false)} className="btn-primary w-full justify-center">
-                  <LogIn size={16} />Se connecter
+                <Link href="/auth" onClick={() => setMenuOpen(false)} className="btn-primary w-full justify-center py-3">
+                  <LogIn size={16} />Se connecter — Gratuit
                 </Link>
               )}
             </div>
           </div>
         </div>
       )}
-    </nav>
+    </>
   )
 }
