@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import CartButton from '@/components/CartButton'
 import {
   Shield, Bell, Menu, X, LogIn, LogOut,
   User, Settings, LayoutDashboard, BookOpen,
@@ -38,7 +39,6 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  // Fermer menu profil si clic en dehors
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
@@ -63,9 +63,10 @@ export default function Navbar() {
 
   const navLinks = [
     { href: '/', label: 'Accueil', icon: Home },
-    { href: '/secteurs', label: 'Secteurs', icon: BookOpen },
+    { href: '/secteurs', label: 'Formations', icon: BookOpen },
     { href: '/marketplace', label: 'Marketplace', icon: ShoppingBag },
     { href: '/alertes', label: 'Alertes', icon: AlertTriangle },
+    { href: '/abonnements', label: 'Abonnements', icon: Shield },
   ]
 
   const isActive = (href: string) => pathname === href
@@ -78,7 +79,6 @@ export default function Navbar() {
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex items-center justify-between h-16 gap-3">
 
-            {/* Logo */}
             <Link href="/" className="flex items-center gap-2 flex-shrink-0">
               <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--orange)' }}>
                 <Shield size={18} className="text-white" fill="white" />
@@ -90,42 +90,34 @@ export default function Navbar() {
               </div>
             </Link>
 
-            {/* Nav desktop */}
             <div className="hidden md:flex items-center gap-0.5 flex-1 justify-center">
               {navLinks.map((link) => (
                 <Link key={link.href} href={link.href}
                   className={`px-3 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
-                    isActive(link.href)
-                      ? 'text-orange-400 bg-orange-500/10'
-                      : 'text-white/60 hover:text-white hover:bg-white/5'
+                    isActive(link.href) ? 'text-orange-400 bg-orange-500/10' : 'text-white/60 hover:text-white hover:bg-white/5'
                   }`}>
                   {link.label}
                 </Link>
               ))}
             </div>
 
-            {/* Actions droite */}
             <div className="flex items-center gap-1.5 flex-shrink-0">
-
-              {/* Search desktop */}
               <Link href="/recherche" className="hidden md:flex items-center justify-center w-9 h-9 rounded-lg text-white/50 hover:text-white hover:bg-white/5 transition-all">
                 <Search size={18} />
               </Link>
 
-              {/* Bell */}
               <Link href="/alertes" className="relative flex items-center justify-center w-9 h-9 rounded-lg text-white/50 hover:text-white hover:bg-white/5 transition-all">
                 <Bell size={18} />
                 <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
               </Link>
 
-              {/* User */}
+              {/* Panier */}
+              <CartButton />
+
               {user ? (
                 <div className="relative" ref={userMenuRef}>
-                  <button
-                    type="button"
-                    onClick={() => setUserMenuOpen(prev => !prev)}
-                    className="flex items-center gap-1.5 bg-navy-700 border border-white/10 rounded-lg px-2.5 py-1.5 hover:bg-navy-600 transition-all"
-                  >
+                  <button type="button" onClick={() => setUserMenuOpen(prev => !prev)}
+                    className="flex items-center gap-1.5 bg-navy-700 border border-white/10 rounded-lg px-2.5 py-1.5 hover:bg-navy-600 transition-all">
                     <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(255,107,53,0.25)' }}>
                       <User size={12} style={{ color: 'var(--orange)' }} />
                     </div>
@@ -147,14 +139,18 @@ export default function Navbar() {
                         }`}>{profile?.role || 'user'}</span>
                       </div>
                       <div className="p-1.5">
-                        <Link href="/dashboard"
-                          onClick={() => setUserMenuOpen(false)}
+                        <Link href="/dashboard" onClick={() => setUserMenuOpen(false)}
                           className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-white/70 hover:text-white hover:bg-white/5 transition-all">
                           <LayoutDashboard size={15} />Mon espace
                         </Link>
+                        {profile?.is_seller && (
+                          <Link href="/mes-commandes" onClick={() => setUserMenuOpen(false)}
+                            className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-white/70 hover:text-white hover:bg-white/5 transition-all">
+                            <ShoppingBag size={15} />Mes commandes
+                          </Link>
+                        )}
                         {(profile?.role === 'admin' || profile?.role === 'superadmin') && (
-                          <Link href="/admin"
-                            onClick={() => setUserMenuOpen(false)}
+                          <Link href="/admin" onClick={() => setUserMenuOpen(false)}
                             className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm hover:bg-orange-500/10 transition-all"
                             style={{ color: 'var(--orange)' }}>
                             <Settings size={15} />Administration
@@ -172,16 +168,12 @@ export default function Navbar() {
                 </div>
               ) : (
                 <Link href="/auth" className="btn-primary text-xs py-2 px-3 whitespace-nowrap">
-                  <LogIn size={14} />
-                  <span className="hidden sm:inline">Connexion</span>
+                  <LogIn size={14} /><span className="hidden sm:inline">Connexion</span>
                 </Link>
               )}
 
-              {/* Burger */}
-              <button
-                className="md:hidden flex items-center justify-center w-9 h-9 rounded-lg text-white/60 hover:text-white hover:bg-white/5 transition-all"
-                onClick={() => setMenuOpen(!menuOpen)}
-              >
+              <button className="md:hidden flex items-center justify-center w-9 h-9 rounded-lg text-white/60 hover:text-white hover:bg-white/5 transition-all"
+                onClick={() => setMenuOpen(!menuOpen)}>
                 {menuOpen ? <X size={20} /> : <Menu size={20} />}
               </button>
             </div>
@@ -189,7 +181,6 @@ export default function Navbar() {
         </div>
       </nav>
 
-      {/* Menu mobile */}
       {menuOpen && (
         <div className="fixed inset-0 z-40 md:hidden">
           <div className="absolute inset-0 bg-black/70" onClick={() => setMenuOpen(false)} />
@@ -212,9 +203,7 @@ export default function Navbar() {
                 return (
                   <Link key={link.href} href={link.href} onClick={() => setMenuOpen(false)}
                     className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-medium ${
-                      isActive(link.href)
-                        ? 'text-orange-400 bg-orange-500/10 border border-orange-500/20'
-                        : 'text-white/70 hover:text-white hover:bg-white/5'
+                      isActive(link.href) ? 'text-orange-400 bg-orange-500/10 border border-orange-500/20' : 'text-white/70 hover:text-white hover:bg-white/5'
                     }`}>
                     <Icon size={18} />{link.label}
                   </Link>
@@ -223,6 +212,10 @@ export default function Navbar() {
               <Link href="/recherche" onClick={() => setMenuOpen(false)}
                 className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-white/70 hover:text-white hover:bg-white/5 transition-all">
                 <Search size={18} />Rechercher
+              </Link>
+              <Link href="/panier" onClick={() => setMenuOpen(false)}
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-white/70 hover:text-white hover:bg-white/5 transition-all">
+                <ShoppingBag size={18} />Mon panier
               </Link>
             </nav>
 
@@ -237,6 +230,12 @@ export default function Navbar() {
                     className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-white/70 hover:text-white hover:bg-white/5 transition-all">
                     <LayoutDashboard size={16} />Mon espace
                   </Link>
+                  {profile?.is_seller && (
+                    <Link href="/mes-commandes" onClick={() => setMenuOpen(false)}
+                      className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-white/70 hover:text-white hover:bg-white/5 transition-all">
+                      <ShoppingBag size={16} />Mes commandes
+                    </Link>
+                  )}
                   {(profile?.role === 'admin' || profile?.role === 'superadmin') && (
                     <Link href="/admin" onClick={() => setMenuOpen(false)}
                       className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm hover:bg-orange-500/10 transition-all"
