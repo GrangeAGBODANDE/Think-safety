@@ -3,6 +3,12 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { Users, BookOpen, AlertTriangle, ShoppingBag, BarChart2, Settings, Shield, Eye, Pencil, Trash2, CheckCircle, XCircle, Globe } from 'lucide-react'
 
+import { redirect } from 'next/navigation'
+
+export default function AdminPage() {
+  redirect('/admin/dashboard')
+}
+
 const TABS = [
   { id: 'overview', label: 'Vue d ensemble', icon: BarChart2 },
   { id: 'users', label: 'Utilisateurs', icon: Users },
