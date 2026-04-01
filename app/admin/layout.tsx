@@ -6,16 +6,22 @@ import { supabase } from '@/lib/supabase'
 import {
   Shield, LayoutDashboard, Users, BookOpen,
   AlertTriangle, ShoppingBag, Settings, Globe,
-  LogOut, ChevronLeft, ChevronRight, Menu, Video, Plus
+  LogOut, ChevronLeft, ChevronRight,
+  Building2, CreditCard, ShoppingCart, Star, Plus
 } from 'lucide-react'
 
 const NAV = [
   { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/utilisateurs', label: 'Utilisateurs', icon: Users },
+  { href: '/admin/entreprises', label: 'Entreprises', icon: Building2 },
   { href: '/admin/contenus', label: 'Contenus', icon: BookOpen },
   { href: '/admin/contenus/nouveau', label: '+ Ajouter contenu', icon: Plus },
   { href: '/admin/alertes', label: 'Alertes', icon: AlertTriangle },
   { href: '/admin/marketplace', label: 'Marketplace', icon: ShoppingBag },
+  { href: '/admin/commandes', label: 'Commandes', icon: ShoppingCart },
+  { href: '/admin/abonnements', label: 'Abonnements', icon: Star },
+  { href: '/admin/paiements', label: 'Config Paiements', icon: CreditCard },
+  { href: '/admin/parametres', label: 'Parametres', icon: Settings },
 ]
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -29,36 +35,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   useEffect(() => {
     async function checkAccess() {
       try {
-        const { data: { user }, error: authError } = await supabase.auth.getUser()
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) { router.push('/auth'); return }
 
-        if (authError || !user) {
-          router.push('/auth')
-          return
+        const { data: p } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+        if (!p || !['admin', 'superadmin', 'moderateur'].includes(p.role)) {
+          router.push('/'); return
         }
-
-        const { data: p, error: profileError } = await supabase
-          .from('profiles')
-          .select('id, prenom, nom, email, role')
-          .eq('id', user.id)
-          .single()
-
-        if (profileError) {
-          setError('Erreur profil: ' + profileError.message)
-          setLoading(false)
-          return
-        }
-
-        if (!p) {
-          setError('Profil introuvable')
-          setLoading(false)
-          return
-        }
-
-        if (p.role !== 'superadmin' && p.role !== 'admin') {
-          router.push('/')
-          return
-        }
-
         setProfile(p)
         setLoading(false)
       } catch (e: any) {
@@ -86,10 +69,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return (
       <div className="min-h-screen bg-navy-900 flex items-center justify-center">
         <div className="text-center max-w-md px-4">
-          <div className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-4 bg-red-500/20">
-            <Shield size={24} className="text-red-400" />
-          </div>
-          <p className="text-white font-bold mb-2">Erreur d&apos;acces</p>
           <p className="text-red-400 text-sm mb-4">{error}</p>
           <Link href="/" className="btn-secondary py-2 px-4 text-sm">Retour au site</Link>
         </div>
@@ -101,9 +80,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="min-h-screen bg-navy-900 flex">
-      {/* Sidebar */}
       <aside className={`${collapsed ? 'w-16' : 'w-56'} bg-navy-800 border-r border-white/5 fixed h-full z-20 transition-all duration-300 flex flex-col`}>
-        {/* Logo */}
         <div className="p-4 border-b border-white/5 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'var(--orange)' }}>
@@ -113,7 +90,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <div>
                 <p className="text-white text-sm font-bold font-display leading-none">Think Safety</p>
                 <p className="text-[10px] font-mono mt-0.5" style={{ color: 'var(--orange)' }}>
-                  {profile?.role === 'superadmin' ? 'SUPER ADMIN' : 'ADMIN'}
+                  {profile?.role === 'superadmin' ? 'SUPER ADMIN' : profile?.role?.toUpperCase()}
                 </p>
               </div>
             )}
@@ -123,22 +100,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </button>
         </div>
 
-        {/* Nav */}
-        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+        <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
           {NAV.map((item) => {
             const Icon = item.icon
             const active = isActive(item.href)
             return (
-              <Link
-                key={item.href}
-                href={item.href}
-                title={collapsed ? item.label : undefined}
+              <Link key={item.href} href={item.href} title={collapsed ? item.label : undefined}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                  active
-                    ? 'text-orange-400 bg-orange-500/10 border border-orange-500/20'
-                    : 'text-white/50 hover:text-white hover:bg-white/5'
-                }`}
-              >
+                  active ? 'text-orange-400 bg-orange-500/10 border border-orange-500/20' : 'text-white/50 hover:text-white hover:bg-white/5'
+                }`}>
                 <Icon size={16} className="flex-shrink-0" />
                 {!collapsed && <span>{item.label}</span>}
               </Link>
@@ -146,33 +116,24 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           })}
         </nav>
 
-        {/* Bottom */}
         <div className="p-3 border-t border-white/5 space-y-1">
           <Link href="/" className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-white/30 hover:text-white hover:bg-white/5 transition-all">
-            <Globe size={15} />
-            {!collapsed && 'Voir le site'}
+            <Globe size={15} />{!collapsed && 'Voir le site'}
           </Link>
           {!collapsed && profile && (
             <div className="px-3 py-2 bg-navy-700 rounded-xl mt-1">
               <p className="text-white text-xs font-medium truncate">{profile.prenom} {profile.nom}</p>
-              <p className="text-[10px] mt-0.5" style={{ color: 'var(--orange)' }}>
-                {profile.role === 'superadmin' ? 'Super Admin' : 'Administrateur'}
-              </p>
+              <p className="text-[10px] mt-0.5" style={{ color: 'var(--orange)' }}>{profile.role}</p>
             </div>
           )}
-          <button
-            onClick={async () => { await supabase.auth.signOut(); router.push('/') }}
-            className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-red-400 hover:bg-red-500/10 transition-all w-full"
-          >
-            <LogOut size={15} />
-            {!collapsed && 'Deconnexion'}
+          <button onClick={async () => { await supabase.auth.signOut(); router.push('/') }}
+            className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-red-400 hover:bg-red-500/10 transition-all w-full">
+            <LogOut size={15} />{!collapsed && 'Deconnexion'}
           </button>
         </div>
       </aside>
 
-      {/* Main content */}
       <main className={`flex-1 ${collapsed ? 'ml-16' : 'ml-56'} transition-all duration-300 min-h-screen`}>
-        {/* Header */}
         <header className="bg-navy-800 border-b border-white/5 px-6 py-3 flex items-center justify-between sticky top-0 z-10">
           <p className="text-white/40 text-sm">
             Connecte en tant que <span className="text-white font-medium">{profile?.prenom}</span>
@@ -182,7 +143,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <Plus size={13} />Nouveau contenu
           </Link>
         </header>
-
         {children}
       </main>
     </div>
