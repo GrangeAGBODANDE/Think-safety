@@ -286,6 +286,22 @@ export default function NouveauContenuPage() {
                 <option value="review">En revision</option>
                 <option value="published">Publie</option>
               </select>
+              <div className="border-t border-white/5 pt-4 mt-2">
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm text-white/70">Contenu payant</label>
+                <button type="button" onClick={() => setForm(p => ({ ...p, is_paid: !(p as any).is_paid }))}
+                  className={`w-11 h-6 rounded-full transition-all ${(form as any).is_paid ? 'bg-orange-500' : 'bg-navy-600'}`}>
+                  <div className={`w-5 h-5 bg-white rounded-full shadow transition-transform mx-0.5 ${(form as any).is_paid ? 'translate-x-5' : 'translate-x-0'}`} />
+                </button>
+              </div>
+              {(form as any).is_paid && (
+                <div>
+                  <label className="input-label">Prix d&apos;acces (FCFA)</label>
+                  <input type="number" value={(form as any).prix_acces || ''} onChange={e => setForm(p => ({ ...p, prix_acces: e.target.value } as any))} placeholder="2500" className="input-field" />
+                </div>
+              )}
+              {!(form as any).is_paid && <p className="text-white/30 text-xs">Ce contenu est gratuit pour tous.</p>}
+            </div>
             </div>
             <div className="space-y-2">
               <button onClick={() => save(true)} disabled={saving}
