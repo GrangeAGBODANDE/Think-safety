@@ -1,16 +1,88 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { CreditCard, CheckCircle, X, Eye, EyeOff, Zap } from 'lucide-react'
+import { CreditCard, CheckCircle, X, Eye, EyeOff, Zap, ExternalLink } from 'lucide-react'
 
-const PROVIDER_LOGOS: Record<string, string> = {
-  stripe: '💳',
-  paypal: '🅿️',
-  mtn_momo: '📱',
-  orange_money: '🟠',
-  moov_money: '🔵',
-  wave: '🌊',
+const PROVIDER_CONFIG: Record<string, {
+  logo: string
+  color: string
+  docs: string
+  fields: { key: string; label: string; placeholder: string; help?: string }[]
+}> = {
+  stripe: {
+    logo: '💳', color: '#6772E5',
+    docs: 'https://dashboard.stripe.com/apikeys',
+    fields: [
+      { key: 'public_key', label: 'Publishable Key', placeholder: 'pk_test_...', help: 'Cle publique (commence par pk_test_ en test)' },
+      { key: 'secret_key', label: 'Secret Key', placeholder: 'sk_test_...', help: 'Cle secrete (commence par sk_test_ en test)' },
+      { key: 'webhook_secret', label: 'Webhook Secret', placeholder: 'whsec_...', help: 'Depuis Stripe Dashboard > Developers > Webhooks' },
+    ]
+  },
+  paypal: {
+    logo: '🅿️', color: '#003087',
+    docs: 'https://developer.paypal.com/dashboard/applications',
+    fields: [
+      { key: 'client_id', label: 'Client ID', placeholder: 'AX...', help: 'Depuis PayPal Developer > My Apps > App credentials' },
+      { key: 'client_secret', label: 'Client Secret', placeholder: 'EK...', help: 'Secret correspondant au Client ID' },
+    ]
+  },
+  fedapay: {
+    logo: '🌍', color: '#00A86B',
+    docs: 'https://docs.fedapay.com',
+    fields: [
+      { key: 'public_key', label: 'Public Key', placeholder: 'pk_sandbox_...', help: 'Depuis FedaPay Dashboard > API Keys' },
+      { key: 'secret_key', label: 'Secret Key', placeholder: 'sk_sandbox_...', help: 'Cle secrete FedaPay' },
+      { key: 'webhook_secret', label: 'Webhook Secret', placeholder: 'whsec_...', help: 'Pour valider les notifications de paiement' },
+    ]
+  },
+  kakiapay: {
+    logo: '🟢', color: '#00C896',
+    docs: 'https://docs.kakiapay.me',
+    fields: [
+      { key: 'api_key', label: 'API Key', placeholder: 'kk_...', help: 'Depuis votre espace KakiaPay > Parametres > API' },
+      { key: 'secret_key', label: 'Secret Key', placeholder: 'sk_...', help: 'Cle secrete pour signer les requetes' },
+      { key: 'sandbox_key', label: 'Sandbox Key (test)', placeholder: 'kk_sandbox_...', help: 'Cle de test KakiaPay' },
+    ]
+  },
+  mtn_momo: {
+    logo: '📱', color: '#FFCB00',
+    docs: 'https://momodeveloper.mtn.com',
+    fields: [
+      { key: 'subscription_key', label: 'Subscription Key', placeholder: 'Ocp-Apim-Subscription-Key', help: 'Depuis MTN MoMo Developer Portal' },
+      { key: 'api_key', label: 'API Key', placeholder: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', help: 'UUID genere lors de la creation du user' },
+      { key: 'user_id', label: 'API User ID', placeholder: 'UUID v4', help: 'ID utilisateur API MTN MoMo' },
+      { key: 'environment', label: 'Environnement', placeholder: 'sandbox ou mtncongo', help: 'sandbox pour les tests' },
+    ]
+  },
+  orange_money: {
+    logo: '🟠', color: '#FF6600',
+    docs: 'https://developer.orange.com/apis/orange-money-webpay-bf/getting-started',
+    fields: [
+      { key: 'merchant_key', label: 'Merchant Key', placeholder: 'Votre cle marchand', help: 'Fournie par Orange lors de l inscription' },
+      { key: 'api_username', label: 'API Username', placeholder: 'username', help: 'Identifiant API Orange Money' },
+      { key: 'api_password', label: 'API Password', placeholder: '••••••••', help: 'Mot de passe API Orange Money' },
+    ]
+  },
+  moov_money: {
+    logo: '🔵', color: '#0066CC',
+    docs: 'https://dev.moov-africa.bj',
+    fields: [
+      { key: 'api_key', label: 'API Key', placeholder: 'Votre cle API Moov', help: 'Fournie par Moov Africa' },
+      { key: 'merchant_id', label: 'Merchant ID', placeholder: 'ID marchand', help: 'Votre identifiant marchand Moov' },
+      { key: 'callback_url', label: 'Callback URL', placeholder: 'https://votre-site.com/api/moov/callback', help: 'URL de notification apres paiement' },
+    ]
+  },
+  wave: {
+    logo: '🌊', color: '#1EBCF0',
+    docs: 'https://docs.wave.com/business-payments',
+    fields: [
+      { key: 'api_key', label: 'API Key', placeholder: 'wave_sn_prod_...', help: 'Depuis Wave Business > Integrations > API Keys' },
+      { key: 'webhook_secret', label: 'Webhook Secret', placeholder: 'ws_...', help: 'Pour valider les webhooks Wave' },
+    ]
+  },
 }
+
+const PROVIDER_ORDER = ['fedapay', 'kakiapay', 'mtn_momo', 'orange_money', 'moov_money', 'wave', 'stripe', 'paypal']
 
 export default function PaiementsPage() {
   const [configs, setConfigs] = useState<any[]>([])
@@ -19,11 +91,17 @@ export default function PaiementsPage() {
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState('')
   const [showKeys, setShowKeys] = useState<Record<string, boolean>>({})
+  const [testing, setTesting] = useState<string | null>(null)
+  const [testResult, setTestResult] = useState<Record<string, string>>({})
 
   async function load() {
     setLoading(true)
     const { data } = await supabase.from('payment_configs').select('*').order('provider')
-    setConfigs(data || [])
+    // Trier selon l'ordre defini
+    const sorted = PROVIDER_ORDER
+      .map(p => data?.find((c: any) => c.provider === p))
+      .filter(Boolean)
+    setConfigs(sorted as any[])
     setLoading(false)
   }
 
@@ -31,19 +109,19 @@ export default function PaiementsPage() {
 
   async function saveConfig() {
     setSaving(true)
-    const config_json = {
-      api_key: editing.api_key || '',
-      secret_key: editing.secret_key || '',
-      webhook_secret: editing.webhook_secret || '',
-      endpoint: editing.endpoint || '',
-      extra: editing.extra || '',
+    const cfg = PROVIDER_CONFIG[editing.provider]
+    const config_json: Record<string, string> = {}
+    if (cfg) {
+      cfg.fields.forEach(f => {
+        config_json[f.key] = editing[f.key] || ''
+      })
     }
     await supabase.from('payment_configs').update({
       actif: editing.actif,
       mode: editing.mode,
       config_json,
     }).eq('id', editing.id)
-    setMsg('Configuration sauvegardee !')
+    setMsg(`${editing.nom_affichage} configure avec succes !`)
     setEditing(null)
     load()
     setTimeout(() => setMsg(''), 3000)
@@ -51,46 +129,67 @@ export default function PaiementsPage() {
   }
 
   async function toggleActive(config: any) {
+    const cfg = PROVIDER_CONFIG[config.provider]
+    const hasKeys = cfg?.fields.some(f => config.config_json?.[f.key])
+    if (!config.actif && !hasKeys) {
+      setMsg(`⚠️ Configurez d'abord les cles API de ${config.nom_affichage} avant de l'activer.`)
+      setTimeout(() => setMsg(''), 4000)
+      openEdit(config)
+      return
+    }
     await supabase.from('payment_configs').update({ actif: !config.actif }).eq('id', config.id)
     load()
   }
 
-  const openEdit = (config: any) => {
-    setEditing({
-      ...config,
-      api_key: config.config_json?.api_key || '',
-      secret_key: config.config_json?.secret_key || '',
-      webhook_secret: config.config_json?.webhook_secret || '',
-      endpoint: config.config_json?.endpoint || '',
-      extra: config.config_json?.extra || '',
-    })
+  function openEdit(config: any) {
+    const cfg = PROVIDER_CONFIG[config.provider]
+    const editData: any = { ...config }
+    if (cfg) {
+      cfg.fields.forEach(f => {
+        editData[f.key] = config.config_json?.[f.key] || ''
+      })
+    }
+    setEditing(editData)
   }
 
-  const providerDocs: Record<string, string> = {
-    stripe: 'https://dashboard.stripe.com/apikeys',
-    paypal: 'https://developer.paypal.com/home',
-    mtn_momo: 'https://momodeveloper.mtn.com/',
-    orange_money: 'https://developer.orange.com/apis/orange-money-webpay-bf',
-    moov_money: 'https://dev.moov-africa.bj/',
-    wave: 'https://docs.wave.com/',
+  async function testConnection(config: any) {
+    setTesting(config.provider)
+    // Simulation d'un test de connexion
+    await new Promise(r => setTimeout(r, 1500))
+    const hasKeys = PROVIDER_CONFIG[config.provider]?.fields
+      .some(f => config.config_json?.[f.key])
+    setTestResult(prev => ({
+      ...prev,
+      [config.provider]: hasKeys
+        ? '✅ Cles configurees — test de connexion requis en production'
+        : '❌ Aucune cle API configuree'
+    }))
+    setTesting(null)
+    setTimeout(() => setTestResult(prev => {
+      const n = { ...prev }
+      delete n[config.provider]
+      return n
+    }), 5000)
   }
+
+  const africaProviders = configs.filter(c => ['fedapay', 'kakiapay', 'mtn_momo', 'orange_money', 'moov_money', 'wave'].includes(c.provider))
+  const intlProviders = configs.filter(c => ['stripe', 'paypal'].includes(c.provider))
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
       <div className="mb-6">
         <h1 className="text-2xl font-bold font-display text-white">Configuration des paiements</h1>
-        <p className="text-white/40 text-sm">Configurez les passerelles de paiement pour les abonnements</p>
+        <p className="text-white/40 text-sm">Configurez les passerelles de paiement pour les abonnements et commandes</p>
       </div>
 
-      {/* Banniere info */}
       <div className="card p-4 mb-6 border-blue-500/20 bg-blue-500/5">
         <div className="flex items-start gap-3">
           <Zap size={18} className="text-blue-400 flex-shrink-0 mt-0.5" />
           <div>
-            <p className="text-white font-medium text-sm mb-1">Integration pret a connecter</p>
+            <p className="text-white font-medium text-sm mb-1">Integration prete a connecter</p>
             <p className="text-white/50 text-sm">
-              Toutes les passerelles sont preparees. Ajoutez vos cles API quand vous etes pret a activer les paiements. 
-              Les transactions resteront desactivees tant qu&apos;une passerelle n&apos;est pas activee.
+              Toutes les passerelles sont preparees. Ajoutez vos cles API quand vous etes pret. 
+              Les paiements restent desactives tant qu&apos;une passerelle n&apos;est pas configuree et activee.
             </p>
           </div>
         </div>
@@ -105,112 +204,120 @@ export default function PaiementsPage() {
       {loading ? (
         <div className="text-white/40 p-8 text-center">Chargement...</div>
       ) : (
-        <div className="grid md:grid-cols-2 gap-4">
-          {configs.map(config => (
-            <div key={config.id} className={`card p-5 ${config.actif ? 'border-green-500/20 bg-green-500/3' : ''}`}>
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-navy-700 flex items-center justify-center text-2xl">
-                    {PROVIDER_LOGOS[config.provider] || '💰'}
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-white">{config.nom_affichage}</h3>
-                    <p className="text-white/40 text-xs mt-0.5">{config.description}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className={`badge text-[10px] ${config.actif ? 'badge-safe' : ''}`} style={!config.actif ? { background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.3)' } : {}}>
-                    {config.actif ? 'Actif' : 'Inactif'}
-                  </span>
-                  <span className="badge badge-info text-[10px]">{config.mode}</span>
-                </div>
-              </div>
+        <div className="space-y-8">
 
-              <div className="flex items-center justify-between">
-                <div className="flex gap-2">
-                  <button onClick={() => openEdit(config)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/10 text-blue-400 rounded-lg text-xs hover:bg-blue-500/20 transition-all">
-                    <CreditCard size={12} />Configurer
-                  </button>
-                  {providerDocs[config.provider] && (
-                    <a href={providerDocs[config.provider]} target="_blank" rel="noreferrer"
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 text-white/40 rounded-lg text-xs hover:bg-white/10 hover:text-white transition-all">
-                      Docs API
-                    </a>
-                  )}
-                </div>
-                <button onClick={() => toggleActive(config)}
-                  className={`px-3 py-1.5 rounded-lg text-xs transition-all ${config.actif ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20' : 'bg-green-500/10 text-green-400 hover:bg-green-500/20'}`}>
-                  {config.actif ? 'Desactiver' : 'Activer'}
-                </button>
-              </div>
-
-              {config.actif && config.config_json?.api_key && (
-                <div className="mt-3 flex items-center gap-2 text-xs text-green-400">
-                  <CheckCircle size={12} />Cles API configurees
-                </div>
-              )}
-              {!config.config_json?.api_key && (
-                <div className="mt-3 text-xs text-white/30">
-                  Aucune cle API configuree
-                </div>
-              )}
+          {/* Paiements Afrique de l'Ouest */}
+          <div>
+            <h2 className="font-display font-bold text-white mb-4 flex items-center gap-2">
+              🌍 <span>Paiements Afrique de l&apos;Ouest</span>
+              <span className="badge badge-safe text-[10px]">Recommandes</span>
+            </h2>
+            <div className="grid md:grid-cols-2 gap-4">
+              {africaProviders.map(config => (
+                <ProviderCard
+                  key={config.id}
+                  config={config}
+                  onEdit={() => openEdit(config)}
+                  onToggle={() => toggleActive(config)}
+                  onTest={() => testConnection(config)}
+                  testing={testing === config.provider}
+                  testResult={testResult[config.provider]}
+                />
+              ))}
             </div>
-          ))}
+          </div>
+
+          {/* Paiements internationaux */}
+          <div>
+            <h2 className="font-display font-bold text-white mb-4">💳 Paiements Internationaux</h2>
+            <div className="grid md:grid-cols-2 gap-4">
+              {intlProviders.map(config => (
+                <ProviderCard
+                  key={config.id}
+                  config={config}
+                  onEdit={() => openEdit(config)}
+                  onToggle={() => toggleActive(config)}
+                  onTest={() => testConnection(config)}
+                  testing={testing === config.provider}
+                  testResult={testResult[config.provider]}
+                />
+              ))}
+            </div>
+          </div>
         </div>
       )}
 
       {/* Modal configuration */}
       {editing && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4 py-8 overflow-y-auto">
+        <div className="fixed inset-0 bg-black/70 flex items-start justify-center z-50 px-4 py-6 overflow-y-auto">
           <div className="bg-navy-800 border border-white/10 rounded-2xl p-6 w-full max-w-lg my-auto">
             <div className="flex items-center justify-between mb-5">
               <h2 className="font-display font-bold text-white text-lg flex items-center gap-2">
-                <span className="text-2xl">{PROVIDER_LOGOS[editing.provider]}</span>
+                <span className="text-2xl">{PROVIDER_CONFIG[editing.provider]?.logo || '💰'}</span>
                 {editing.nom_affichage}
               </h2>
-              <button onClick={() => setEditing(null)} className="text-white/40 hover:text-white"><X size={18} /></button>
+              <button onClick={() => setEditing(null)} className="text-white/40 hover:text-white">
+                <X size={18} />
+              </button>
             </div>
 
             <div className="space-y-4">
+              {/* Mode */}
               <div>
-                <label className="input-label">Mode</label>
-                <select value={editing.mode} onChange={e => setEditing({...editing, mode: e.target.value})} className="input-field">
-                  <option value="test">Test (sandbox)</option>
-                  <option value="production">Production (live)</option>
+                <label className="input-label">Mode d&apos;operation</label>
+                <select value={editing.mode} onChange={e => setEditing({ ...editing, mode: e.target.value })} className="input-field">
+                  <option value="test">Test (Sandbox) — Aucune vraie transaction</option>
+                  <option value="production">Production (Live) — Vraies transactions</option>
                 </select>
                 {editing.mode === 'production' && (
-                  <p className="text-orange-400 text-xs mt-1">⚠️ Mode production — les vraies transactions seront traitees.</p>
+                  <p className="text-orange-400 text-xs mt-1">⚠️ Mode production actif — les vraies transactions seront traitees.</p>
                 )}
               </div>
 
-              {[
-                { key: 'api_key', label: 'Cle API / Public Key', placeholder: 'pk_test_...' },
-                { key: 'secret_key', label: 'Cle secrete / Secret Key', placeholder: 'sk_test_...' },
-                { key: 'webhook_secret', label: 'Webhook Secret (optionnel)', placeholder: 'whsec_...' },
-                { key: 'endpoint', label: 'Endpoint URL (si applicable)', placeholder: 'https://...' },
-              ].map(field => (
+              {/* Champs specifiques au provider */}
+              {PROVIDER_CONFIG[editing.provider]?.fields.map(field => (
                 <div key={field.key}>
                   <label className="input-label">{field.label}</label>
                   <div className="relative">
                     <input
                       type={showKeys[field.key] ? 'text' : 'password'}
-                      value={(editing as any)[field.key] || ''}
-                      onChange={e => setEditing({...editing, [field.key]: e.target.value})}
+                      value={editing[field.key] || ''}
+                      onChange={e => setEditing({ ...editing, [field.key]: e.target.value })}
                       placeholder={field.placeholder}
                       className="input-field pr-10"
                     />
-                    <button type="button" onClick={() => setShowKeys({...showKeys, [field.key]: !showKeys[field.key]})}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white">
+                    <button
+                      type="button"
+                      onClick={() => setShowKeys(prev => ({ ...prev, [field.key]: !prev[field.key] }))}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white"
+                    >
                       {showKeys[field.key] ? <EyeOff size={14} /> : <Eye size={14} />}
                     </button>
                   </div>
+                  {field.help && <p className="text-white/30 text-xs mt-1">{field.help}</p>}
                 </div>
               ))}
 
-              <div className="flex items-center gap-3">
-                <button type="button" onClick={() => setEditing({...editing, actif: !editing.actif})}
-                  className={`w-11 h-6 rounded-full transition-all ${editing.actif ? 'bg-orange-500' : 'bg-navy-600'}`}>
+              {/* Lien documentation */}
+              {PROVIDER_CONFIG[editing.provider]?.docs && (
+                <a
+                  href={PROVIDER_CONFIG[editing.provider].docs}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-2 text-blue-400 text-sm hover:text-blue-300 transition-colors"
+                >
+                  <ExternalLink size={14} />
+                  Voir la documentation officielle {editing.nom_affichage}
+                </a>
+              )}
+
+              {/* Activer */}
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setEditing({ ...editing, actif: !editing.actif })}
+                  className={`w-11 h-6 rounded-full transition-all ${editing.actif ? 'bg-orange-500' : 'bg-navy-600'}`}
+                >
                   <div className={`w-5 h-5 bg-white rounded-full shadow transition-transform mx-0.5 ${editing.actif ? 'translate-x-5' : 'translate-x-0'}`} />
                 </button>
                 <span className="text-sm text-white/70">Activer ce moyen de paiement</span>
@@ -218,7 +325,7 @@ export default function PaiementsPage() {
 
               <div className="p-3 bg-navy-700 rounded-xl">
                 <p className="text-white/40 text-xs">
-                  Les cles sont chiffrees et stockees de facon securisee. Ne partagez jamais vos cles secretes.
+                  🔒 Les cles sont stockees de facon securisee. Ne partagez jamais vos cles secretes. Utilisez toujours le mode test avant la production.
                 </p>
               </div>
             </div>
@@ -232,6 +339,71 @@ export default function PaiementsPage() {
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+function ProviderCard({ config, onEdit, onToggle, onTest, testing, testResult }: any) {
+  const cfg = PROVIDER_CONFIG[config.provider]
+  const hasKeys = cfg?.fields.some((f: any) => config.config_json?.[f.key])
+
+  return (
+    <div className={`card p-5 transition-all ${config.actif ? 'border-green-500/20' : ''}`}>
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div className="w-11 h-11 rounded-xl bg-navy-700 flex items-center justify-center text-2xl flex-shrink-0">
+            {cfg?.logo || '💰'}
+          </div>
+          <div>
+            <h3 className="font-bold text-white text-sm">{config.nom_affichage}</h3>
+            <p className="text-white/40 text-xs mt-0.5">{config.description}</p>
+          </div>
+        </div>
+        <div className="flex flex-col items-end gap-1">
+          <span className={`badge text-[10px] ${config.actif ? 'badge-safe' : ''}`}
+            style={!config.actif ? { background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.3)' } : {}}>
+            {config.actif ? '● Actif' : '○ Inactif'}
+          </span>
+          <span className="badge badge-info text-[10px]">{config.mode}</span>
+        </div>
+      </div>
+
+      {/* Statut des cles */}
+      <div className={`flex items-center gap-2 text-xs mb-4 px-3 py-2 rounded-lg ${hasKeys ? 'bg-green-500/10 text-green-400' : 'bg-white/5 text-white/30'}`}>
+        {hasKeys ? <CheckCircle size={12} /> : <div className="w-3 h-3 rounded-full border border-white/20" />}
+        {hasKeys ? 'Cles API configurees' : 'Aucune cle API — configuration requise'}
+      </div>
+
+      {testResult && (
+        <div className="text-xs mb-3 px-3 py-2 rounded-lg bg-navy-700 text-white/70">
+          {testResult}
+        </div>
+      )}
+
+      <div className="flex items-center gap-2 flex-wrap">
+        <button onClick={onEdit}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/10 text-blue-400 rounded-lg text-xs hover:bg-blue-500/20 transition-all">
+          <CreditCard size={12} />Configurer
+        </button>
+        {cfg?.docs && (
+          <a href={cfg.docs} target="_blank" rel="noreferrer"
+            className="flex items-center gap-1 px-3 py-1.5 bg-white/5 text-white/40 rounded-lg text-xs hover:bg-white/10 hover:text-white transition-all">
+            <ExternalLink size={11} />Docs
+          </a>
+        )}
+        <button onClick={onTest} disabled={testing}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-500/10 text-purple-400 rounded-lg text-xs hover:bg-purple-500/20 transition-all">
+          {testing ? '...' : '🔌 Tester'}
+        </button>
+        <button onClick={onToggle}
+          className={`ml-auto px-3 py-1.5 rounded-lg text-xs transition-all ${
+            config.actif
+              ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20'
+              : 'bg-green-500/10 text-green-400 hover:bg-green-500/20'
+          }`}>
+          {config.actif ? 'Desactiver' : 'Activer'}
+        </button>
+      </div>
     </div>
   )
 }
