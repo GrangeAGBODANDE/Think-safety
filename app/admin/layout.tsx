@@ -5,7 +5,6 @@ import { usePathname, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import ThemeToggle from '@/components/ThemeToggle'
 import LanguageSelector from '@/components/LanguageSelector'
-import { useLanguage } from '@/contexts/LanguageContext'
 import {
   Shield, LayoutDashboard, Users, BookOpen,
   AlertTriangle, ShoppingBag, Settings, Globe,
@@ -13,29 +12,28 @@ import {
   Building2, CreditCard, ShoppingCart, Star, Plus, FileText
 } from 'lucide-react'
 
+const NAV = [
+  { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/admin/utilisateurs', label: 'Utilisateurs', icon: Users },
+  { href: '/admin/entreprises', label: 'Entreprises', icon: Building2 },
+  { href: '/admin/contenus', label: 'Contenus', icon: BookOpen },
+  { href: '/admin/contenus/nouveau', label: 'Ajouter contenu', icon: Plus },
+  { href: '/admin/alertes', label: 'Alertes', icon: AlertTriangle },
+  { href: '/admin/marketplace', label: 'Marketplace', icon: ShoppingBag },
+  { href: '/admin/commandes', label: 'Commandes', icon: ShoppingCart },
+  { href: '/admin/abonnements', label: 'Abonnements', icon: Star },
+  { href: '/admin/paiements', label: 'Config Paiements', icon: CreditCard },
+  { href: '/admin/parametres', label: 'Parametres', icon: Settings },
+  { href: '/admin/documentation', label: 'Documentation Dev', icon: FileText },
+]
+
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
-  const { t } = useLanguage()
   const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [collapsed, setCollapsed] = useState(false)
   const [error, setError] = useState('')
-
-  const NAV = [
-    { href: '/admin/dashboard',          label: t('admin.dashboard'),      icon: LayoutDashboard },
-    { href: '/admin/utilisateurs',       label: t('admin.users'),          icon: Users },
-    { href: '/admin/entreprises',        label: t('admin.companies'),      icon: Building2 },
-    { href: '/admin/contenus',           label: t('admin.contents'),       icon: BookOpen },
-    { href: '/admin/contenus/nouveau',   label: t('admin.add_content'),    icon: Plus },
-    { href: '/admin/alertes',            label: t('admin.alerts'),         icon: AlertTriangle },
-    { href: '/admin/marketplace',        label: t('admin.marketplace'),    icon: ShoppingBag },
-    { href: '/admin/commandes',          label: t('admin.orders'),         icon: ShoppingCart },
-    { href: '/admin/abonnements',        label: t('admin.subscriptions'),  icon: Star },
-    { href: '/admin/paiements',          label: t('admin.payments'),       icon: CreditCard },
-    { href: '/admin/parametres',         label: t('admin.settings'),       icon: Settings },
-    { href: '/admin/documentation',      label: t('admin.documentation'),  icon: FileText },
-  ]
 
   useEffect(() => {
     async function checkAccess() {
@@ -43,9 +41,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) { router.push('/auth'); return }
         const { data: p } = await supabase.from('profiles').select('*').eq('id', user.id).single()
-        if (!p || !['admin', 'superadmin', 'moderateur'].includes(p.role)) {
-          router.push('/'); return
-        }
+        if (!p || !['admin', 'superadmin', 'moderateur'].includes(p.role)) { router.push('/'); return }
         setProfile(p)
         setLoading(false)
       } catch (e: any) {
@@ -85,12 +81,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <div className="min-h-screen flex" style={{ background: 'var(--bg-main)' }}>
 
-      {/* Sidebar */}
       <aside
         className={`${collapsed ? 'w-16' : 'w-60'} fixed h-full z-20 transition-all duration-300 flex flex-col border-r`}
         style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}
       >
-        {/* Logo */}
         <div className="p-4 flex items-center justify-between border-b" style={{ borderColor: 'var(--border)' }}>
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'var(--orange)' }}>
@@ -105,35 +99,24 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </div>
             )}
           </div>
-          <button
-            onClick={() => setCollapsed(!collapsed)}
-            className="p-1 rounded-lg transition-all"
-            style={{ color: 'var(--text-secondary)' }}
-          >
+          <button onClick={() => setCollapsed(!collapsed)} className="p-1 rounded-lg" style={{ color: 'var(--text-secondary)' }}>
             {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
           </button>
         </div>
 
-        {/* Nav */}
         <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto">
           {NAV.map((item) => {
             const Icon = item.icon
             const active = isActive(item.href)
             return (
-              <Link
-                key={item.href}
-                href={item.href}
+              <Link key={item.href} href={item.href}
                 title={collapsed ? item.label : undefined}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                  item.href === '/admin/documentation' && !active
-                    ? 'border border-transparent'
-                    : 'border border-transparent'
-                }`}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all border"
                 style={active
                   ? { color: 'var(--orange)', background: 'rgba(212,80,15,0.1)', borderColor: 'rgba(212,80,15,0.2)' }
                   : item.href === '/admin/documentation'
-                  ? { color: '#1976D2' }
-                  : { color: 'var(--text-secondary)' }
+                  ? { color: '#1976D2', borderColor: 'transparent' }
+                  : { color: 'var(--text-secondary)', borderColor: 'transparent' }
                 }
                 onMouseEnter={e => { if (!active) e.currentTarget.style.background = 'var(--navy-700)' }}
                 onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent' }}
@@ -145,16 +128,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           })}
         </nav>
 
-        {/* Bottom */}
         <div className="p-3 border-t space-y-1" style={{ borderColor: 'var(--border)' }}>
-          <Link
-            href="/"
-            className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-all"
+          <Link href="/" className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-all"
             style={{ color: 'var(--text-secondary)' }}
             onMouseEnter={e => e.currentTarget.style.background = 'var(--navy-700)'}
-            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-          >
-            <Globe size={15} />{!collapsed && t('common.see_site')}
+            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+            <Globe size={15} />{!collapsed && 'Voir le site'}
           </Link>
           {!collapsed && profile && (
             <div className="px-3 py-2 rounded-xl" style={{ background: 'var(--bg-secondary)' }}>
@@ -162,26 +141,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <p className="text-[10px] mt-0.5" style={{ color: 'var(--orange)' }}>{profile.role}</p>
             </div>
           )}
-          <button
-            onClick={async () => { await supabase.auth.signOut(); router.push('/') }}
-            className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-red-400 hover:bg-red-500/10 transition-all w-full"
-          >
-            <LogOut size={15} />{!collapsed && t('common.logout')}
+          <button onClick={async () => { await supabase.auth.signOut(); router.push('/') }}
+            className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-red-400 hover:bg-red-500/10 transition-all w-full">
+            <LogOut size={15} />{!collapsed && 'Deconnexion'}
           </button>
         </div>
       </aside>
 
-      {/* Main */}
       <main className={`flex-1 ${collapsed ? 'ml-16' : 'ml-60'} transition-all duration-300 min-h-screen`}>
-
-        {/* Header */}
-        <header
-          className="px-6 py-3 flex items-center justify-between sticky top-0 z-10 border-b"
-          style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}
-        >
+        <header className="px-6 py-3 flex items-center justify-between sticky top-0 z-10 border-b"
+          style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
           <div className="flex items-center gap-3">
             <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-              {t('admin.connected_as')}{' '}
+              Connecte en tant que{' '}
               <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{profile?.prenom}</span>
             </p>
             <span className={`badge text-[10px] ${
@@ -189,20 +161,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               profile?.role === 'admin' ? 'badge-orange' : 'badge-info'
             }`}>{profile?.role}</span>
           </div>
-
-          {/* Contrôles droite */}
           <div className="flex items-center gap-2">
-            {/* Sélecteur de langue */}
             <LanguageSelector />
-            {/* Toggle thème */}
             <ThemeToggle />
-            {/* Bouton nouveau contenu */}
             <Link href="/admin/contenus/nouveau" className="btn-primary py-1.5 px-4 text-xs">
-              <Plus size={13} />{t('admin.new_content')}
+              <Plus size={13} />Nouveau contenu
             </Link>
           </div>
         </header>
-
         {children}
       </main>
     </div>
