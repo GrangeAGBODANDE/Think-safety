@@ -24,20 +24,19 @@ export default function MarketplacePage() {
   const [profile, setProfile] = useState<any>(null)
 
   useEffect(() => {
-    supabase.from('marketplace_annonces').select('id, titre, description, categorie, secteur_slug, prix, prix_type, localisation, vendeur_certifie, note, images')
-      .eq('status', 'approved').order('created_at', { ascending: false })
+    supabase
+      .from('marketplace_annonces')
+      .select('id, titre, description, categorie, secteur_slug, prix, prix_type, localisation, vendeur_certifie, note, images')
+      .eq('status', 'approved')
+      .order('created_at', { ascending: false })
       .then(({ data }) => { setAnnonces(data || []); setLoading(false) })
 
     supabase.auth.getUser().then(({ data }) => {
       if (data.user) {
-        supabase.from('profiles').select('role, is_seller').eq('id', data.user.id).single().then(({ data: p }) => setProfile(p))
+        supabase.from('profiles').select('role, is_seller').eq('id', data.user.id).single()
+          .then(({ data: p }) => setProfile(p))
       }
     })
-
-    try {
-      const cart = JSON.parse(localStorage.getItem('ts_cart') || '[]')
-      setLiked(cart.map((i: any) => i.id))
-    } catch {}
   }, [])
 
   const canPublish = profile && (['admin', 'superadmin', 'moderateur'].includes(profile.role) || profile.is_seller)
@@ -50,11 +49,19 @@ export default function MarketplacePage() {
       if (existing) {
         newCart = cart.map((i: any) => i.id === annonce.id ? { ...i, quantite: i.quantite + 1 } : i)
       } else {
-        newCart = [...cart, { id: annonce.id, titre: annonce.titre, prix: annonce.prix, prix_type: annonce.prix_type, categorie: annonce.categorie, localisation: annonce.localisation, quantite: 1 }]
+        newCart = [...cart, {
+          id: annonce.id,
+          titre: annonce.titre,
+          prix: annonce.prix,
+          prix_type: annonce.prix_type,
+          categorie: annonce.categorie,
+          localisation: annonce.localisation,
+          quantite: 1
+        }]
       }
       localStorage.setItem('ts_cart', JSON.stringify(newCart))
       window.dispatchEvent(new Event('cart_updated'))
-      setCartMsg(`"${annonce.titre.substring(0, 30)}..." ajoute au panier !`)
+      setCartMsg(`Article ajoute au panier !`)
       setTimeout(() => setCartMsg(''), 3000)
     } catch {}
   }
@@ -84,7 +91,6 @@ export default function MarketplacePage() {
             )}
           </div>
 
-          {/* Toast panier */}
           {cartMsg && (
             <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 bg-green-500 text-white rounded-xl shadow-xl text-sm font-medium flex items-center gap-2">
               <ShoppingCart size={16} />{cartMsg}
@@ -94,13 +100,22 @@ export default function MarketplacePage() {
           <div className="mb-8 space-y-4">
             <div className="relative max-w-md">
               <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
-              <input type="text" value={search} onChange={e => setSearch(e.target.value)}
-                placeholder="Rechercher EPI, formation, service..." className="input-field pl-10" />
+              <input
+                type="text"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="Rechercher EPI, formation, service..."
+                className="input-field pl-10"
+              />
             </div>
             <div className="flex flex-wrap gap-2">
               {CATEGORIES.map(c => (
                 <button key={c} onClick={() => setCategorie(c)}
-                  className={`px-4 py-1.5 rounded-xl border text-sm transition-all ${categorie === c ? 'border-orange-500/50 text-orange-400 bg-orange-500/10' : 'border-white/10 text-white/50 hover:border-white/20 hover:text-white'}`}>
+                  className={`px-4 py-1.5 rounded-xl border text-sm transition-all ${
+                    categorie === c
+                      ? 'border-orange-500/50 text-orange-400 bg-orange-500/10'
+                      : 'border-white/10 text-white/50 hover:border-white/20 hover:text-white'
+                  }`}>
                   {c}
                 </button>
               ))}
@@ -111,23 +126,27 @@ export default function MarketplacePage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {[1,2,3,4,5,6].map(i => (
                 <div key={i} className="card overflow-hidden">
-                  <div className="bg-navy-700 h-28 shimmer" />
+                  <div className="bg-navy-700 h-28 animate-pulse" />
                   <div className="p-4 space-y-2">
-                    <div className="h-3 bg-navy-700 rounded shimmer w-1/3" />
-                    <div className="h-4 bg-navy-700 rounded shimmer w-2/3" />
+                    <div className="h-3 bg-navy-700 rounded animate-pulse w-1/3" />
+                    <div className="h-4 bg-navy-700 rounded animate-pulse w-2/3" />
                   </div>
                 </div>
               ))}
             </div>
           ) : filtered.length === 0 ? (
             <div className="text-center py-16 card">
-              <p className="text-white/40">Aucune annonce trouvee</p>
+              <p className="text-white/40 mb-4">Aucune annonce trouvee</p>
+              {canPublish && (
+                <Link href="/marketplace/publier" className="btn-primary py-2 px-5 text-sm">
+                  <Plus size={14} />Publier une annonce
+                </Link>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {filtered.map(a => (
                 <div key={a.id} className="card group overflow-hidden flex flex-col">
-                  {/* Image ou emoji */}
                   <div className="bg-navy-700 h-36 flex items-center justify-center relative overflow-hidden">
                     {a.images && a.images.length > 0 ? (
                       <img src={a.images[0]} alt={a.titre} className="w-full h-full object-cover" />
@@ -141,7 +160,9 @@ export default function MarketplacePage() {
                     </button>
                     {a.vendeur_certifie && (
                       <div className="absolute top-3 left-3">
-                        <span className="badge badge-info text-[10px]"><BadgeCheck size={9} className="mr-0.5" />Certifie</span>
+                        <span className="badge badge-info text-[10px]">
+                          <BadgeCheck size={9} className="mr-0.5" />Certifie
+                        </span>
                       </div>
                     )}
                   </div>
@@ -156,10 +177,13 @@ export default function MarketplacePage() {
                       )}
                     </div>
 
-                    <h3 className="text-white font-medium text-sm mb-1 group-hover:text-orange-400 transition-colors leading-snug">{a.titre}</h3>
-                    <p className="text-white/40 text-xs leading-relaxed mb-3 line-clamp-2 flex-1">{a.description}</p>
+                    <h3 className="text-white font-medium text-sm mb-1 group-hover:text-orange-400 transition-colors leading-snug">
+                      {a.titre}
+                    </h3>
+                    <p className="text-white/40 text-xs leading-relaxed mb-3 line-clamp-2 flex-1">
+                      {a.description}
+                    </p>
 
-                    {/* NOM DU VENDEUR MASQUE — on affiche uniquement la localisation */}
                     {a.localisation && (
                       <div className="flex items-center gap-1 text-white/30 text-xs mb-3">
                         <MapPin size={10} />{a.localisation}
@@ -175,36 +199,7 @@ export default function MarketplacePage() {
                           <div className="text-white/30 text-xs mt-0.5">{a.prix_type}</div>
                         )}
                       </div>
-                      <button onClick={() => addToCart(a)}
+                      <button
+                        onClick={() => addToCart(a)}
                         className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-all"
-                        style={{ background: 'rgba(255,107,53,0.15)', color: 'var(--orange)', border: '1px solid rgba(255,107,53,0.25)' }}
-                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,107,53,0.25)'}
-                        onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,107,53,0.15)'}>
-                        <ShoppingCart size={13} />
-                        {a.prix > 0 ? 'Ajouter' : 'Demander'}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </main>
-      <Footer />
-    </div>
-  )
-}
-```
-
----
-
-### FICHIER 13 — Remplace `app/admin/contenus/nouveau/page.tsx`
-
-Ajouter is_paid + visionneuse document :
-
-Ajoute juste ces 2 blocs dans le formulaire existant, dans la section **"Sidebar droite"** après le select Statut :
-
-Dans `app/admin/contenus/nouveau/page.tsx`, trouve la ligne :
-```
-<option value="published">Publie</option>
+                        sty
