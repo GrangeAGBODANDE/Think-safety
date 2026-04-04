@@ -6,7 +6,6 @@ import { supabase } from '@/lib/supabase'
 import CartButton from '@/components/CartButton'
 import ThemeToggle from '@/components/ThemeToggle'
 import LanguageSelector from '@/components/LanguageSelector'
-import { useLanguage } from '@/contexts/LanguageContext'
 import {
   Shield, Bell, Menu, X, LogIn, LogOut,
   User, Settings, LayoutDashboard,
@@ -16,7 +15,6 @@ import {
 export default function Navbar() {
   const router = useRouter()
   const pathname = usePathname()
-  const { t } = useLanguage()
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -66,11 +64,11 @@ export default function Navbar() {
   }
 
   const navLinks = [
-    { href: '/', label: t('nav.home'), icon: Home },
-    { href: '/secteurs', label: t('nav.sectors'), icon: BookOpen },
-    { href: '/marketplace', label: t('nav.marketplace'), icon: ShoppingBag },
-    { href: '/alertes', label: t('nav.alerts'), icon: AlertTriangle },
-    { href: '/abonnements', label: t('nav.subscriptions'), icon: Shield },
+    { href: '/', label: 'Accueil', icon: Home },
+    { href: '/secteurs', label: 'Formations', icon: BookOpen },
+    { href: '/marketplace', label: 'Marketplace', icon: ShoppingBag },
+    { href: '/alertes', label: 'Alertes', icon: AlertTriangle },
+    { href: '/abonnements', label: 'Abonnements', icon: Shield },
   ]
 
   const isActive = (href: string) => pathname === href
@@ -78,10 +76,13 @@ export default function Navbar() {
   return (
     <>
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled
-          ? 'bg-[var(--bg-card)]/95 backdrop-blur-md shadow-lg border-b border-[var(--border)]'
-          : 'bg-transparent'
-      }`}>
+        scrolled ? 'border-b' : ''
+      }`} style={scrolled ? {
+        background: 'var(--bg-card)',
+        borderColor: 'var(--border)',
+        backdropFilter: 'blur(12px)',
+        boxShadow: 'var(--shadow)',
+      } : { background: 'transparent' }}>
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex items-center justify-between h-16 gap-3">
 
@@ -101,12 +102,13 @@ export default function Navbar() {
             <div className="hidden md:flex items-center gap-0.5 flex-1 justify-center">
               {navLinks.map((link) => (
                 <Link key={link.href} href={link.href}
-                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
-                    isActive(link.href)
-                      ? 'bg-orange-500/10'
-                      : 'hover:bg-[var(--navy-700)]'
-                  }`}
-                  style={{ color: isActive(link.href) ? 'var(--orange)' : 'var(--text-secondary)' }}>
+                  className="px-3 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap"
+                  style={isActive(link.href)
+                    ? { color: 'var(--orange)', background: 'rgba(212,80,15,0.1)' }
+                    : { color: 'var(--text-secondary)' }
+                  }
+                  onMouseEnter={e => { if (!isActive(link.href)) { e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.background = 'var(--navy-700)' } }}
+                  onMouseLeave={e => { if (!isActive(link.href)) { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.background = 'transparent' } }}>
                   {link.label}
                 </Link>
               ))}
@@ -115,44 +117,34 @@ export default function Navbar() {
             {/* Actions droite */}
             <div className="flex items-center gap-1.5 flex-shrink-0">
 
-              {/* Search */}
               <Link href="/recherche"
-                className="hidden md:flex items-center justify-center w-9 h-9 rounded-lg transition-all hover:bg-[var(--navy-700)]"
-                style={{ color: 'var(--text-secondary)' }}>
+                className="hidden md:flex items-center justify-center w-9 h-9 rounded-lg transition-all"
+                style={{ color: 'var(--text-secondary)' }}
+                onMouseEnter={e => e.currentTarget.style.background = 'var(--navy-700)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                 <Search size={18} />
               </Link>
 
-              {/* Bell */}
               <Link href="/alertes"
-                className="relative flex items-center justify-center w-9 h-9 rounded-lg transition-all hover:bg-[var(--navy-700)]"
-                style={{ color: 'var(--text-secondary)' }}>
+                className="relative flex items-center justify-center w-9 h-9 rounded-lg transition-all"
+                style={{ color: 'var(--text-secondary)' }}
+                onMouseEnter={e => e.currentTarget.style.background = 'var(--navy-700)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                 <Bell size={18} />
                 <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
               </Link>
 
-              {/* Panier */}
               <CartButton />
-
-              {/* Sélecteur de langue */}
               <LanguageSelector />
-
-              {/* Toggle thème */}
               <ThemeToggle />
 
-              {/* User menu */}
               {user ? (
                 <div className="relative" ref={userMenuRef}>
-                  <button
-                    type="button"
-                    onClick={() => setUserMenuOpen(prev => !prev)}
+                  <button type="button" onClick={() => setUserMenuOpen(prev => !prev)}
                     className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 transition-all border"
-                    style={{
-                      background: 'var(--bg-input)',
-                      borderColor: 'var(--border)',
-                    }}
-                  >
+                    style={{ background: 'var(--bg-input)', borderColor: 'var(--border)' }}>
                     <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
-                      style={{ background: 'rgba(255,107,53,0.2)' }}>
+                      style={{ background: 'rgba(212,80,15,0.2)' }}>
                       <User size={12} style={{ color: 'var(--orange)' }} />
                     </div>
                     <span className="text-sm hidden sm:block max-w-[80px] truncate"
@@ -167,9 +159,7 @@ export default function Navbar() {
                     <div className="absolute right-0 top-full mt-2 w-52 rounded-xl shadow-2xl overflow-hidden z-[100] border"
                       style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
                       <div className="p-3 border-b" style={{ borderColor: 'var(--border)' }}>
-                        <div className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>
-                          {profile?.prenom} {profile?.nom}
-                        </div>
+                        <div className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>{profile?.prenom} {profile?.nom}</div>
                         <div className="text-xs truncate" style={{ color: 'var(--text-secondary)' }}>{user.email}</div>
                         <span className={`badge text-[10px] mt-1.5 inline-block ${
                           profile?.role === 'superadmin' ? 'badge-danger' :
@@ -179,29 +169,33 @@ export default function Navbar() {
                       </div>
                       <div className="p-1.5">
                         <Link href="/dashboard" onClick={() => setUserMenuOpen(false)}
-                          className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all hover:bg-[var(--navy-700)]"
-                          style={{ color: 'var(--text-secondary)' }}>
-                          <LayoutDashboard size={15} />{t('nav.myspace')}
+                          className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all"
+                          style={{ color: 'var(--text-secondary)' }}
+                          onMouseEnter={e => e.currentTarget.style.background = 'var(--navy-700)'}
+                          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                          <LayoutDashboard size={15} />Mon espace
                         </Link>
                         {profile?.is_seller && (
                           <Link href="/mes-commandes" onClick={() => setUserMenuOpen(false)}
-                            className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all hover:bg-[var(--navy-700)]"
-                            style={{ color: 'var(--text-secondary)' }}>
-                            <ShoppingBag size={15} />{t('nav.orders')}
+                            className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all"
+                            style={{ color: 'var(--text-secondary)' }}
+                            onMouseEnter={e => e.currentTarget.style.background = 'var(--navy-700)'}
+                            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                            <ShoppingBag size={15} />Mes commandes
                           </Link>
                         )}
                         {(profile?.role === 'admin' || profile?.role === 'superadmin' || profile?.role === 'moderateur') && (
                           <Link href="/admin" onClick={() => setUserMenuOpen(false)}
                             className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all hover:bg-orange-500/10"
                             style={{ color: 'var(--orange)' }}>
-                            <Settings size={15} />{t('nav.admin')}
+                            <Settings size={15} />Administration
                           </Link>
                         )}
                       </div>
                       <div className="p-1.5 border-t" style={{ borderColor: 'var(--border)' }}>
                         <button onClick={handleLogout}
                           className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-red-400 hover:bg-red-500/10 transition-all w-full">
-                          <LogOut size={15} />{t('nav.logout')}
+                          <LogOut size={15} />Deconnexion
                         </button>
                       </div>
                     </div>
@@ -210,16 +204,16 @@ export default function Navbar() {
               ) : (
                 <Link href="/auth" className="btn-primary text-xs py-2 px-3 whitespace-nowrap">
                   <LogIn size={14} />
-                  <span className="hidden sm:inline">{t('nav.login')}</span>
+                  <span className="hidden sm:inline">Connexion</span>
                 </Link>
               )}
 
-              {/* Burger mobile */}
               <button
-                className="md:hidden flex items-center justify-center w-9 h-9 rounded-lg transition-all hover:bg-[var(--navy-700)]"
+                className="md:hidden flex items-center justify-center w-9 h-9 rounded-lg transition-all"
                 style={{ color: 'var(--text-secondary)' }}
                 onClick={() => setMenuOpen(!menuOpen)}
-              >
+                onMouseEnter={e => e.currentTarget.style.background = 'var(--navy-700)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                 {menuOpen ? <X size={20} /> : <Menu size={20} />}
               </button>
             </div>
@@ -241,8 +235,7 @@ export default function Navbar() {
                 </div>
                 <span className="font-display font-bold" style={{ color: 'var(--text-primary)' }}>Think Safety</span>
               </div>
-              <button onClick={() => setMenuOpen(false)} className="p-1 rounded-lg hover:bg-[var(--navy-700)]"
-                style={{ color: 'var(--text-secondary)' }}>
+              <button onClick={() => setMenuOpen(false)} style={{ color: 'var(--text-secondary)' }}>
                 <X size={20} />
               </button>
             </div>
@@ -252,27 +245,27 @@ export default function Navbar() {
                 const Icon = link.icon
                 return (
                   <Link key={link.href} href={link.href} onClick={() => setMenuOpen(false)}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-medium border ${
-                      isActive(link.href) ? 'border-orange-500/20 bg-orange-500/10' : 'border-transparent hover:bg-[var(--navy-700)]'
-                    }`}
-                    style={{ color: isActive(link.href) ? 'var(--orange)' : 'var(--text-secondary)' }}>
+                    className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-medium"
+                    style={isActive(link.href)
+                      ? { color: 'var(--orange)', background: 'rgba(212,80,15,0.1)', border: '1px solid rgba(212,80,15,0.2)' }
+                      : { color: 'var(--text-secondary)', border: '1px solid transparent' }
+                    }>
                     <Icon size={18} />{link.label}
                   </Link>
                 )
               })}
               <Link href="/recherche" onClick={() => setMenuOpen(false)}
-                className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all hover:bg-[var(--navy-700)]"
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all"
                 style={{ color: 'var(--text-secondary)' }}>
-                <Search size={18} />{t('nav.search')}
+                <Search size={18} />Rechercher
               </Link>
               <Link href="/panier" onClick={() => setMenuOpen(false)}
-                className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all hover:bg-[var(--navy-700)]"
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all"
                 style={{ color: 'var(--text-secondary)' }}>
-                <ShoppingBag size={18} />{t('nav.cart')}
+                <ShoppingBag size={18} />Mon panier
               </Link>
             </nav>
 
-            {/* Langue + Thème dans le menu mobile */}
             <div className="px-4 py-3 border-t flex items-center gap-3" style={{ borderColor: 'var(--border)' }}>
               <LanguageSelector />
               <ThemeToggle />
@@ -281,30 +274,30 @@ export default function Navbar() {
             <div className="p-3 border-t" style={{ borderColor: 'var(--border)' }}>
               {user ? (
                 <div className="space-y-1">
-                  <div className="px-4 py-3 rounded-xl" style={{ background: 'var(--bg-input)' }}>
+                  <div className="px-4 py-3 rounded-xl" style={{ background: 'var(--bg-secondary)' }}>
                     <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{profile?.prenom} {profile?.nom}</p>
                     <p className="text-xs truncate" style={{ color: 'var(--text-secondary)' }}>{user.email}</p>
                   </div>
                   <Link href="/dashboard" onClick={() => setMenuOpen(false)}
-                    className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm transition-all hover:bg-[var(--navy-700)]"
+                    className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm transition-all"
                     style={{ color: 'var(--text-secondary)' }}>
-                    <LayoutDashboard size={16} />{t('nav.myspace')}
+                    <LayoutDashboard size={16} />Mon espace
                   </Link>
-                  {(profile?.role === 'admin' || profile?.role === 'superadmin' || profile?.role === 'moderateur') && (
+                  {(profile?.role === 'admin' || profile?.role === 'superadmin') && (
                     <Link href="/admin" onClick={() => setMenuOpen(false)}
-                      className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm transition-all hover:bg-orange-500/10"
+                      className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm"
                       style={{ color: 'var(--orange)' }}>
-                      <Settings size={16} />{t('nav.admin')}
+                      <Settings size={16} />Administration
                     </Link>
                   )}
                   <button onClick={handleLogout}
                     className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-red-400 hover:bg-red-500/10 transition-all w-full">
-                    <LogOut size={16} />{t('nav.logout')}
+                    <LogOut size={16} />Deconnexion
                   </button>
                 </div>
               ) : (
                 <Link href="/auth" onClick={() => setMenuOpen(false)} className="btn-primary w-full justify-center py-3">
-                  <LogIn size={16} />{t('nav.login')} — Gratuit
+                  <LogIn size={16} />Se connecter — Gratuit
                 </Link>
               )}
             </div>
