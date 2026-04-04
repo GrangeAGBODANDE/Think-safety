@@ -1,15 +1,32 @@
 'use client'
 import { useState, useRef, useEffect } from 'react'
-import { useLanguage, LANGUAGES } from '@/contexts/LanguageContext'
 import { ChevronDown } from 'lucide-react'
 
+const LANGUAGES = [
+  { code: 'fr',    googleCode: 'fr',    name: 'Français',   flag: '🇫🇷' },
+  { code: 'en',    googleCode: 'en',    name: 'English',    flag: '🇬🇧' },
+  { code: 'es',    googleCode: 'es',    name: 'Español',    flag: '🇪🇸' },
+  { code: 'zh',    googleCode: 'zh-CN', name: '中文',        flag: '🇨🇳' },
+  { code: 'de',    googleCode: 'de',    name: 'Deutsch',    flag: '🇩🇪' },
+  { code: 'ko',    googleCode: 'ko',    name: '한국어',      flag: '🇰🇷' },
+  { code: 'ru',    googleCode: 'ru',    name: 'Русский',    flag: '🇷🇺' },
+  { code: 'ar',    googleCode: 'ar',    name: 'العربية',    flag: '🇸🇦' },
+]
+
 export default function LanguageSelector() {
-  const { lang, setLang } = useLanguage()
   const [open, setOpen] = useState(false)
+  const [currentLang, setCurrentLang] = useState('fr')
   const ref = useRef<HTMLDivElement>(null)
 
-  const current = LANGUAGES.find(l => l.code === lang) || LANGUAGES[0]
+  // Lire la langue stockée
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('ts_ui_lang') || 'fr'
+      setCurrentLang(saved)
+    } catch {}
+  }, [])
 
+  // Fermer si clic en dehors
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) {
@@ -20,34 +37,90 @@ export default function LanguageSelector() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
+  function changeLang(lang: typeof LANGUAGES[0]) {
+    // Sauvegarder le choix
+    localStorage.setItem('ts_ui_lang', lang.code)
+    setCurrentLang(lang.code)
+    setOpen(false)
+
+    // Gérer la direction RTL pour l'arabe
+    if (lang.code === 'ar') {
+      document.documentElement.dir = 'rtl'
+    } else {
+      document.documentElement.dir = 'ltr'
+    }
+
+    // Déclencher Google Translate
+    if (typeof window !== 'undefined' && window.doGTranslate) {
+      window.doGTranslate(`fr|${lang.googleCode}`)
+    } else {
+      // Si Google Translate n'est pas encore chargé, réessayer
+      setTimeout(() => {
+        if (window.doGTranslate) {
+          window.doGTranslate(`fr|${lang.googleCode}`)
+        }
+      }, 1000)
+    }
+  }
+
+  const current = LANGUAGES.find(l => l.code === currentLang) || LANGUAGES[0]
+
   return (
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-navy-700 border border-white/10 text-white/70 hover:text-white transition-all text-sm"
+        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all text-sm"
+        style={{
+          background: 'var(--bg-input)',
+          borderColor: 'var(--border)',
+          color: 'var(--text-secondary)',
+        }}
         title="Changer de langue / Change language"
       >
         <span className="text-base leading-none">{current.flag}</span>
-        <span className="text-xs hidden sm:block font-medium">{current.code.toUpperCase()}</span>
-        <ChevronDown size={11} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
+        <span className="text-xs font-medium hidden sm:block">{current.code.toUpperCase()}</span>
+        <ChevronDown
+          size={11}
+          className={`transition-transform ${open ? 'rotate-180' : ''}`}
+        />
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-44 bg-navy-800 border border-white/10 rounded-xl shadow-2xl overflow-hidden z-[200]">
+        <div
+          className="absolute right-0 top-full mt-2 w-44 rounded-xl shadow-2xl overflow-hidden z-[200] border"
+          style={{
+            background: 'var(--bg-card)',
+            borderColor: 'var(--border)',
+          }}
+        >
           <div className="p-1">
             {LANGUAGES.map(l => (
               <button
                 key={l.code}
-                onClick={() => { setLang(l.code); setOpen(false) }}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all text-left ${
-                  lang === l.code
-                    ? 'bg-orange-500/15 text-orange-400'
-                    : 'text-white/60 hover:text-white hover:bg-white/5'
-                }`}
+                onClick={() => changeLang(l)}
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all text-left"
+                style={currentLang === l.code
+                  ? { background: 'rgba(212,80,15,0.1)', color: 'var(--orange)' }
+                  : { color: 'var(--text-secondary)' }
+                }
+                onMouseEnter={e => {
+                  if (currentLang !== l.code) {
+                    e.currentTarget.style.background = 'var(--bg-secondary)'
+                    e.currentTarget.style.color = 'var(--text-primary)'
+                  }
+                }}
+                onMouseLeave={e => {
+                  if (currentLang !== l.code) {
+                    e.currentTarget.style.background = 'transparent'
+                    e.currentTarget.style.color = 'var(--text-secondary)'
+                  }
+                }}
               >
                 <span className="text-base">{l.flag}</span>
                 <span className="flex-1">{l.name}</span>
-                {lang === l.code && <span className="text-orange-400 text-[10px]">✓</span>}
+                {currentLang === l.code && (
+                  <span style={{ color: 'var(--orange)' }} className="text-[10px]">✓</span>
+                )}
               </button>
             ))}
           </div>
