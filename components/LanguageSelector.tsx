@@ -3,14 +3,14 @@ import { useState, useRef, useEffect } from 'react'
 import { ChevronDown } from 'lucide-react'
 
 const LANGUAGES = [
-  { code: 'fr',    googleCode: 'fr',    name: 'Français',   flag: '🇫🇷' },
-  { code: 'en',    googleCode: 'en',    name: 'English',    flag: '🇬🇧' },
-  { code: 'es',    googleCode: 'es',    name: 'Español',    flag: '🇪🇸' },
-  { code: 'zh',    googleCode: 'zh-CN', name: '中文',        flag: '🇨🇳' },
-  { code: 'de',    googleCode: 'de',    name: 'Deutsch',    flag: '🇩🇪' },
-  { code: 'ko',    googleCode: 'ko',    name: '한국어',      flag: '🇰🇷' },
-  { code: 'ru',    googleCode: 'ru',    name: 'Русский',    flag: '🇷🇺' },
-  { code: 'ar',    googleCode: 'ar',    name: 'العربية',    flag: '🇸🇦' },
+  { code: 'fr', googleCode: 'fr',    name: 'Français',  flag: '🇫🇷' },
+  { code: 'en', googleCode: 'en',    name: 'English',   flag: '🇬🇧' },
+  { code: 'es', googleCode: 'es',    name: 'Español',   flag: '🇪🇸' },
+  { code: 'zh', googleCode: 'zh-CN', name: '中文',       flag: '🇨🇳' },
+  { code: 'de', googleCode: 'de',    name: 'Deutsch',   flag: '🇩🇪' },
+  { code: 'ko', googleCode: 'ko',    name: '한국어',     flag: '🇰🇷' },
+  { code: 'ru', googleCode: 'ru',    name: 'Русский',   flag: '🇷🇺' },
+  { code: 'ar', googleCode: 'ar',    name: 'العربية',   flag: '🇸🇦' },
 ]
 
 export default function LanguageSelector() {
@@ -18,15 +18,14 @@ export default function LanguageSelector() {
   const [currentLang, setCurrentLang] = useState('fr')
   const ref = useRef<HTMLDivElement>(null)
 
-  // Lire la langue stockée
   useEffect(() => {
+    // Lire la langue depuis le cookie Google Translate ou localStorage
     try {
       const saved = localStorage.getItem('ts_ui_lang') || 'fr'
       setCurrentLang(saved)
     } catch {}
   }, [])
 
-  // Fermer si clic en dehors
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) {
@@ -38,28 +37,43 @@ export default function LanguageSelector() {
   }, [])
 
   function changeLang(lang: typeof LANGUAGES[0]) {
-    // Sauvegarder le choix
     localStorage.setItem('ts_ui_lang', lang.code)
     setCurrentLang(lang.code)
     setOpen(false)
 
-    // Gérer la direction RTL pour l'arabe
-    if (lang.code === 'ar') {
-      document.documentElement.dir = 'rtl'
-    } else {
-      document.documentElement.dir = 'ltr'
+    // Direction RTL pour l'arabe
+    document.documentElement.dir = lang.code === 'ar' ? 'rtl' : 'ltr'
+
+    if (lang.code === 'fr') {
+      // Revenir au français — supprimer le cookie Google Translate
+      const hostname = window.location.hostname
+      document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`
+      document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${hostname}`
+      document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.${hostname}`
+      window.location.reload()
+      return
     }
 
-    // Déclencher Google Translate
-    if (typeof window !== 'undefined' && window.doGTranslate) {
-      window.doGTranslate(`fr|${lang.googleCode}`)
-    } else {
-      // Si Google Translate n'est pas encore chargé, réessayer
-      setTimeout(() => {
-        if (window.doGTranslate) {
-          window.doGTranslate(`fr|${lang.googleCode}`)
-        }
-      }, 1000)
+    // Appliquer la traduction via le select Google Translate (méthode 1)
+    function applyTranslation() {
+      const selects = document.querySelectorAll('select.goog-te-combo')
+      if (selects.length > 0) {
+        const select = selects[0] as HTMLSelectElement
+        select.value = lang.googleCode
+        select.dispatchEvent(new Event('change', { bubbles: true }))
+        return true
+      }
+      return false
+    }
+
+    // Essayer immédiatement, puis avec délai si pas prêt
+    if (!applyTranslation()) {
+      // Google Translate pas encore chargé — utiliser la méthode cookie + reload
+      const hostname = window.location.hostname
+      document.cookie = `googtrans=/fr/${lang.googleCode}; path=/;`
+      document.cookie = `googtrans=/fr/${lang.googleCode}; path=/; domain=${hostname}`
+      document.cookie = `googtrans=/fr/${lang.googleCode}; path=/; domain=.${hostname}`
+      window.location.reload()
     }
   }
 
@@ -75,23 +89,17 @@ export default function LanguageSelector() {
           borderColor: 'var(--border)',
           color: 'var(--text-secondary)',
         }}
-        title="Changer de langue / Change language"
+        title="Changer de langue"
       >
         <span className="text-base leading-none">{current.flag}</span>
         <span className="text-xs font-medium hidden sm:block">{current.code.toUpperCase()}</span>
-        <ChevronDown
-          size={11}
-          className={`transition-transform ${open ? 'rotate-180' : ''}`}
-        />
+        <ChevronDown size={11} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
 
       {open && (
         <div
           className="absolute right-0 top-full mt-2 w-44 rounded-xl shadow-2xl overflow-hidden z-[200] border"
-          style={{
-            background: 'var(--bg-card)',
-            borderColor: 'var(--border)',
-          }}
+          style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}
         >
           <div className="p-1">
             {LANGUAGES.map(l => (
