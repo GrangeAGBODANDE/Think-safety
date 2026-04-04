@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { DM_Sans, Rajdhani, IBM_Plex_Mono } from 'next/font/google'
 import './globals.css'
 import { ThemeProvider } from '@/contexts/ThemeContext'
-import { LanguageProvider } from '@/contexts/LanguageContext'
+import TranslateWidget from '@/components/TranslateWidget'
 
 const dmSans = DM_Sans({
   subsets: ['latin'],
@@ -30,25 +30,23 @@ export const metadata: Metadata = {
   keywords: 'securite travail, formation HSE, EPI, Benin, Afrique Ouest',
 }
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="fr" data-theme="dark" suppressHydrationWarning>
       <head>
+        {/* Script inline pour appliquer le thème AVANT le rendu — évite le flash */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
               try {
-                var theme = localStorage.getItem('ts_theme') || 'dark';
-                var lang = localStorage.getItem('ts_lang') || 'fr';
-                if (theme === 'auto') {
-                  theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                var t = localStorage.getItem('ts_theme') || 'dark';
+                if (t === 'auto') {
+                  t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
                 }
-                document.documentElement.setAttribute('data-theme', theme);
-                document.documentElement.lang = lang;
+                document.documentElement.setAttribute('data-theme', t);
+
+                // Restaurer la langue et direction
+                var lang = localStorage.getItem('ts_ui_lang') || 'fr';
                 if (lang === 'ar') document.documentElement.dir = 'rtl';
               } catch(e) {}
             `,
@@ -57,9 +55,15 @@ export default function RootLayout({
       </head>
       <body className={`${dmSans.variable} ${rajdhani.variable} ${ibmPlexMono.variable}`}>
         <ThemeProvider>
-          <LanguageProvider>
-            {children}
-          </LanguageProvider>
+          {children}
+
+          {/*
+            TranslateWidget charge Google Translate invisiblement.
+            Il traduit automatiquement TOUT le texte du site
+            (navbar, pages, admin, boutons, formulaires...)
+            sans aucune modification sur les pages individuelles.
+          */}
+          <TranslateWidget />
         </ThemeProvider>
       </body>
     </html>
