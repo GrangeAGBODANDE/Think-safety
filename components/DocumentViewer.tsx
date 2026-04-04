@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { Download, FileText, X, Maximize2, ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from 'lucide-react'
+import { Download, FileText, X, Maximize2, ZoomIn, ZoomOut } from 'lucide-react'
 
 interface DocumentViewerProps {
   url: string
@@ -11,9 +11,6 @@ interface DocumentViewerProps {
 export default function DocumentViewer({ url, titre, pages }: DocumentViewerProps) {
   const [fullscreen, setFullscreen] = useState(false)
   const [zoom, setZoom] = useState(100)
-
-  const isPDF = url?.toLowerCase().includes('.pdf') || url?.includes('pdf')
-  const isExternalLink = !isPDF
 
   if (!url) {
     return (
@@ -26,19 +23,19 @@ export default function DocumentViewer({ url, titre, pages }: DocumentViewerProp
     )
   }
 
-  if (isExternalLink) {
+  const isPDF = url?.toLowerCase().includes('.pdf')
+
+  if (!isPDF) {
     return (
       <div className="w-full bg-navy-800 border border-white/10 rounded-xl p-6 text-center">
-        <FileText size={40} className="text-white/40 mx-auto mb-3" style={{ color: 'var(--orange)' }} />
+        <FileText size={40} className="mx-auto mb-3" style={{ color: 'var(--orange)' }} />
         <h3 className="text-white font-medium mb-2">{titre || 'Document'}</h3>
         {pages && <p className="text-white/40 text-sm mb-4">{pages} pages</p>}
         <div className="flex gap-3 justify-center">
-          <a href={url} target="_blank" rel="noreferrer"
-            className="btn-primary py-2 px-5 text-sm">
-            <Maximize2 size={14} />Ouvrir le document
+          <a href={url} target="_blank" rel="noreferrer" className="btn-primary py-2 px-5 text-sm">
+            <Maximize2 size={14} />Ouvrir
           </a>
-          <a href={url} download
-            className="btn-secondary py-2 px-5 text-sm">
+          <a href={url} download className="btn-secondary py-2 px-5 text-sm">
             <Download size={14} />Telecharger
           </a>
         </div>
@@ -48,9 +45,7 @@ export default function DocumentViewer({ url, titre, pages }: DocumentViewerProp
 
   return (
     <>
-      {/* Viewer inline */}
       <div className="w-full bg-navy-800 border border-white/10 rounded-xl overflow-hidden">
-        {/* Toolbar */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-white/5 bg-navy-700">
           <div className="flex items-center gap-3">
             <FileText size={16} style={{ color: 'var(--orange)' }} />
@@ -79,17 +74,24 @@ export default function DocumentViewer({ url, titre, pages }: DocumentViewerProp
           </div>
         </div>
 
-        {/* PDF iframe */}
-        <div style={{ height: '600px', overflow: 'hidden' }}>
+        <div style={{ height: '600px', overflow: 'hidden', position: 'relative' }}>
           <iframe
-            src={`${url}#toolbar=0&navpanes=0&scrollbar=1&zoom=${zoom}`}
-            style={{ width: `${10000/zoom}%`, height: '100%', border: 'none', transform: `scale(${zoom/100})`, transformOrigin: 'top left' }}
+            src={`${url}#toolbar=0&navpanes=0&scrollbar=1`}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              border: 'none',
+              transform: `scale(${zoom / 100})`,
+              transformOrigin: 'top left',
+            }}
             title={titre || 'Document'}
           />
         </div>
       </div>
 
-      {/* Fullscreen modal */}
       {fullscreen && (
         <div className="fixed inset-0 z-50 bg-black/95 flex flex-col">
           <div className="flex items-center justify-between px-4 py-3 bg-navy-800 border-b border-white/10">
