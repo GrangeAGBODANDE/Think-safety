@@ -15,7 +15,7 @@ const NAV = [
   { href: '/admin/utilisateurs', label: 'Utilisateurs', icon: Users },
   { href: '/admin/entreprises', label: 'Entreprises', icon: Building2 },
   { href: '/admin/contenus', label: 'Contenus', icon: BookOpen },
-  { href: '/admin/contenus/nouveau', label: '+ Ajouter contenu', icon: Plus },
+  { href: '/admin/contenus/nouveau', label: 'Ajouter contenu', icon: Plus },
   { href: '/admin/alertes', label: 'Alertes', icon: AlertTriangle },
   { href: '/admin/marketplace', label: 'Marketplace', icon: ShoppingBag },
   { href: '/admin/commandes', label: 'Commandes', icon: ShoppingCart },
@@ -37,7 +37,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       try {
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) { router.push('/auth'); return }
-
         const { data: p } = await supabase.from('profiles').select('*').eq('id', user.id).single()
         if (!p || !['admin', 'superadmin', 'moderateur'].includes(p.role)) {
           router.push('/'); return
@@ -80,7 +79,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="min-h-screen bg-navy-900 flex">
-      <aside className={`${collapsed ? 'w-16' : 'w-56'} bg-navy-800 border-r border-white/5 fixed h-full z-20 transition-all duration-300 flex flex-col`}>
+
+      {/* Sidebar */}
+      <aside className={`${collapsed ? 'w-16' : 'w-60'} bg-navy-800 border-r border-white/5 fixed h-full z-20 transition-all duration-300 flex flex-col`}>
+
+        {/* Logo */}
         <div className="p-4 border-b border-white/5 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'var(--orange)' }}>
@@ -95,54 +98,76 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </div>
             )}
           </div>
-          <button onClick={() => setCollapsed(!collapsed)} className="text-white/30 hover:text-white p-1">
+          <button onClick={() => setCollapsed(!collapsed)} className="text-white/30 hover:text-white p-1 flex-shrink-0">
             {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
           </button>
         </div>
 
+        {/* Nav */}
         <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
           {NAV.map((item) => {
             const Icon = item.icon
             const active = isActive(item.href)
             return (
-              <Link key={item.href} href={item.href} title={collapsed ? item.label : undefined}
+              <Link
+                key={item.href}
+                href={item.href}
+                title={collapsed ? item.label : undefined}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                  active ? 'text-orange-400 bg-orange-500/10 border border-orange-500/20' : 'text-white/50 hover:text-white hover:bg-white/5'
-                }`}>
+                  active
+                    ? 'text-orange-400 bg-orange-500/10 border border-orange-500/20'
+                    : 'text-white/50 hover:text-white hover:bg-white/5'
+                }`}
+              >
                 <Icon size={16} className="flex-shrink-0" />
-                {!collapsed && <span>{item.label}</span>}
+                {!collapsed && <span className="truncate">{item.label}</span>}
               </Link>
             )
           })}
         </nav>
 
+        {/* Bottom */}
         <div className="p-3 border-t border-white/5 space-y-1">
           <Link href="/" className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-white/30 hover:text-white hover:bg-white/5 transition-all">
-            <Globe size={15} />{!collapsed && 'Voir le site'}
+            <Globe size={15} className="flex-shrink-0" />
+            {!collapsed && 'Voir le site'}
           </Link>
           {!collapsed && profile && (
-            <div className="px-3 py-2 bg-navy-700 rounded-xl mt-1">
+            <div className="px-3 py-2 bg-navy-700 rounded-xl">
               <p className="text-white text-xs font-medium truncate">{profile.prenom} {profile.nom}</p>
               <p className="text-[10px] mt-0.5" style={{ color: 'var(--orange)' }}>{profile.role}</p>
             </div>
           )}
-          <button onClick={async () => { await supabase.auth.signOut(); router.push('/') }}
-            className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-red-400 hover:bg-red-500/10 transition-all w-full">
-            <LogOut size={15} />{!collapsed && 'Deconnexion'}
+          <button
+            onClick={async () => { await supabase.auth.signOut(); router.push('/') }}
+            className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-red-400 hover:bg-red-500/10 transition-all w-full"
+          >
+            <LogOut size={15} className="flex-shrink-0" />
+            {!collapsed && 'Deconnexion'}
           </button>
         </div>
       </aside>
 
-      <main className={`flex-1 ${collapsed ? 'ml-16' : 'ml-56'} transition-all duration-300 min-h-screen`}>
+      {/* Main */}
+      <main className={`flex-1 ${collapsed ? 'ml-16' : 'ml-60'} transition-all duration-300 min-h-screen`}>
+
+        {/* Top header */}
         <header className="bg-navy-800 border-b border-white/5 px-6 py-3 flex items-center justify-between sticky top-0 z-10">
-          <p className="text-white/40 text-sm">
-            Connecte en tant que <span className="text-white font-medium">{profile?.prenom}</span>
-            <span className="ml-2 badge badge-orange text-[10px]">{profile?.role}</span>
-          </p>
+          <div className="flex items-center gap-3">
+            <p className="text-white/40 text-sm">
+              Connecte en tant que{' '}
+              <span className="text-white font-medium">{profile?.prenom} {profile?.nom}</span>
+            </p>
+            <span className={`badge text-[10px] ${
+              profile?.role === 'superadmin' ? 'badge-danger' :
+              profile?.role === 'admin' ? 'badge-orange' : 'badge-info'
+            }`}>{profile?.role}</span>
+          </div>
           <Link href="/admin/contenus/nouveau" className="btn-primary py-1.5 px-4 text-xs">
             <Plus size={13} />Nouveau contenu
           </Link>
         </header>
+
         {children}
       </main>
     </div>
