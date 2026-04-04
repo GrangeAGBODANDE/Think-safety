@@ -3,7 +3,12 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { Shield, LayoutDashboard, Users, BookOpen, AlertTriangle, ShoppingBag, Settings, Globe, LogOut, ChevronLeft, ChevronRight, Building2, CreditCard, ShoppingCart, Star, Plus } from 'lucide-react'
+import {
+  Shield, LayoutDashboard, Users, BookOpen,
+  AlertTriangle, ShoppingBag, Settings, Globe,
+  LogOut, ChevronLeft, ChevronRight,
+  Building2, CreditCard, ShoppingCart, Star, Plus, FileText
+} from 'lucide-react'
 
 const NAV = [
   { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -17,6 +22,7 @@ const NAV = [
   { href: '/admin/abonnements', label: 'Abonnements', icon: Star },
   { href: '/admin/paiements', label: 'Config Paiements', icon: CreditCard },
   { href: '/admin/parametres', label: 'Parametres', icon: Settings },
+  { href: '/admin/documentation', label: 'Documentation Dev', icon: FileText },
 ]
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -33,7 +39,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) { router.push('/auth'); return }
         const { data: p } = await supabase.from('profiles').select('*').eq('id', user.id).single()
-        if (!p || !['admin', 'superadmin', 'moderateur'].includes(p.role)) { router.push('/'); return }
+        if (!p || !['admin', 'superadmin', 'moderateur'].includes(p.role)) {
+          router.push('/'); return
+        }
         setProfile(p)
         setLoading(false)
       } catch (e: any) {
@@ -99,11 +107,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             const Icon = item.icon
             const active = isActive(item.href)
             return (
-              <Link key={item.href} href={item.href}
+              <Link
+                key={item.href}
+                href={item.href}
                 title={collapsed ? item.label : undefined}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
                   active
                     ? 'text-orange-400 bg-orange-500/10 border border-orange-500/20'
+                    : item.href === '/admin/documentation'
+                    ? 'text-blue-400/70 hover:text-blue-400 hover:bg-blue-500/5'
                     : 'text-white/50 hover:text-white hover:bg-white/5'
                 }`}
               >
