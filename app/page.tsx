@@ -7,18 +7,18 @@ import { supabase } from '@/lib/supabase'
 import { Shield, BookOpen, AlertTriangle, ShoppingBag, Search, ArrowRight, Star } from 'lucide-react'
 
 const SECTEURS_HOME = [
-  { slug: 'construction-btp', nom: 'Construction BTP', icon: '🏗️', couleur: '#FF6B35' },
-  { slug: 'sante-medical', nom: 'Sante & Medical', icon: '🏥', couleur: '#00C896' },
-  { slug: 'industrie-manufacturiere', nom: 'Industrie', icon: '⚙️', couleur: '#6C63FF' },
-  { slug: 'transport-logistique', nom: 'Transport & Logistique', icon: '🚛', couleur: '#FF9800' },
-  { slug: 'agriculture', nom: 'Agriculture', icon: '🌾', couleur: '#8BC34A' },
-  { slug: 'bureaux-tertiaire', nom: 'Bureaux & Tertiaire', icon: '🏢', couleur: '#2196F3' },
-  { slug: 'energie', nom: 'Energie', icon: '⚡', couleur: '#FFD700' },
-  { slug: 'chimie-pharmacie', nom: 'Chimie & Pharmacie', icon: '🧪', couleur: '#E91E63' },
-  { slug: 'mines-carrieres', nom: 'Mines & Carrieres', icon: '⛏️', couleur: '#795548' },
-  { slug: 'restauration-hotellerie', nom: 'Restauration', icon: '👨‍🍳', couleur: '#FF5722' },
-  { slug: 'maritime-peche', nom: 'Maritime & Peche', icon: '⚓', couleur: '#03A9F4' },
-  { slug: 'securite-defense', nom: 'Securite & Defense', icon: '🛡️', couleur: '#37474F' },
+  { slug: 'construction-btp', nom: 'Construction BTP', icon: '🏗️' },
+  { slug: 'sante-medical', nom: 'Sante & Medical', icon: '🏥' },
+  { slug: 'industrie-manufacturiere', nom: 'Industrie', icon: '⚙️' },
+  { slug: 'transport-logistique', nom: 'Transport & Logistique', icon: '🚛' },
+  { slug: 'agriculture', nom: 'Agriculture', icon: '🌾' },
+  { slug: 'bureaux-tertiaire', nom: 'Bureaux & Tertiaire', icon: '🏢' },
+  { slug: 'energie', nom: 'Energie', icon: '⚡' },
+  { slug: 'chimie-pharmacie', nom: 'Chimie & Pharmacie', icon: '🧪' },
+  { slug: 'mines-carrieres', nom: 'Mines & Carrieres', icon: '⛏️' },
+  { slug: 'restauration-hotellerie', nom: 'Restauration', icon: '👨‍🍳' },
+  { slug: 'maritime-peche', nom: 'Maritime & Peche', icon: '⚓' },
+  { slug: 'securite-defense', nom: 'Securite & Defense', icon: '🛡️' },
 ]
 
 const NIVEAU_COLOR: Record<string, string> = {
@@ -31,10 +31,12 @@ export default function HomePage() {
   const [annonces, setAnnonces] = useState<any[]>([])
 
   useEffect(() => {
-    supabase.from('alertes').select('*').eq('status', 'active').order('created_at', { ascending: false }).limit(3)
+    supabase.from('alertes').select('*').eq('status', 'active')
+      .order('created_at', { ascending: false }).limit(3)
       .then(({ data }) => setAlertes(data || []))
+
     supabase.from('marketplace_annonces')
-      .select('id,titre,categorie,prix,prix_type,localisation,vendeur_certifie')
+      .select('id,titre,categorie,prix,prix_type,localisation')
       .eq('status', 'approved').limit(6)
       .then(({ data }) => setAnnonces(data || []))
   }, [])
@@ -55,7 +57,9 @@ export default function HomePage() {
               <span className="gradient-text">Ensemble.</span>
             </h1>
             <p className="text-lg mb-8 max-w-xl leading-relaxed animate-fade-up animate-fade-up-delay-2" style={{ color: 'var(--text-secondary)' }}>
-              Formez-vous gratuitement aux regles de securite dans <strong style={{ color: 'var(--text-primary)' }}>tous les secteurs d&apos;activite</strong>. Videos, documents, quiz, alertes locales et marketplace.
+              Formez-vous gratuitement aux regles de securite dans{' '}
+              <strong style={{ color: 'var(--text-primary)' }}>tous les secteurs d&apos;activite</strong>.
+              Videos, documents, quiz, alertes locales et marketplace.
             </p>
 
             <div className="flex gap-3 mb-8 animate-fade-up animate-fade-up-delay-3 flex-wrap">
@@ -123,8 +127,7 @@ export default function HomePage() {
           <div className="text-center mb-12">
             <div className="section-eyebrow mb-3">Formations par secteur</div>
             <h2 className="section-title mb-4" style={{ color: 'var(--text-primary)' }}>
-              Votre secteur,{' '}
-              <span className="gradient-text">vos risques</span>
+              Votre secteur, <span className="gradient-text">vos risques</span>
             </h2>
             <p className="text-base max-w-xl mx-auto" style={{ color: 'var(--text-secondary)' }}>
               Des contenus specialises pour chaque metier — videos, documents, FAQ et alertes adaptees a votre domaine.
@@ -135,9 +138,7 @@ export default function HomePage() {
               <Link key={s.slug} href={`/secteurs/${s.slug}`}
                 className="card sector-card p-5 text-center group hover:no-underline">
                 <div className="text-4xl mb-3 sector-icon">{s.icon}</div>
-                <div className="text-sm font-semibold transition-colors" style={{ color: 'var(--text-primary)' }}>
-                  {s.nom}
-                </div>
+                <div className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{s.nom}</div>
                 <div className="flex items-center justify-center gap-1 mt-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
                   Commencer <ArrowRight size={11} />
                 </div>
@@ -158,7 +159,7 @@ export default function HomePage() {
               <div>
                 <div className="section-eyebrow mb-3">Alertes en temps reel</div>
                 <h2 className="section-title" style={{ color: 'var(--text-primary)' }}>
-                  Restez informe,{' '}<span className="gradient-text">restez en securite</span>
+                  Restez informe, <span className="gradient-text">restez en securite</span>
                 </h2>
               </div>
               <Link href="/alertes" className="btn-secondary py-2.5 px-6 text-sm flex-shrink-0 mt-4">
@@ -172,9 +173,9 @@ export default function HomePage() {
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1 flex-wrap">
                         <span className="badge text-[10px]" style={{
-                          background: `${NIVEAU_COLOR[a.niveau]}20`,
-                          color: NIVEAU_COLOR[a.niveau],
-                          border: `1px solid ${NIVEAU_COLOR[a.niveau]}40`
+                          background: `${NIVEAU_COLOR[a.niveau] || '#2196F3'}20`,
+                          color: NIVEAU_COLOR[a.niveau] || '#2196F3',
+                          border: `1px solid ${NIVEAU_COLOR[a.niveau] || '#2196F3'}40`
                         }}>{a.niveau?.toUpperCase()}</span>
                         {a.secteur_slug && <span className="badge badge-orange text-[10px]">{a.secteur_slug}</span>}
                       </div>
@@ -197,10 +198,56 @@ export default function HomePage() {
             <div className="text-center mb-12">
               <div className="section-eyebrow mb-3">Marketplace securite</div>
               <h2 className="section-title mb-4" style={{ color: 'var(--text-primary)' }}>
-                Equipements &{' '}<span className="gradient-text">Services HSE</span>
+                Equipements & <span className="gradient-text">Services HSE</span>
               </h2>
               <p className="text-base max-w-lg mx-auto" style={{ color: 'var(--text-secondary)' }}>
                 Trouvez des equipements certifies, formations et services HSE aupres de fournisseurs verifies.
               </p>
             </div>
-            <div className="grid grid-cols-1 sm
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-10">
+              {annonces.map(a => (
+                <div key={a.id} className="card overflow-hidden group">
+                  <div className="h-28 flex items-center justify-center" style={{ background: 'var(--bg-secondary)' }}>
+                    <span className="text-5xl">
+                      {a.categorie === 'EPI' ? '🦺' : a.categorie === 'Formation' ? '🎓' : '🛡️'}
+                    </span>
+                  </div>
+                  <div className="p-4">
+                    <span className="badge badge-orange text-[10px] mb-2 inline-block">{a.categorie}</span>
+                    <h3 className="text-sm font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>{a.titre}</h3>
+                    <p className="text-sm font-bold" style={{ color: 'var(--orange)' }}>
+                      {a.prix > 0 ? `${a.prix.toLocaleString()} FCFA` : 'Sur devis'}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="text-center">
+              <Link href="/marketplace" className="btn-primary py-3 px-8">
+                <ShoppingBag size={18} />EXPLORER LE MARKETPLACE
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* CTA FINAL */}
+      <section className="py-24" style={{ background: 'var(--bg-card)' }}>
+        <div className="max-w-2xl mx-auto text-center px-4">
+          <div className="section-eyebrow mb-4">Think Safety</div>
+          <h2 className="section-title mb-4" style={{ color: 'var(--text-primary)' }}>
+            Pret a commencer ?
+          </h2>
+          <p className="text-lg mb-8" style={{ color: 'var(--text-secondary)' }}>
+            Rejoignez des milliers de professionnels qui se forment gratuitement.
+          </p>
+          <Link href="/auth" className="btn-primary py-4 px-10 text-lg">
+            <Shield size={20} />CREER UN COMPTE GRATUIT
+          </Link>
+        </div>
+      </section>
+
+      <Footer />
+    </div>
+  )
+}
