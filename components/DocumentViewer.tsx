@@ -83,7 +83,7 @@ export default function DocumentViewer({ url, titre, pages }: DocumentViewerProp
         <div style={{ height: '600px', overflow: 'hidden' }}>
           <iframe
             src={`${url}#toolbar=0&navpanes=0&scrollbar=1&zoom=${zoom}`}
-            style={{ width: '100%', height: '100%', border: 'none', transform: `scale(${zoom/100})`, transformOrigin: 'top left', width: `${10000/zoom}%` }}
+            style={{ width: `${10000/zoom}%`, height: '100%', border: 'none', transform: `scale(${zoom/100})`, transformOrigin: 'top left' }}
             title={titre || 'Document'}
           />
         </div>
