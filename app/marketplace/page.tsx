@@ -202,4 +202,30 @@ export default function MarketplacePage() {
                       <button
                         onClick={() => addToCart(a)}
                         className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-all"
-                        sty
+                        style={{ background: 'rgba(255,107,53,0.15)', color: 'var(--orange)', border: '1px solid rgba(255,107,53,0.25)' }}
+                      >
+                        <ShoppingCart size={13} />
+                        {a.prix > 0 ? 'Ajouter' : 'Demander'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {canPublish && annonces.length > 0 && (
+            <div className="mt-12 card-glow p-8 text-center">
+              <h3 className="font-display font-bold text-white text-xl mb-2">Ajouter un produit ou service</h3>
+              <p className="text-white/50 text-sm mb-5">Publiez une annonce directement sur le marketplace.</p>
+              <Link href="/marketplace/publier" className="btn-primary">
+                <Plus size={16} />Publier une annonce
+              </Link>
+            </div>
+          )}
+        </div>
+      </main>
+      <Footer />
+    </div>
+  )
+}
