@@ -37,16 +37,16 @@ const PROVIDER_CONFIG: Record<string, {
   },
   kakiapay: {
     logo: '🟢', color: '#00C896',
-    docs: 'https://docs.kakiapay.me',
+    docs: 'https://kkiapay.me/documentation/',
     fields: [
-      { key: 'api_key', label: 'API Key', placeholder: 'kk_...', help: 'Depuis votre espace KakiaPay > Parametres > API' },
+      { key: 'api_key', label: 'API Key', placeholder: 'kk_...', help: 'Depuis votre espace KkiaPay > Parametres > API' },
       { key: 'secret_key', label: 'Secret Key', placeholder: 'sk_...', help: 'Cle secrete pour signer les requetes' },
-      { key: 'sandbox_key', label: 'Sandbox Key (test)', placeholder: 'kk_sandbox_...', help: 'Cle de test KakiaPay' },
+      { key: 'sandbox_key', label: 'Sandbox Key (test)', placeholder: 'kk_sandbox_...', help: 'Cle de test KkiaPay' },
     ]
   },
   mtn_momo: {
     logo: '📱', color: '#FFCB00',
-    docs: 'https://momodeveloper.mtn.com',
+    docs: 'https://momodeveloper.mtn.com/',
     fields: [
       { key: 'subscription_key', label: 'Subscription Key', placeholder: 'Ocp-Apim-Subscription-Key', help: 'Depuis MTN MoMo Developer Portal' },
       { key: 'api_key', label: 'API Key', placeholder: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', help: 'UUID genere lors de la creation du user' },
@@ -56,7 +56,7 @@ const PROVIDER_CONFIG: Record<string, {
   },
   orange_money: {
     logo: '🟠', color: '#FF6600',
-    docs: 'https://developer.orange.com/apis/orange-money-webpay-bf/getting-started',
+    docs: 'https://docs.developer.orange.com/',
     fields: [
       { key: 'merchant_key', label: 'Merchant Key', placeholder: 'Votre cle marchand', help: 'Fournie par Orange lors de l inscription' },
       { key: 'api_username', label: 'API Username', placeholder: 'username', help: 'Identifiant API Orange Money' },
@@ -97,7 +97,6 @@ export default function PaiementsPage() {
   async function load() {
     setLoading(true)
     const { data } = await supabase.from('payment_configs').select('*').order('provider')
-    // Trier selon l'ordre defini
     const sorted = PROVIDER_ORDER
       .map(p => data?.find((c: any) => c.provider === p))
       .filter(Boolean)
@@ -154,10 +153,8 @@ export default function PaiementsPage() {
 
   async function testConnection(config: any) {
     setTesting(config.provider)
-    // Simulation d'un test de connexion
     await new Promise(r => setTimeout(r, 1500))
-    const hasKeys = PROVIDER_CONFIG[config.provider]?.fields
-      .some(f => config.config_json?.[f.key])
+    const hasKeys = PROVIDER_CONFIG[config.provider]?.fields.some(f => config.config_json?.[f.key])
     setTestResult(prev => ({
       ...prev,
       [config.provider]: hasKeys
@@ -172,7 +169,9 @@ export default function PaiementsPage() {
     }), 5000)
   }
 
-  const africaProviders = configs.filter(c => ['fedapay', 'kakiapay', 'mtn_momo', 'orange_money', 'moov_money', 'wave'].includes(c.provider))
+  const africaProviders = configs.filter(c =>
+    ['fedapay', 'kakiapay', 'mtn_momo', 'orange_money', 'moov_money', 'wave'].includes(c.provider)
+  )
   const intlProviders = configs.filter(c => ['stripe', 'paypal'].includes(c.provider))
 
   return (
@@ -188,7 +187,7 @@ export default function PaiementsPage() {
           <div>
             <p className="text-white font-medium text-sm mb-1">Integration prete a connecter</p>
             <p className="text-white/50 text-sm">
-              Toutes les passerelles sont preparees. Ajoutez vos cles API quand vous etes pret. 
+              Toutes les passerelles sont preparees. Ajoutez vos cles API quand vous etes pret.
               Les paiements restent desactives tant qu&apos;une passerelle n&apos;est pas configuree et activee.
             </p>
           </div>
@@ -206,7 +205,6 @@ export default function PaiementsPage() {
       ) : (
         <div className="space-y-8">
 
-          {/* Paiements Afrique de l'Ouest */}
           <div>
             <h2 className="font-display font-bold text-white mb-4 flex items-center gap-2">
               🌍 <span>Paiements Afrique de l&apos;Ouest</span>
@@ -227,7 +225,6 @@ export default function PaiementsPage() {
             </div>
           </div>
 
-          {/* Paiements internationaux */}
           <div>
             <h2 className="font-display font-bold text-white mb-4">💳 Paiements Internationaux</h2>
             <div className="grid md:grid-cols-2 gap-4">
@@ -247,7 +244,6 @@ export default function PaiementsPage() {
         </div>
       )}
 
-      {/* Modal configuration */}
       {editing && (
         <div className="fixed inset-0 bg-black/70 flex items-start justify-center z-50 px-4 py-6 overflow-y-auto">
           <div className="bg-navy-800 border border-white/10 rounded-2xl p-6 w-full max-w-lg my-auto">
@@ -262,19 +258,23 @@ export default function PaiementsPage() {
             </div>
 
             <div className="space-y-4">
-              {/* Mode */}
               <div>
                 <label className="input-label">Mode d&apos;operation</label>
-                <select value={editing.mode} onChange={e => setEditing({ ...editing, mode: e.target.value })} className="input-field">
+                <select
+                  value={editing.mode}
+                  onChange={e => setEditing({ ...editing, mode: e.target.value })}
+                  className="input-field"
+                >
                   <option value="test">Test (Sandbox) — Aucune vraie transaction</option>
                   <option value="production">Production (Live) — Vraies transactions</option>
                 </select>
                 {editing.mode === 'production' && (
-                  <p className="text-orange-400 text-xs mt-1">⚠️ Mode production actif — les vraies transactions seront traitees.</p>
+                  <p className="text-orange-400 text-xs mt-1">
+                    ⚠️ Mode production actif — les vraies transactions seront traitees.
+                  </p>
                 )}
               </div>
 
-              {/* Champs specifiques au provider */}
               {PROVIDER_CONFIG[editing.provider]?.fields.map(field => (
                 <div key={field.key}>
                   <label className="input-label">{field.label}</label>
@@ -298,7 +298,6 @@ export default function PaiementsPage() {
                 </div>
               ))}
 
-              {/* Lien documentation */}
               {PROVIDER_CONFIG[editing.provider]?.docs && (
                 <a
                   href={PROVIDER_CONFIG[editing.provider].docs}
@@ -311,7 +310,6 @@ export default function PaiementsPage() {
                 </a>
               )}
 
-              {/* Activer */}
               <div className="flex items-center gap-3 pt-2">
                 <button
                   type="button"
@@ -325,7 +323,8 @@ export default function PaiementsPage() {
 
               <div className="p-3 bg-navy-700 rounded-xl">
                 <p className="text-white/40 text-xs">
-                  🔒 Les cles sont stockees de facon securisee. Ne partagez jamais vos cles secretes. Utilisez toujours le mode test avant la production.
+                  🔒 Les cles sont stockees de facon securisee. Ne partagez jamais vos cles secretes.
+                  Utilisez toujours le mode test avant la production.
                 </p>
               </div>
             </div>
@@ -360,18 +359,23 @@ function ProviderCard({ config, onEdit, onToggle, onTest, testing, testResult }:
           </div>
         </div>
         <div className="flex flex-col items-end gap-1">
-          <span className={`badge text-[10px] ${config.actif ? 'badge-safe' : ''}`}
-            style={!config.actif ? { background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.3)' } : {}}>
+          <span
+            className={`badge text-[10px] ${config.actif ? 'badge-safe' : ''}`}
+            style={!config.actif ? { background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.3)' } : {}}
+          >
             {config.actif ? '● Actif' : '○ Inactif'}
           </span>
           <span className="badge badge-info text-[10px]">{config.mode}</span>
         </div>
       </div>
 
-      {/* Statut des cles */}
-      <div className={`flex items-center gap-2 text-xs mb-4 px-3 py-2 rounded-lg ${hasKeys ? 'bg-green-500/10 text-green-400' : 'bg-white/5 text-white/30'}`}>
-        {hasKeys ? <CheckCircle size={12} /> : <div className="w-3 h-3 rounded-full border border-white/20" />}
-        {hasKeys ? 'Cles API configurees' : 'Aucune cle API — configuration requise'}
+      <div className={`flex items-center gap-2 text-xs mb-4 px-3 py-2 rounded-lg ${
+        hasKeys ? 'bg-green-500/10 text-green-400' : 'bg-white/5 text-white/30'
+      }`}>
+        {hasKeys
+          ? <><CheckCircle size={12} />Cles API configurees</>
+          : <><div className="w-3 h-3 rounded-full border border-white/20" />Aucune cle API — configuration requise</>
+        }
       </div>
 
       {testResult && (
@@ -381,26 +385,40 @@ function ProviderCard({ config, onEdit, onToggle, onTest, testing, testResult }:
       )}
 
       <div className="flex items-center gap-2 flex-wrap">
-        <button onClick={onEdit}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/10 text-blue-400 rounded-lg text-xs hover:bg-blue-500/20 transition-all">
+        <button
+          onClick={onEdit}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/10 text-blue-400 rounded-lg text-xs hover:bg-blue-500/20 transition-all"
+        >
           <CreditCard size={12} />Configurer
         </button>
+
         {cfg?.docs && (
-          <a href={cfg.docs} target="_blank" rel="noreferrer"
-            className="flex items-center gap-1 px-3 py-1.5 bg-white/5 text-white/40 rounded-lg text-xs hover:bg-white/10 hover:text-white transition-all">
+          <a
+            href={cfg.docs}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-1 px-3 py-1.5 bg-white/5 text-white/40 rounded-lg text-xs hover:bg-white/10 hover:text-white transition-all"
+          >
             <ExternalLink size={11} />Docs
           </a>
         )}
-        <button onClick={onTest} disabled={testing}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-500/10 text-purple-400 rounded-lg text-xs hover:bg-purple-500/20 transition-all">
+
+        <button
+          onClick={onTest}
+          disabled={testing}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-500/10 text-purple-400 rounded-lg text-xs hover:bg-purple-500/20 transition-all"
+        >
           {testing ? '...' : '🔌 Tester'}
         </button>
-        <button onClick={onToggle}
+
+        <button
+          onClick={onToggle}
           className={`ml-auto px-3 py-1.5 rounded-lg text-xs transition-all ${
             config.actif
               ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20'
               : 'bg-green-500/10 text-green-400 hover:bg-green-500/20'
-          }`}>
+          }`}
+        >
           {config.actif ? 'Desactiver' : 'Activer'}
         </button>
       </div>
