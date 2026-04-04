@@ -3,12 +3,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import {
-  Shield, LayoutDashboard, Users, BookOpen,
-  AlertTriangle, ShoppingBag, Settings, Globe,
-  LogOut, ChevronLeft, ChevronRight,
-  Building2, CreditCard, ShoppingCart, Star, Plus
-} from 'lucide-react'
+import { Shield, LayoutDashboard, Users, BookOpen, AlertTriangle, ShoppingBag, Settings, Globe, LogOut, ChevronLeft, ChevronRight, Building2, CreditCard, ShoppingCart, Star, Plus } from 'lucide-react'
 
 const NAV = [
   { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -38,9 +33,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) { router.push('/auth'); return }
         const { data: p } = await supabase.from('profiles').select('*').eq('id', user.id).single()
-        if (!p || !['admin', 'superadmin', 'moderateur'].includes(p.role)) {
-          router.push('/'); return
-        }
+        if (!p || !['admin', 'superadmin', 'moderateur'].includes(p.role)) { router.push('/'); return }
         setProfile(p)
         setLoading(false)
       } catch (e: any) {
@@ -67,9 +60,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   if (error) {
     return (
       <div className="min-h-screen bg-navy-900 flex items-center justify-center">
-        <div className="text-center max-w-md px-4">
+        <div className="text-center px-4">
           <p className="text-red-400 text-sm mb-4">{error}</p>
-          <Link href="/" className="btn-secondary py-2 px-4 text-sm">Retour au site</Link>
+          <Link href="/" className="btn-secondary py-2 px-4 text-sm">Retour</Link>
         </div>
       </div>
     )
@@ -80,12 +73,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <div className="min-h-screen bg-navy-900 flex">
 
-      {/* Sidebar */}
       <aside className={`${collapsed ? 'w-16' : 'w-60'} bg-navy-800 border-r border-white/5 fixed h-full z-20 transition-all duration-300 flex flex-col`}>
 
-        {/* Logo */}
         <div className="p-4 border-b border-white/5 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'var(--orange)' }}>
               <Shield size={16} className="text-white" />
             </div>
@@ -93,25 +84,22 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <div>
                 <p className="text-white text-sm font-bold font-display leading-none">Think Safety</p>
                 <p className="text-[10px] font-mono mt-0.5" style={{ color: 'var(--orange)' }}>
-                  {profile?.role === 'superadmin' ? 'SUPER ADMIN' : profile?.role?.toUpperCase()}
+                  {profile?.role?.toUpperCase()}
                 </p>
               </div>
             )}
           </div>
-          <button onClick={() => setCollapsed(!collapsed)} className="text-white/30 hover:text-white p-1 flex-shrink-0">
+          <button onClick={() => setCollapsed(!collapsed)} className="text-white/30 hover:text-white p-1">
             {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
           </button>
         </div>
 
-        {/* Nav */}
-        <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
+        <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto">
           {NAV.map((item) => {
             const Icon = item.icon
             const active = isActive(item.href)
             return (
-              <Link
-                key={item.href}
-                href={item.href}
+              <Link key={item.href} href={item.href}
                 title={collapsed ? item.label : undefined}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
                   active
@@ -126,11 +114,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           })}
         </nav>
 
-        {/* Bottom */}
         <div className="p-3 border-t border-white/5 space-y-1">
           <Link href="/" className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-white/30 hover:text-white hover:bg-white/5 transition-all">
-            <Globe size={15} className="flex-shrink-0" />
-            {!collapsed && 'Voir le site'}
+            <Globe size={15} />{!collapsed && 'Voir le site'}
           </Link>
           {!collapsed && profile && (
             <div className="px-3 py-2 bg-navy-700 rounded-xl">
@@ -142,21 +128,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             onClick={async () => { await supabase.auth.signOut(); router.push('/') }}
             className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-red-400 hover:bg-red-500/10 transition-all w-full"
           >
-            <LogOut size={15} className="flex-shrink-0" />
-            {!collapsed && 'Deconnexion'}
+            <LogOut size={15} />{!collapsed && 'Deconnexion'}
           </button>
         </div>
       </aside>
 
-      {/* Main */}
       <main className={`flex-1 ${collapsed ? 'ml-16' : 'ml-60'} transition-all duration-300 min-h-screen`}>
-
-        {/* Top header */}
         <header className="bg-navy-800 border-b border-white/5 px-6 py-3 flex items-center justify-between sticky top-0 z-10">
           <div className="flex items-center gap-3">
             <p className="text-white/40 text-sm">
-              Connecte en tant que{' '}
-              <span className="text-white font-medium">{profile?.prenom} {profile?.nom}</span>
+              Bonjour, <span className="text-white font-medium">{profile?.prenom}</span>
             </p>
             <span className={`badge text-[10px] ${
               profile?.role === 'superadmin' ? 'badge-danger' :
@@ -167,7 +148,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <Plus size={13} />Nouveau contenu
           </Link>
         </header>
-
         {children}
       </main>
     </div>
