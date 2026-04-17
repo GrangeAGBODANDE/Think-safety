@@ -3,6 +3,7 @@ import { DM_Sans, Rajdhani, IBM_Plex_Mono } from 'next/font/google'
 import './globals.css'
 import { ThemeProvider } from '@/contexts/ThemeContext'
 import { LanguageProvider } from '@/contexts/LanguageContext'
+import AutoTranslate from '@/components/AutoTranslate'
 
 const dmSans = DM_Sans({
   subsets: ['latin'],
@@ -51,6 +52,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeProvider>
           <LanguageProvider>
             {children}
+            {/* Traduit automatiquement tout le texte visible sans modifier les pages */}
+            <AutoTranslate />
           </LanguageProvider>
         </ThemeProvider>
       </body>
