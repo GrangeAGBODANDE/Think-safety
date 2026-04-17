@@ -12,7 +12,7 @@ export default function Footer() {
               <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'var(--orange)' }}>
                 <Shield size={20} className="text-white" fill="white" />
               </div>
-              <div className="font-display text-lg font-bold text-white">THINK <span style={{ color: 'var(--orange)' }}>SAFETY</span></div>
+              <div className="font-display text-lg font-bold text-white">THINKS <span style={{ color: 'var(--orange)' }}>SAFETY</span></div>
             </Link>
             <p className="text-sm text-white/50 leading-relaxed">Plateforme gratuite de formation securite au travail pour tous les secteurs.</p>
           </div>
@@ -40,7 +40,7 @@ export default function Footer() {
             <h4 className="font-display font-bold text-white mb-4 text-sm uppercase tracking-widest">Contact</h4>
             <ul className="space-y-3">
               <li className="flex items-center gap-2 text-sm text-white/50">
-                <Mail size={14} style={{ color: 'var(--orange)' }} />contact@think-safety.io
+                <Mail size={14} style={{ color: 'var(--orange)' }} />contact@thinkssafety.com
               </li>
               <li className="flex items-center gap-2 text-sm text-white/50">
                 <MapPin size={14} style={{ color: 'var(--orange)' }} />Cotonou, Benin
@@ -51,7 +51,7 @@ export default function Footer() {
       </div>
       <div className="border-t border-white/5 py-5">
         <div className="max-w-7xl mx-auto px-4 text-center">
-          <p className="text-sm text-white/30">2025 Think Safety &mdash; Plateforme 100% gratuite.</p>
+          <p className="text-sm text-white/30">2026 Thinks Safety &mdash; Plateforme 100% gratuite.</p>
         </div>
       </div>
     </footer>
