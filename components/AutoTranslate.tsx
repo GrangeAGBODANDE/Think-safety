@@ -292,7 +292,6 @@ const DICT: Record<string, string> = {
   'Mes Commandes': 'My Orders',
   'commandes recues': 'orders received',
   'Debloquez les informations de contact': 'Unlock contact information',
-  "S'abonner": 'Subscribe',
   'Aucune commande pour l\'instant': 'No orders yet',
   'Vos commandes apparaitront ici des qu\'un client passera une commande pour vos produits.': 'Orders will appear here when a customer orders your products.',
   'Informations client': 'Customer information',
