@@ -13,7 +13,7 @@ export default function MaintenancePage() {
             <Shield size={16} className="text-white" />
           </div>
           <span className="font-display text-xl font-bold text-white">
-            THINK <span style={{ color: 'var(--orange)' }}>SAFETY</span>
+            THINKS <span style={{ color: 'var(--orange)' }}>SAFETY</span>
           </span>
         </div>
         <h1 className="text-white font-display font-bold text-2xl mb-3">
