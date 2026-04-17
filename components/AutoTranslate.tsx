@@ -600,7 +600,6 @@ const PLACEHOLDER_DICT: Record<string, string> = {
   '+229 97 XX XX XX': '+229 97 XX XX XX',
   'Decrivez votre produit ou service en detail...': 'Describe your product or service...',
   "Description courte du contenu...": 'Short content description...',
-  'Titre du contenu': 'Content title',
   'https://www.youtube.com/watch?v=...': 'https://www.youtube.com/watch?v=...',
   'https://...': 'https://...',
   'Quelle est la question ?': 'What is the question?',
