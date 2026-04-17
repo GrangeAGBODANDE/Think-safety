@@ -80,7 +80,7 @@ export default function AuthPage() {
               <Shield size={22} className="text-white" fill="white" />
             </div>
             <span className="font-display text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
-              THINK <span style={{ color: 'var(--orange)' }}>SAFETY</span>
+              THINKS <span style={{ color: 'var(--orange)' }}>SAFETY</span>
             </span>
           </Link>
         </div>
