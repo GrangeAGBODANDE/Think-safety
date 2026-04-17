@@ -234,7 +234,7 @@ export default function HomePage() {
       {/* CTA FINAL */}
       <section className="py-24" style={{ background: 'var(--bg-card)' }}>
         <div className="max-w-2xl mx-auto text-center px-4">
-          <div className="section-eyebrow mb-4">Think Safety</div>
+          <div className="section-eyebrow mb-4">Thinks Safety</div>
           <h2 className="section-title mb-4" style={{ color: 'var(--text-primary)' }}>
             Pret a commencer ?
           </h2>
