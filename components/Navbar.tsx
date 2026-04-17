@@ -93,7 +93,7 @@ export default function Navbar() {
                 <Shield size={18} className="text-white" fill="white" />
               </div>
               <div className="hidden sm:block font-display text-base font-bold leading-none" style={{ color: 'var(--text-primary)' }}>
-                THINK <span style={{ color: 'var(--orange)' }}>SAFETY</span>
+                THINKS <span style={{ color: 'var(--orange)' }}>SAFETY</span>
               </div>
             </Link>
 
@@ -228,7 +228,7 @@ export default function Navbar() {
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--orange)' }}>
                   <Shield size={16} className="text-white" fill="white" />
                 </div>
-                <span className="font-display font-bold" style={{ color: 'var(--text-primary)' }}>Think Safety</span>
+                <span className="font-display font-bold" style={{ color: 'var(--text-primary)' }}>Thinks Safety</span>
               </div>
               <button onClick={() => setMenuOpen(false)} style={{ color: 'var(--text-secondary)' }}><X size={20} /></button>
             </div>
