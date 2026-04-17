@@ -86,8 +86,8 @@ const DICT: Record<string, string> = {
   'S\'abonner': 'Subscribe',
   'Reseau social': 'Social network',
   'Suivez-nous': 'Follow us',
-  '© 2024 Think Safety. Tous droits reserves.': '© 2024 Think Safety. All rights reserved.',
-  '© 2025 Think Safety. Tous droits reserves.': '© 2025 Think Safety. All rights reserved.',
+  '© 2024 Thinks Safety. Tous droits reserves.': '© 2024 Thinks Safety. All rights reserved.',
+  '© 2025 Thinks Safety. Tous droits reserves.': '© 2025 Thinks Safety. All rights reserved.',
 
   // ===== SECTEURS =====
   'Construction BTP': 'Construction & Civil Engineering',
@@ -226,7 +226,7 @@ const DICT: Record<string, string> = {
   'SafeEquip SARL': 'SafeEquip Ltd',
 
   // ===== DASHBOARD =====
-  'Bienvenue sur Think Safety !': 'Welcome to Think Safety!',
+  'Bienvenue sur Thinks Safety !': 'Welcome to Thinks Safety!',
   "Votre compte est pret. Choisissez un secteur d'activite pour commencer votre premiere formation gratuitement.": 'Your account is ready. Choose a sector to start your first free training.',
   'Choisir mon premier secteur': 'Choose my first sector',
   'Secteurs populaires': 'Popular sectors',
@@ -312,7 +312,7 @@ const DICT: Record<string, string> = {
   'Debloquer avec un abonnement Basic': 'Unlock with a Basic subscription',
 
   // ===== RECHERCHE =====
-  'Rechercher sur Think Safety...': 'Search Think Safety...',
+  'Rechercher sur Thinks Safety...': 'Search Thinks Safety...',
   'Aucun resultat pour': 'No results for',
   'resultats pour': 'results for',
   'Voir le contenu': 'View content',
@@ -339,7 +339,7 @@ const DICT: Record<string, string> = {
 
   // ===== ADMIN DASHBOARD =====
   'Tableau de bord': 'Dashboard',
-  "Vue d'ensemble de Think Safety": 'Think Safety overview',
+  "Vue d'ensemble de Thinks Safety": 'Thinks Safety overview',
   'Actions rapides': 'Quick actions',
   'Derniers inscrits': 'Latest registrations',
   'Derniers contenus': 'Latest content',
@@ -657,7 +657,7 @@ const PLACEHOLDER_DICT: Record<string, string> = {
   'Votre nom ou celui de votre entreprise': 'Your name or company name',
   'contact@email.com': 'contact@email.com',
   'Instructions de livraison, precisions...': 'Delivery instructions, details...',
-  'Rechercher sur Think Safety...': 'Search Think Safety...',
+  'Rechercher sur Thinks Safety...': 'Search Thinks Safety...',
   'Nom du plan *': 'Plan name *',
 }
 
