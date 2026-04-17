@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase'
 import CartButton from '@/components/CartButton'
 import ThemeToggle from '@/components/ThemeToggle'
 import LanguageSelector from '@/components/LanguageSelector'
+import { useLang } from '@/contexts/LanguageContext'
 import {
   Shield, Bell, Menu, X, LogIn, LogOut,
   User, Settings, LayoutDashboard,
@@ -15,6 +16,7 @@ import {
 export default function Navbar() {
   const router = useRouter()
   const pathname = usePathname()
+  const { t } = useLang()
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -64,25 +66,24 @@ export default function Navbar() {
   }
 
   const navLinks = [
-    { href: '/', label: 'Accueil', icon: Home },
-    { href: '/secteurs', label: 'Formations', icon: BookOpen },
-    { href: '/marketplace', label: 'Marketplace', icon: ShoppingBag },
-    { href: '/alertes', label: 'Alertes', icon: AlertTriangle },
-    { href: '/abonnements', label: 'Abonnements', icon: Shield },
+    { href: '/',             label: t('nav.home'),          icon: Home },
+    { href: '/secteurs',     label: t('nav.sectors'),       icon: BookOpen },
+    { href: '/marketplace',  label: t('nav.marketplace'),   icon: ShoppingBag },
+    { href: '/alertes',      label: t('nav.alerts'),        icon: AlertTriangle },
+    { href: '/abonnements',  label: t('nav.subscriptions'), icon: Shield },
   ]
 
   const isActive = (href: string) => pathname === href
 
   return (
     <>
-      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled ? 'border-b' : ''
-      }`} style={scrolled ? {
-        background: 'var(--bg-card)',
-        borderColor: 'var(--border)',
-        backdropFilter: 'blur(12px)',
-        boxShadow: 'var(--shadow)',
-      } : { background: 'transparent' }}>
+      <nav
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'border-b' : ''}`}
+        style={scrolled
+          ? { background: 'var(--bg-card)', borderColor: 'var(--border)', backdropFilter: 'blur(12px)', boxShadow: 'var(--shadow)' }
+          : { background: 'transparent' }
+        }
+      >
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex items-center justify-between h-16 gap-3">
 
@@ -91,10 +92,8 @@ export default function Navbar() {
               <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--orange)' }}>
                 <Shield size={18} className="text-white" fill="white" />
               </div>
-              <div className="hidden sm:block">
-                <div className="font-display text-base font-bold leading-none" style={{ color: 'var(--text-primary)' }}>
-                  THINK <span style={{ color: 'var(--orange)' }}>SAFETY</span>
-                </div>
+              <div className="hidden sm:block font-display text-base font-bold leading-none" style={{ color: 'var(--text-primary)' }}>
+                THINK <span style={{ color: 'var(--orange)' }}>SAFETY</span>
               </div>
             </Link>
 
@@ -108,7 +107,8 @@ export default function Navbar() {
                     : { color: 'var(--text-secondary)' }
                   }
                   onMouseEnter={e => { if (!isActive(link.href)) { e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.background = 'var(--navy-700)' } }}
-                  onMouseLeave={e => { if (!isActive(link.href)) { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.background = 'transparent' } }}>
+                  onMouseLeave={e => { if (!isActive(link.href)) { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.background = 'transparent' } }}
+                >
                   {link.label}
                 </Link>
               ))}
@@ -116,7 +116,6 @@ export default function Navbar() {
 
             {/* Actions droite */}
             <div className="flex items-center gap-1.5 flex-shrink-0">
-
               <Link href="/recherche"
                 className="hidden md:flex items-center justify-center w-9 h-9 rounded-lg transition-all"
                 style={{ color: 'var(--text-secondary)' }}
@@ -131,7 +130,7 @@ export default function Navbar() {
                 onMouseEnter={e => e.currentTarget.style.background = 'var(--navy-700)'}
                 onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                 <Bell size={18} />
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
               </Link>
 
               <CartButton />
@@ -140,15 +139,13 @@ export default function Navbar() {
 
               {user ? (
                 <div className="relative" ref={userMenuRef}>
-                  <button type="button" onClick={() => setUserMenuOpen(prev => !prev)}
+                  <button type="button" onClick={() => setUserMenuOpen(p => !p)}
                     className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 transition-all border"
                     style={{ background: 'var(--bg-input)', borderColor: 'var(--border)' }}>
-                    <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
-                      style={{ background: 'rgba(212,80,15,0.2)' }}>
+                    <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: 'rgba(212,80,15,0.2)' }}>
                       <User size={12} style={{ color: 'var(--orange)' }} />
                     </div>
-                    <span className="text-sm hidden sm:block max-w-[80px] truncate"
-                      style={{ color: 'var(--text-primary)' }}>
+                    <span className="text-sm hidden sm:block max-w-[80px] truncate" style={{ color: 'var(--text-primary)' }}>
                       {profile?.prenom || '...'}
                     </span>
                     <ChevronDown size={12} style={{ color: 'var(--text-secondary)' }}
@@ -173,7 +170,7 @@ export default function Navbar() {
                           style={{ color: 'var(--text-secondary)' }}
                           onMouseEnter={e => e.currentTarget.style.background = 'var(--navy-700)'}
                           onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                          <LayoutDashboard size={15} />Mon espace
+                          <LayoutDashboard size={15} />{t('nav.myspace')}
                         </Link>
                         {profile?.is_seller && (
                           <Link href="/mes-commandes" onClick={() => setUserMenuOpen(false)}
@@ -181,21 +178,21 @@ export default function Navbar() {
                             style={{ color: 'var(--text-secondary)' }}
                             onMouseEnter={e => e.currentTarget.style.background = 'var(--navy-700)'}
                             onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                            <ShoppingBag size={15} />Mes commandes
+                            <ShoppingBag size={15} />{t('nav.orders')}
                           </Link>
                         )}
                         {(profile?.role === 'admin' || profile?.role === 'superadmin' || profile?.role === 'moderateur') && (
                           <Link href="/admin" onClick={() => setUserMenuOpen(false)}
                             className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all hover:bg-orange-500/10"
                             style={{ color: 'var(--orange)' }}>
-                            <Settings size={15} />Administration
+                            <Settings size={15} />{t('nav.admin')}
                           </Link>
                         )}
                       </div>
                       <div className="p-1.5 border-t" style={{ borderColor: 'var(--border)' }}>
                         <button onClick={handleLogout}
                           className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-red-400 hover:bg-red-500/10 transition-all w-full">
-                          <LogOut size={15} />Deconnexion
+                          <LogOut size={15} />{t('nav.logout')}
                         </button>
                       </div>
                     </div>
@@ -204,16 +201,14 @@ export default function Navbar() {
               ) : (
                 <Link href="/auth" className="btn-primary text-xs py-2 px-3 whitespace-nowrap">
                   <LogIn size={14} />
-                  <span className="hidden sm:inline">Connexion</span>
+                  <span className="hidden sm:inline">{t('nav.login')}</span>
                 </Link>
               )}
 
               <button
                 className="md:hidden flex items-center justify-center w-9 h-9 rounded-lg transition-all"
                 style={{ color: 'var(--text-secondary)' }}
-                onClick={() => setMenuOpen(!menuOpen)}
-                onMouseEnter={e => e.currentTarget.style.background = 'var(--navy-700)'}
-                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                onClick={() => setMenuOpen(!menuOpen)}>
                 {menuOpen ? <X size={20} /> : <Menu size={20} />}
               </button>
             </div>
@@ -235,9 +230,7 @@ export default function Navbar() {
                 </div>
                 <span className="font-display font-bold" style={{ color: 'var(--text-primary)' }}>Think Safety</span>
               </div>
-              <button onClick={() => setMenuOpen(false)} style={{ color: 'var(--text-secondary)' }}>
-                <X size={20} />
-              </button>
+              <button onClick={() => setMenuOpen(false)} style={{ color: 'var(--text-secondary)' }}><X size={20} /></button>
             </div>
 
             <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
@@ -254,15 +247,10 @@ export default function Navbar() {
                   </Link>
                 )
               })}
-              <Link href="/recherche" onClick={() => setMenuOpen(false)}
-                className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all"
-                style={{ color: 'var(--text-secondary)' }}>
-                <Search size={18} />Rechercher
-              </Link>
               <Link href="/panier" onClick={() => setMenuOpen(false)}
-                className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all"
-                style={{ color: 'var(--text-secondary)' }}>
-                <ShoppingBag size={18} />Mon panier
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium"
+                style={{ color: 'var(--text-secondary)', border: '1px solid transparent' }}>
+                <ShoppingBag size={18} />{t('nav.cart')}
               </Link>
             </nav>
 
@@ -279,25 +267,25 @@ export default function Navbar() {
                     <p className="text-xs truncate" style={{ color: 'var(--text-secondary)' }}>{user.email}</p>
                   </div>
                   <Link href="/dashboard" onClick={() => setMenuOpen(false)}
-                    className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm transition-all"
+                    className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm"
                     style={{ color: 'var(--text-secondary)' }}>
-                    <LayoutDashboard size={16} />Mon espace
+                    <LayoutDashboard size={16} />{t('nav.myspace')}
                   </Link>
                   {(profile?.role === 'admin' || profile?.role === 'superadmin') && (
                     <Link href="/admin" onClick={() => setMenuOpen(false)}
                       className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm"
                       style={{ color: 'var(--orange)' }}>
-                      <Settings size={16} />Administration
+                      <Settings size={16} />{t('nav.admin')}
                     </Link>
                   )}
                   <button onClick={handleLogout}
-                    className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-red-400 hover:bg-red-500/10 transition-all w-full">
-                    <LogOut size={16} />Deconnexion
+                    className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-red-400 hover:bg-red-500/10 w-full">
+                    <LogOut size={16} />{t('nav.logout')}
                   </button>
                 </div>
               ) : (
                 <Link href="/auth" onClick={() => setMenuOpen(false)} className="btn-primary w-full justify-center py-3">
-                  <LogIn size={16} />Se connecter — Gratuit
+                  <LogIn size={16} />{t('nav.login')}
                 </Link>
               )}
             </div>
