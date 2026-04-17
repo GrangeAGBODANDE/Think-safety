@@ -26,7 +26,7 @@ const ibmPlexMono = IBM_Plex_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'Think Safety — Formation Securite Afrique de l\'Ouest',
+  title: 'Thinks Safety — Formation Securite Afrique de l\'Ouest',
   description: 'Plateforme gratuite de formation a la securite au travail pour tous les secteurs professionnels d\'Afrique de l\'Ouest.',
 }
 
