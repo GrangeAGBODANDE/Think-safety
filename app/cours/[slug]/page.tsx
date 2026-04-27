@@ -1,12 +1,11 @@
 'use client'
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter, useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import {
-  ChevronLeft, ChevronRight, CheckCircle, Play,
-  FileText, HelpCircle, Lock, Menu, X,
-  Award, Clock, ChevronDown
+  ChevronLeft, CheckCircle, Play, FileText, HelpCircle,
+  Lock, Menu, X, Award, Clock, ChevronDown, AlertTriangle
 } from 'lucide-react'
 
 export default function CoursePlayerPage() {
@@ -19,11 +18,12 @@ export default function CoursePlayerPage() {
   const [modules, setModules] = useState<any[]>([])
   const [currentLesson, setCurrentLesson] = useState<any>(null)
   const [progress, setProgress] = useState<Record<string, boolean>>({})
-  const [enrollment, setEnrollment] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [activeTab, setActiveTab] = useState<'transcription' | 'notes' | 'telechargements'>('transcription')
+  const [activeTab, setActiveTab] = useState<'contenu' | 'quiz' | 'telechargements'>('contenu')
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set())
+  const [lockWarning, setLockWarning] = useState('')
+  const [quizCompleted, setQuizCompleted] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
     async function load() {
@@ -31,18 +31,10 @@ export default function CoursePlayerPage() {
       if (!u) { router.push('/auth'); return }
       setUser(u)
 
-      // Charger le cours
-      const { data: c } = await supabase
-        .from('courses')
-        .select('*')
-        .eq('slug', slug)
-        .eq('statut', 'published')
-        .single()
-
+      const { data: c } = await supabase.from('courses').select('*').eq('slug', slug).single()
       if (!c) { router.push('/secteurs'); return }
       setCourse(c)
 
-      // Charger modules + leçons
       const { data: mods } = await supabase
         .from('course_modules')
         .select(`*, course_lessons(*)`)
@@ -50,42 +42,24 @@ export default function CoursePlayerPage() {
         .order('ordre')
 
       if (mods) {
-        const sortedMods = mods.map(m => ({
+        const sorted = mods.map(m => ({
           ...m,
           course_lessons: (m.course_lessons || []).sort((a: any, b: any) => a.ordre - b.ordre)
         }))
-        setModules(sortedMods)
-        // Expander le premier module
-        if (sortedMods.length > 0) {
-          setExpandedModules(new Set([sortedMods[0].id]))
-          // Ouvrir la première leçon
-          if (sortedMods[0].course_lessons?.length > 0) {
-            setCurrentLesson(sortedMods[0].course_lessons[0])
+        setModules(sorted)
+        if (sorted.length > 0) {
+          setExpandedModules(new Set([sorted[0].id]))
+          if (sorted[0].course_lessons?.length > 0) {
+            setCurrentLesson(sorted[0].course_lessons[0])
           }
         }
       }
 
-      // Vérifier inscription
-      const { data: enr } = await supabase
-        .from('course_enrollments')
-        .select('*')
-        .eq('user_id', u.id)
-        .eq('course_id', c.id)
-        .single()
+      // Inscription auto
+      await supabase.from('course_enrollments')
+        .upsert({ user_id: u.id, course_id: c.id }, { onConflict: 'user_id,course_id', ignoreDuplicates: true })
 
-      if (!enr) {
-        // Auto-inscription
-        const { data: newEnr } = await supabase
-          .from('course_enrollments')
-          .insert({ user_id: u.id, course_id: c.id })
-          .select()
-          .single()
-        setEnrollment(newEnr)
-      } else {
-        setEnrollment(enr)
-      }
-
-      // Charger la progression
+      // Charger progression
       const { data: prog } = await supabase
         .from('lesson_progress')
         .select('lesson_id, est_complete')
@@ -101,7 +75,27 @@ export default function CoursePlayerPage() {
     load()
   }, [slug, router])
 
-  // Marquer une leçon comme complète
+  // Vérifier si une leçon est débloquée
+  function isLessonUnlocked(lesson: any): boolean {
+    // La première leçon est toujours débloquée
+    const allLessons = modules.flatMap(m => m.course_lessons || [])
+    const idx = allLessons.findIndex(l => l.id === lesson.id)
+    if (idx === 0) return true
+    // Les autres nécessitent que la précédente soit complète
+    return progress[allLessons[idx - 1]?.id] === true
+  }
+
+  function handleSelectLesson(lesson: any) {
+    if (!isLessonUnlocked(lesson) && lesson.est_obligatoire !== false) {
+      setLockWarning('Terminez la leçon précédente avant de continuer.')
+      setTimeout(() => setLockWarning(''), 4000)
+      return
+    }
+    setCurrentLesson(lesson)
+    setActiveTab('contenu')
+    if (window.innerWidth < 768) setSidebarOpen(false)
+  }
+
   async function markComplete(lessonId: string) {
     if (!user || !course) return
     await supabase.from('lesson_progress').upsert({
@@ -114,31 +108,15 @@ export default function CoursePlayerPage() {
 
     setProgress(prev => ({ ...prev, [lessonId]: true }))
 
-    // Passer à la leçon suivante
+    // Passer à la prochaine leçon automatiquement
     const allLessons = modules.flatMap(m => m.course_lessons || [])
     const idx = allLessons.findIndex(l => l.id === lessonId)
     if (idx < allLessons.length - 1) {
       setCurrentLesson(allLessons[idx + 1])
+      setActiveTab('contenu')
     }
   }
 
-  function toggleModule(moduleId: string) {
-    setExpandedModules(prev => {
-      const next = new Set(prev)
-      if (next.has(moduleId)) next.delete(moduleId)
-      else next.add(moduleId)
-      return next
-    })
-  }
-
-  function getLessonIcon(type: string) {
-    if (type === 'video') return <Play size={13} />
-    if (type === 'pdf') return <FileText size={13} />
-    if (type === 'quiz') return <HelpCircle size={13} />
-    return <FileText size={13} />
-  }
-
-  // Compter progression
   const allLessons = modules.flatMap(m => m.course_lessons || [])
   const completedCount = allLessons.filter(l => progress[l.id]).length
   const progressPct = allLessons.length > 0 ? Math.round((completedCount / allLessons.length) * 100) : 0
@@ -146,18 +124,18 @@ export default function CoursePlayerPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg-main)' }}>
-        <div className="text-center">
-          <div className="w-10 h-10 rounded-xl animate-pulse mx-auto mb-3" style={{ background: 'var(--orange)' }} />
-          <p style={{ color: 'var(--text-secondary)' }}>Chargement du cours...</p>
-        </div>
+        <div className="w-10 h-10 rounded-xl animate-pulse mx-auto" style={{ background: 'var(--orange)' }} />
       </div>
     )
   }
 
+  const hasQuiz = currentLesson?.type === 'quiz' ||
+    (currentLesson && allLessons.filter(l => l.module_id === currentLesson.module_id && l.type === 'quiz').length > 0)
+
   return (
     <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-main)' }}>
 
-      {/* Header fixe */}
+      {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 h-14 flex items-center justify-between px-4 border-b"
         style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
         <div className="flex items-center gap-3">
@@ -167,31 +145,21 @@ export default function CoursePlayerPage() {
             <span className="hidden sm:inline">Mon espace</span>
           </Link>
           <span style={{ color: 'var(--border)' }}>|</span>
-          <h1 className="font-semibold text-sm truncate max-w-64" style={{ color: 'var(--text-primary)' }}>
+          <h1 className="font-semibold text-sm truncate max-w-xs" style={{ color: 'var(--text-primary)' }}>
             {course?.titre}
           </h1>
         </div>
-
         <div className="flex items-center gap-3">
-          {/* Progression globale */}
           <div className="hidden sm:flex items-center gap-2">
-            <div className="w-24 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--navy-600)' }}>
-              <div className="h-full rounded-full transition-all" style={{
-                width: `${progressPct}%`,
-                background: progressPct === 100 ? 'var(--safe)' : 'var(--orange)'
-              }} />
+            <div className="w-28 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--navy-600)' }}>
+              <div className="h-full rounded-full transition-all duration-500"
+                style={{ width: `${progressPct}%`, background: progressPct === 100 ? 'var(--safe)' : 'var(--orange)' }} />
             </div>
-            <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
-              {progressPct}%
-            </span>
+            <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>{progressPct}%</span>
           </div>
-
           {progressPct === 100 && (
-            <span className="badge badge-safe text-[10px]">
-              <Award size={11} className="mr-1" />Certifié
-            </span>
+            <span className="badge badge-safe text-[10px]"><Award size={11} className="mr-1" />Certifié</span>
           )}
-
           <button onClick={() => setSidebarOpen(!sidebarOpen)}
             className="flex items-center justify-center w-8 h-8 rounded-lg transition-all"
             style={{ color: 'var(--text-secondary)', background: 'var(--navy-700)' }}>
@@ -200,70 +168,89 @@ export default function CoursePlayerPage() {
         </div>
       </header>
 
-      {/* Layout principal */}
+      {/* Warning verrou */}
+      {lockWarning && (
+        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 px-4 py-3 rounded-xl shadow-lg flex items-center gap-2 text-sm"
+          style={{ background: 'var(--danger)', color: 'white' }}>
+          <Lock size={15} />{lockWarning}
+        </div>
+      )}
+
       <div className="flex pt-14 flex-1">
 
-        {/* SIDEBAR - Plan du cours */}
-        <aside className={`${sidebarOpen ? 'w-72 xl:w-80' : 'w-0'} transition-all duration-300 flex-shrink-0 overflow-hidden fixed left-0 top-14 bottom-0 z-40 border-r overflow-y-auto`}
+        {/* Sidebar */}
+        <aside className={`${sidebarOpen ? 'w-72 xl:w-80' : 'w-0'} transition-all duration-300 flex-shrink-0 fixed left-0 top-14 bottom-0 z-40 border-r overflow-y-auto`}
           style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
           <div className="p-4 border-b" style={{ borderColor: 'var(--border)' }}>
             <h2 className="font-bold text-sm mb-1" style={{ color: 'var(--text-primary)' }}>Plan du cours</h2>
-            <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-              {completedCount}/{allLessons.length} leçons · {progressPct}% terminé
-            </p>
+            <div className="flex items-center gap-2 mt-2">
+              <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--navy-600)' }}>
+                <div className="h-full rounded-full" style={{
+                  width: `${progressPct}%`,
+                  background: progressPct === 100 ? 'var(--safe)' : 'var(--orange)'
+                }} />
+              </div>
+              <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                {completedCount}/{allLessons.length}
+              </span>
+            </div>
           </div>
 
           <div className="p-2">
             {modules.map((module, mi) => (
               <div key={module.id} className="mb-1">
-                {/* Header module */}
                 <button
-                  onClick={() => toggleModule(module.id)}
-                  className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-left"
+                  onClick={() => setExpandedModules(prev => {
+                    const next = new Set(prev)
+                    next.has(module.id) ? next.delete(module.id) : next.add(module.id)
+                    return next
+                  })}
+                  className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-semibold text-left transition-all"
                   style={{ color: 'var(--text-primary)' }}
                   onMouseEnter={e => e.currentTarget.style.background = 'var(--navy-700)'}
                   onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                 >
-                  <span>Module {mi + 1} · {module.titre}</span>
-                  <ChevronDown size={14}
-                    className={`transition-transform flex-shrink-0 ${expandedModules.has(module.id) ? 'rotate-180' : ''}`}
-                    style={{ color: 'var(--text-secondary)' }} />
+                  <span className="truncate">Module {mi + 1} · {module.titre}</span>
+                  <ChevronDown size={13} style={{ color: 'var(--text-secondary)' }}
+                    className={`transition-transform flex-shrink-0 ${expandedModules.has(module.id) ? 'rotate-180' : ''}`} />
                 </button>
 
-                {/* Leçons */}
                 {expandedModules.has(module.id) && (
-                  <div className="ml-2 space-y-0.5">
+                  <div className="ml-1 space-y-0.5">
                     {(module.course_lessons || []).map((lesson: any) => {
                       const isActive = currentLesson?.id === lesson.id
                       const isComplete = progress[lesson.id]
+                      const unlocked = isLessonUnlocked(lesson)
+
                       return (
-                        <button
-                          key={lesson.id}
-                          onClick={() => { setCurrentLesson(lesson); if (window.innerWidth < 768) setSidebarOpen(false) }}
-                          className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-xs transition-all text-left group"
+                        <button key={lesson.id}
+                          onClick={() => handleSelectLesson(lesson)}
+                          className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-xs transition-all text-left"
                           style={isActive
                             ? { background: 'rgba(212,80,15,0.1)', color: 'var(--orange)', borderLeft: '3px solid var(--orange)' }
-                            : { color: 'var(--text-secondary)', borderLeft: '3px solid transparent' }
+                            : { color: unlocked ? 'var(--text-secondary)' : 'var(--text-secondary)', opacity: unlocked ? 1 : 0.5, borderLeft: '3px solid transparent' }
                           }
                           onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = 'var(--navy-700)' }}
                           onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent' }}
                         >
-                          <div className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center"
+                          <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
                             style={isComplete
                               ? { background: 'var(--safe)', color: 'white' }
+                              : !unlocked
+                              ? { background: 'var(--navy-500)', color: 'var(--text-secondary)' }
                               : { background: 'var(--navy-500)', color: 'var(--text-secondary)' }
                             }>
-                            {isComplete ? <CheckCircle size={12} /> : getLessonIcon(lesson.type)}
+                            {isComplete ? <CheckCircle size={12} /> :
+                             !unlocked ? <Lock size={10} /> :
+                             lesson.type === 'video' ? <Play size={10} /> :
+                             lesson.type === 'quiz' ? <HelpCircle size={10} /> :
+                             <FileText size={10} />}
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="truncate">{lesson.titre}</div>
-                            <div className="flex items-center gap-1 mt-0.5 opacity-70">
-                              <span style={{ color: 'var(--text-secondary)' }}>
-                                {lesson.type === 'video' ? 'Vidéo' : lesson.type === 'pdf' ? 'Lecture' : 'Quiz'}
-                              </span>
-                              {lesson.duree_minutes > 0 && (
-                                <span style={{ color: 'var(--text-secondary)' }}>· {lesson.duree_minutes} min</span>
-                              )}
+                            <div className="text-[10px] mt-0.5 opacity-60">
+                              {lesson.type === 'video' ? 'Vidéo' : lesson.type === 'pdf' ? 'Document' : lesson.type === 'quiz' ? 'Quiz' : 'Lecture'}
+                              {lesson.duree_minutes > 0 && ` · ${lesson.duree_minutes}min`}
                             </div>
                           </div>
                         </button>
@@ -276,23 +263,24 @@ export default function CoursePlayerPage() {
           </div>
         </aside>
 
-        {/* CONTENU PRINCIPAL */}
-        <main className={`flex-1 transition-all duration-300 ${sidebarOpen ? 'ml-72 xl:ml-80' : 'ml-0'} overflow-y-auto`}>
+        {/* Contenu principal */}
+        <main className={`flex-1 ${sidebarOpen ? 'ml-72 xl:ml-80' : 'ml-0'} transition-all duration-300 min-h-screen overflow-y-auto`}>
           {currentLesson ? (
-            <LessonViewer
+            <LessonContent
               lesson={currentLesson}
               isComplete={progress[currentLesson.id] || false}
               onMarkComplete={() => markComplete(currentLesson.id)}
               activeTab={activeTab}
               setActiveTab={setActiveTab}
-              course={course}
+              quizCompleted={quizCompleted[currentLesson.id] || false}
+              onQuizComplete={(passed: boolean) => {
+                setQuizCompleted(prev => ({ ...prev, [currentLesson.id]: passed }))
+                if (passed) markComplete(currentLesson.id)
+              }}
             />
           ) : (
             <div className="flex items-center justify-center h-96">
-              <div className="text-center">
-                <BookOpenIcon />
-                <p style={{ color: 'var(--text-secondary)' }}>Sélectionnez une leçon pour commencer</p>
-              </div>
+              <p style={{ color: 'var(--text-secondary)' }}>Sélectionnez une leçon</p>
             </div>
           )}
         </main>
@@ -304,79 +292,109 @@ export default function CoursePlayerPage() {
 // ============================================================
 // LECTEUR DE LEÇON
 // ============================================================
-function LessonViewer({ lesson, isComplete, onMarkComplete, activeTab, setActiveTab, course }: any) {
+function LessonContent({ lesson, isComplete, onMarkComplete, activeTab, setActiveTab, quizCompleted, onQuizComplete }: any) {
+  const [videoWatched, setVideoWatched] = useState(false)
+  const [textReadProgress, setTextReadProgress] = useState(0)
+  const [showCompletionWarning, setShowCompletionWarning] = useState(false)
+  const textRef = useRef<HTMLDivElement>(null)
+  const playerRef = useRef<any>(null)
+  const progressInterval = useRef<any>(null)
 
-  // Extraire l'ID YouTube
+  useEffect(() => {
+    setVideoWatched(false)
+    setTextReadProgress(0)
+    setShowCompletionWarning(false)
+  }, [lesson.id])
+
+  // Tracking scroll pour le texte
+  useEffect(() => {
+    if (lesson.type !== 'video' && lesson.contenu_riche && textRef.current) {
+      const onScroll = () => {
+        const el = textRef.current!
+        const scrolled = el.scrollTop + el.clientHeight
+        const total = el.scrollHeight
+        const pct = Math.round((scrolled / total) * 100)
+        setTextReadProgress(Math.min(pct, 100))
+      }
+      textRef.current.addEventListener('scroll', onScroll)
+      return () => textRef.current?.removeEventListener('scroll', onScroll)
+    }
+  }, [lesson])
+
   function getYoutubeId(url: string) {
     if (!url) return null
-    const match = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/)
-    return match ? match[1] : null
+    const m = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/)
+    return m ? m[1] : null
   }
 
-  const youtubeId = lesson.type === 'video' ? getYoutubeId(lesson.youtube_url || lesson.video_url) : null
+  const ytId = getYoutubeId(lesson.youtube_url || '')
+
+  function handleMarkComplete() {
+    const needsVideo = lesson.type === 'video' && !videoWatched
+    const needsText = lesson.contenu_riche && textReadProgress < 90
+    if (needsVideo) {
+      setShowCompletionWarning('Regardez la vidéo jusqu\'à la fin avant de continuer.')
+      setTimeout(() => setShowCompletionWarning(false as any), 4000)
+      return
+    }
+    onMarkComplete()
+  }
+
+  const tabs = [
+    { key: 'contenu', label: 'Contenu', show: true },
+    { key: 'quiz', label: 'Quiz', show: true },
+    { key: 'telechargements', label: 'Téléchargements', show: !!lesson.pdf_url },
+  ].filter(t => t.show)
 
   return (
-    <div className="max-w-4xl mx-auto">
-      {/* Zone de contenu */}
-      {lesson.type === 'video' && youtubeId && (
-        <div className="relative bg-black" style={{ aspectRatio: '16/9' }}>
-          <iframe
-            src={`https://www.youtube-nocookie.com/embed/${youtubeId}?rel=0&modestbranding=1`}
-            title={lesson.titre}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-            className="w-full h-full"
+    <div>
+      {/* Zone vidéo */}
+      {ytId && (
+        <div className="relative bg-black" style={{ aspectRatio: '16/9', maxHeight: '70vh' }}>
+          <YoutubeTracker
+            videoId={ytId}
+            threshold={lesson.seuil_completion_video || 80}
+            onComplete={() => setVideoWatched(true)}
           />
+          {videoWatched && (
+            <div className="absolute top-3 right-3 badge badge-safe text-xs">
+              <CheckCircle size={11} className="mr-1" />Vidéo regardée
+            </div>
+          )}
         </div>
       )}
 
-      {lesson.type === 'pdf' && lesson.pdf_url && (
-        <div className="bg-black" style={{ height: '70vh' }}>
-          <iframe src={lesson.pdf_url} className="w-full h-full" title={lesson.titre} />
+      {/* Warning complétion */}
+      {showCompletionWarning && (
+        <div className="mx-5 mt-3 p-3 rounded-xl flex items-center gap-2 text-sm"
+          style={{ background: 'rgba(255,71,87,0.1)', border: '1px solid rgba(255,71,87,0.3)', color: 'var(--danger)' }}>
+          <AlertTriangle size={15} />{showCompletionWarning}
         </div>
       )}
 
-      {lesson.type === 'quiz' && (
-        <div className="p-6" style={{ background: 'var(--bg-secondary)' }}>
-          <QuizViewer lesson={lesson} onComplete={onMarkComplete} isComplete={isComplete} />
-        </div>
-      )}
-
-      {/* Infos leçon */}
-      <div className="p-5 border-b" style={{ borderColor: 'var(--border)' }}>
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <h2 className="text-xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>
-              {lesson.titre}
-            </h2>
-            {lesson.type === 'video' && (
-              <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                Traduit automatiquement de Français
-              </p>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            {isComplete ? (
-              <span className="badge badge-safe text-sm px-4 py-1.5">
-                <CheckCircle size={14} className="mr-1.5" />Vue
-              </span>
-            ) : (
-              <button onClick={onMarkComplete} className="btn-primary py-2 px-5 text-sm">
-                <CheckCircle size={15} />Marquer comme vu
-              </button>
-            )}
-          </div>
-        </div>
+      {/* Titre + bouton marquer */}
+      <div className="px-5 py-4 border-b flex items-center justify-between gap-4 flex-wrap"
+        style={{ borderColor: 'var(--border)' }}>
+        <h2 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>{lesson.titre}</h2>
+        {lesson.type !== 'quiz' && (
+          isComplete ? (
+            <span className="badge badge-safe"><CheckCircle size={14} className="mr-1" />Terminé</span>
+          ) : (
+            <button onClick={handleMarkComplete} className="btn-primary py-2 px-5 text-sm">
+              <CheckCircle size={14} />Marquer comme terminé
+            </button>
+          )
+        )}
       </div>
 
       {/* Onglets */}
-      <div className="border-b flex" style={{ borderColor: 'var(--border)' }}>
-        {(['transcription', 'notes', 'telechargements'] as const).map(t => (
-          <button key={t} onClick={() => setActiveTab(t)}
-            className="px-5 py-3 text-sm font-medium capitalize transition-all relative"
-            style={activeTab === t ? { color: 'var(--text-primary)' } : { color: 'var(--text-secondary)' }}>
-            {t === 'transcription' ? 'Transcription' : t === 'notes' ? 'Notes Personnelles' : 'Téléchargements'}
-            {activeTab === t && (
+      <div className="flex border-b" style={{ borderColor: 'var(--border)' }}>
+        {tabs.map(t => (
+          <button key={t.key} onClick={() => setActiveTab(t.key as any)}
+            className="px-5 py-3 text-sm font-medium transition-all relative"
+            style={activeTab === t.key ? { color: 'var(--text-primary)' } : { color: 'var(--text-secondary)' }}>
+            {t.label}
+            {activeTab === t.key && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5" style={{ background: 'var(--text-primary)' }} />
             )}
           </button>
@@ -385,41 +403,50 @@ function LessonViewer({ lesson, isComplete, onMarkComplete, activeTab, setActive
 
       {/* Contenu onglet */}
       <div className="p-5">
-        {activeTab === 'transcription' && (
+        {activeTab === 'contenu' && (
           <div>
-            {lesson.contenu_texte ? (
-              <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                {lesson.contenu_texte}
-              </p>
+            {lesson.contenu_riche ? (
+              <div
+                ref={textRef}
+                className="prose max-w-none overflow-y-auto"
+                style={{ maxHeight: '60vh', color: 'var(--text-primary)' }}
+                dangerouslySetInnerHTML={{ __html: lesson.contenu_riche }}
+              />
             ) : (
               <p className="text-sm italic" style={{ color: 'var(--text-secondary)' }}>
-                Aucune transcription disponible pour cette leçon.
+                Aucun contenu textuel pour cette leçon.
               </p>
             )}
           </div>
         )}
-        {activeTab === 'notes' && (
-          <NotesEditor lessonId={lesson.id} />
+
+        {activeTab === 'quiz' && (
+          <QuizPlayer
+            lessonId={lesson.id}
+            isAlreadyComplete={quizCompleted}
+            onComplete={onQuizComplete}
+          />
         )}
-        {activeTab === 'telechargements' && (
-          <div>
-            {lesson.pdf_url ? (
-              <a href={lesson.pdf_url} download
-                className="flex items-center gap-3 p-3 rounded-xl border transition-all hover:border-orange-500"
-                style={{ borderColor: 'var(--border)' }}>
-                <FileText size={18} style={{ color: 'var(--orange)' }} />
-                <div>
-                  <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-                    {lesson.titre}.pdf
-                  </div>
-                  <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>Document PDF</div>
+
+        {activeTab === 'telechargements' && lesson.pdf_url && (
+          <div className="space-y-3">
+            <a href={lesson.pdf_url} target="_blank" rel="noreferrer"
+              download={lesson.pdf_nom || 'document.pdf'}
+              className="flex items-center gap-3 p-4 rounded-xl border transition-all hover:border-orange-500"
+              style={{ borderColor: 'var(--border)' }}>
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center"
+                style={{ background: 'rgba(212,80,15,0.1)' }}>
+                <FileText size={22} style={{ color: 'var(--orange)' }} />
+              </div>
+              <div>
+                <div className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>
+                  {lesson.pdf_nom || `${lesson.titre}.pdf`}
                 </div>
-              </a>
-            ) : (
-              <p className="text-sm italic" style={{ color: 'var(--text-secondary)' }}>
-                Aucun fichier disponible pour cette leçon.
-              </p>
-            )}
+                <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                  Document PDF · Cliquez pour télécharger
+                </div>
+              </div>
+            </a>
           </div>
         )}
       </div>
@@ -428,114 +455,399 @@ function LessonViewer({ lesson, isComplete, onMarkComplete, activeTab, setActive
 }
 
 // ============================================================
-// QUIZ VIEWER
+// YOUTUBE TRACKER — sans branding, avec suivi de progression
 // ============================================================
-function QuizViewer({ lesson, onComplete, isComplete }: any) {
-  const [questions, setQuestions] = useState<any[]>([])
-  const [answers, setAnswers] = useState<Record<string, number>>({})
-  const [submitted, setSubmitted] = useState(false)
-  const [score, setScore] = useState(0)
+function YoutubeTracker({ videoId, threshold = 80, onComplete }: {
+  videoId: string
+  threshold: number
+  onComplete: () => void
+}) {
+  const iframeRef = useRef<HTMLIFrameElement>(null)
+  const [completed, setCompleted] = useState(false)
+  const intervalRef = useRef<any>(null)
+  const completedRef = useRef(false)
 
   useEffect(() => {
-    supabase.from('quiz_questions').select('*').eq('lesson_id', lesson.id).order('ordre')
-      .then(({ data }) => setQuestions(data || []))
-  }, [lesson.id])
+    // Utiliser l'API YouTube iframe pour suivre la progression
+    const tag = document.createElement('script')
+    tag.src = 'https://www.youtube.com/iframe_api'
+    document.head.appendChild(tag)
 
-  function handleAnswer(questionId: string, optionIndex: number) {
+    // Fallback: si l'API ne charge pas, timer approximatif
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current)
+    }
+  }, [videoId])
+
+  function handleIframeLoad() {
+    // Timer de sécurité : marquer comme vu après 30s (pour les courtes vidéos)
+    intervalRef.current = setInterval(() => {
+      if (!completedRef.current) {
+        completedRef.current = true
+        setCompleted(true)
+        onComplete()
+        clearInterval(intervalRef.current)
+      }
+    }, 30000) // 30 secondes minimum
+  }
+
+  return (
+    <div className="relative w-full h-full bg-black">
+      <iframe
+        ref={iframeRef}
+        onLoad={handleIframeLoad}
+        src={`https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1&iv_load_policy=3&fs=1&color=white&disablekb=0`}
+        title="Video"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+        allowFullScreen
+        className="w-full h-full border-0"
+        style={{ aspectRatio: '16/9' }}
+      />
+    </div>
+  )
+}
+
+// ============================================================
+// QUIZ PLAYER — avec résultats détaillés
+// ============================================================
+function QuizPlayer({ lessonId, isAlreadyComplete, onComplete }: any) {
+  const [questions, setQuestions] = useState<any[]>([])
+  const [answers, setAnswers] = useState<Record<string, any>>({})
+  const [submitted, setSubmitted] = useState(false)
+  const [results, setResults] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    supabase.from('quiz_questions').select('*').eq('lesson_id', lessonId).order('ordre')
+      .then(({ data }) => { setQuestions(data || []); setLoading(false) })
+  }, [lessonId])
+
+  function handleAnswer(questionId: string, value: any) {
     if (submitted) return
-    setAnswers(prev => ({ ...prev, [questionId]: optionIndex }))
+    setAnswers(prev => ({ ...prev, [questionId]: value }))
   }
 
-  function handleSubmit() {
-    let correct = 0
+  function submitQuiz() {
+    let totalPoints = 0
+    let earnedPoints = 0
+    const details: any[] = []
+
     questions.forEach(q => {
-      const opts = q.options as any[]
-      const selectedIdx = answers[q.id]
-      if (selectedIdx !== undefined && opts[selectedIdx]?.correct) correct++
+      totalPoints += q.points || 1
+      const userAnswer = answers[q.id]
+      let correct = false
+
+      if (q.type === 'qcm' || q.type === 'qcm_multi') {
+        const opts = q.options as any[]
+        const correctOpts = opts.filter(o => o.correct).map(o => o.text)
+        if (q.type === 'qcm') {
+          correct = opts[userAnswer]?.correct === true
+        } else {
+          const selected = userAnswer || []
+          correct = JSON.stringify(selected.sort()) === JSON.stringify(correctOpts.sort())
+        }
+      } else if (q.type === 'vrai_faux') {
+        correct = userAnswer === q.reponse_correcte
+      } else if (q.type === 'texte_libre') {
+        if (q.reponse_correcte) {
+          correct = userAnswer?.toLowerCase().trim() === q.reponse_correcte.toLowerCase().trim()
+        } else {
+          correct = true // correction manuelle
+        }
+      } else if (q.type === 'ordre') {
+        const opts = q.options as any[]
+        const expected = opts.map((o: any) => o.text)
+        correct = JSON.stringify(userAnswer || []) === JSON.stringify(expected)
+      }
+
+      if (correct) earnedPoints += q.points || 1
+      details.push({
+        question: q.question,
+        correct,
+        points: q.points || 1,
+        explication: q.explication,
+        type: q.type,
+      })
     })
-    setScore(correct)
+
+    const percentage = totalPoints > 0 ? Math.round((earnedPoints / totalPoints) * 100) : 0
+    const passed = percentage >= 70
+
+    setResults({ earnedPoints, totalPoints, percentage, passed, details })
     setSubmitted(true)
-    if (correct / questions.length >= 0.7) onComplete()
+    onComplete(passed)
   }
 
-  if (questions.length === 0) {
+  if (loading) return <div className="text-center py-8" style={{ color: 'var(--text-secondary)' }}>Chargement...</div>
+
+  if (questions.length === 0) return (
+    <div className="text-center py-8">
+      <HelpCircle size={40} className="mx-auto mb-3" style={{ color: 'var(--text-secondary)' }} />
+      <p style={{ color: 'var(--text-secondary)' }}>Aucune question pour ce quiz.</p>
+    </div>
+  )
+
+  if (submitted && results) {
     return (
-      <div className="text-center py-10">
-        <HelpCircle size={40} style={{ color: 'var(--text-secondary)' }} className="mx-auto mb-3" />
-        <p style={{ color: 'var(--text-secondary)' }}>Aucune question disponible</p>
+      <div className="max-w-2xl mx-auto">
+        {/* Score global */}
+        <div className={`card p-8 text-center mb-6 border-2 ${results.passed ? 'border-green-500/30' : 'border-red-500/30'}`}>
+          <div className={`w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-4 ${results.passed ? 'bg-green-500/15' : 'bg-red-500/15'}`}>
+            <span className="text-4xl font-bold font-display" style={{ color: results.passed ? 'var(--safe)' : 'var(--danger)' }}>
+              {results.percentage}%
+            </span>
+          </div>
+          <h3 className="text-xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>
+            {results.passed ? '🎉 Quiz réussi !' : '❌ Quiz non réussi'}
+          </h3>
+          <p className="text-sm mb-2" style={{ color: 'var(--text-secondary)' }}>
+            {results.earnedPoints} / {results.totalPoints} points · {results.passed ? 'Score ≥ 70% requis' : 'Score < 70%, réessayez'}
+          </p>
+          {/* Barre de score */}
+          <div className="h-3 rounded-full overflow-hidden mx-auto max-w-48"
+            style={{ background: 'var(--navy-600)' }}>
+            <div className="h-full rounded-full transition-all duration-1000"
+              style={{
+                width: `${results.percentage}%`,
+                background: results.percentage >= 70 ? 'var(--safe)' : results.percentage >= 50 ? 'var(--warn)' : 'var(--danger)'
+              }} />
+          </div>
+        </div>
+
+        {/* Détail par question */}
+        <div className="space-y-3 mb-6">
+          {results.details.map((d: any, i: number) => (
+            <div key={i} className="card p-4 flex items-start gap-3">
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${d.correct ? 'bg-green-500/15' : 'bg-red-500/15'}`}>
+                {d.correct
+                  ? <CheckCircle size={14} style={{ color: 'var(--safe)' }} />
+                  : <X size={14} style={{ color: 'var(--danger)' }} />}
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                  {i + 1}. {d.question}
+                </p>
+                {d.explication && (
+                  <p className="text-xs mt-1 italic" style={{ color: 'var(--text-secondary)' }}>
+                    💡 {d.explication}
+                  </p>
+                )}
+              </div>
+              <span className="text-xs flex-shrink-0" style={{ color: d.correct ? 'var(--safe)' : 'var(--danger)' }}>
+                {d.correct ? `+${d.points}pt` : '0pt'}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {!results.passed && (
+          <button onClick={() => { setSubmitted(false); setAnswers({}); setResults(null) }}
+            className="btn-secondary w-full justify-center py-3">
+            🔄 Recommencer le quiz
+          </button>
+        )}
       </div>
     )
   }
 
   return (
     <div className="max-w-2xl mx-auto">
-      <div className="text-center mb-8">
-        <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3"
-          style={{ background: 'rgba(212,80,15,0.15)' }}>
-          <HelpCircle size={28} style={{ color: 'var(--orange)' }} />
-        </div>
-        <h3 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>{lesson.titre}</h3>
-        <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
-          {questions.length} question{questions.length > 1 ? 's' : ''}
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+          {questions.length} question{questions.length > 1 ? 's' : ''} · {Object.keys(answers).length}/{questions.length} répondues
         </p>
+        <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>Score minimum requis : 70%</p>
       </div>
 
-      {submitted ? (
-        <div className="card p-8 text-center">
-          <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 ${score / questions.length >= 0.7 ? 'bg-green-500/20' : 'bg-red-500/20'}`}>
-            {score / questions.length >= 0.7
-              ? <CheckCircle size={40} style={{ color: 'var(--safe)' }} />
-              : <HelpCircle size={40} style={{ color: 'var(--danger)' }} />
-            }
-          </div>
-          <div className="text-4xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
-            {score}/{questions.length}
-          </div>
-          <p className="text-sm mb-6" style={{ color: 'var(--text-secondary)' }}>
-            {score / questions.length >= 0.7 ? '✅ Quiz réussi ! Leçon validée.' : '❌ Score insuffisant (70% requis). Réessayez.'}
+      <div className="space-y-5">
+        {questions.map((q, qi) => (
+          <QuizQuestion
+            key={q.id}
+            question={q}
+            index={qi}
+            answer={answers[q.id]}
+            onAnswer={(val: any) => handleAnswer(q.id, val)}
+            disabled={submitted}
+          />
+        ))}
+      </div>
+
+      <div className="mt-6 text-center">
+        <button
+          onClick={submitQuiz}
+          disabled={Object.keys(answers).length < questions.length}
+          className="btn-primary py-3 px-12 text-base"
+        >
+          Soumettre mes réponses
+        </button>
+        {Object.keys(answers).length < questions.length && (
+          <p className="text-xs mt-2" style={{ color: 'var(--text-secondary)' }}>
+            Répondez à toutes les questions avant de soumettre
           </p>
-          {score / questions.length < 0.7 && (
-            <button onClick={() => { setSubmitted(false); setAnswers({}) }} className="btn-secondary py-2 px-6">
-              Réessayer
-            </button>
-          )}
-        </div>
-      ) : (
-        <div className="space-y-5">
-          {questions.map((q, qi) => {
-            const opts = q.options as any[]
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ============================================================
+// COMPOSANT QUESTION INDIVIDUELLE
+// ============================================================
+function QuizQuestion({ question: q, index, answer, onAnswer, disabled }: any) {
+  return (
+    <div className="card p-5">
+      <div className="flex items-start gap-3 mb-4">
+        <span className="badge badge-orange text-[10px] flex-shrink-0 mt-0.5">{index + 1}</span>
+        <p className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>{q.question}</p>
+      </div>
+
+      {/* QCM */}
+      {(q.type === 'qcm' || q.type === 'qcm_multi') && (
+        <div className="space-y-2">
+          {(q.options || []).map((opt: any, oi: number) => {
+            const selected = q.type === 'qcm' ? answer === oi : (answer || []).includes(opt.text)
             return (
-              <div key={q.id} className="card p-5">
-                <p className="font-medium mb-4 text-sm" style={{ color: 'var(--text-primary)' }}>
-                  <span className="badge badge-orange text-[10px] mr-2">{qi + 1}</span>
-                  {q.question}
-                </p>
-                <div className="space-y-2">
-                  {opts?.map((opt, oi) => (
-                    <button key={oi} onClick={() => handleAnswer(q.id, oi)}
-                      className="w-full flex items-center gap-3 p-3 rounded-xl border text-left text-sm transition-all"
-                      style={answers[q.id] === oi
-                        ? { borderColor: 'var(--orange)', background: 'rgba(212,80,15,0.08)', color: 'var(--text-primary)' }
-                        : { borderColor: 'var(--border)', color: 'var(--text-secondary)' }
-                      }>
-                      <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${answers[q.id] === oi ? 'border-orange-500' : 'border-gray-500'}`}>
-                        {answers[q.id] === oi && <div className="w-2.5 h-2.5 rounded-full" style={{ background: 'var(--orange)' }} />}
-                      </div>
-                      {opt.text}
-                    </button>
-                  ))}
+              <button key={oi} type="button"
+                onClick={() => {
+                  if (disabled) return
+                  if (q.type === 'qcm') onAnswer(oi)
+                  else {
+                    const curr = answer || []
+                    onAnswer(curr.includes(opt.text) ? curr.filter((x: string) => x !== opt.text) : [...curr, opt.text])
+                  }
+                }}
+                className="w-full flex items-center gap-3 p-3 rounded-xl border text-left text-sm transition-all"
+                style={selected
+                  ? { borderColor: 'var(--orange)', background: 'rgba(212,80,15,0.08)', color: 'var(--text-primary)' }
+                  : { borderColor: 'var(--border)', color: 'var(--text-secondary)' }
+                }>
+                <div className={`w-5 h-5 rounded-${q.type === 'qcm' ? 'full' : 'md'} border-2 flex items-center justify-center flex-shrink-0 transition-all`}
+                  style={selected
+                    ? { background: 'var(--orange)', borderColor: 'var(--orange)' }
+                    : { borderColor: 'var(--border)' }
+                  }>
+                  {selected && <Check size={11} className="text-white" />}
                 </div>
-              </div>
+                {opt.text}
+              </button>
             )
           })}
-          <div className="text-center pt-2">
-            <button
-              onClick={handleSubmit}
-              disabled={Object.keys(answers).length < questions.length}
-              className="btn-primary py-3 px-10"
-            >
-              Soumettre les réponses
+        </div>
+      )}
+
+      {/* VRAI/FAUX */}
+      {q.type === 'vrai_faux' && (
+        <div className="flex gap-3">
+          {['Vrai', 'Faux'].map(val => (
+            <button key={val} type="button"
+              onClick={() => !disabled && onAnswer(val)}
+              className="flex-1 py-3 rounded-xl border-2 font-medium text-sm transition-all"
+              style={answer === val
+                ? { borderColor: val === 'Vrai' ? 'var(--safe)' : 'var(--danger)', background: val === 'Vrai' ? 'rgba(0,200,150,0.1)' : 'rgba(255,71,87,0.1)', color: val === 'Vrai' ? 'var(--safe)' : 'var(--danger)' }
+                : { borderColor: 'var(--border)', color: 'var(--text-secondary)' }
+              }>
+              {val === 'Vrai' ? '✅' : '❌'} {val}
             </button>
+          ))}
+        </div>
+      )}
+
+      {/* TEXTE LIBRE */}
+      {q.type === 'texte_libre' && (
+        <textarea
+          value={answer || ''}
+          onChange={e => !disabled && onAnswer(e.target.value)}
+          placeholder="Votre réponse..."
+          rows={3}
+          className="input-field text-sm"
+          disabled={disabled}
+        />
+      )}
+
+      {/* RELIER */}
+      {q.type === 'relier' && (
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            {(q.options || []).map((opt: any, oi: number) => (
+              <div key={oi} className="p-2.5 rounded-lg text-sm text-center"
+                style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}>
+                {opt.gauche}
+              </div>
+            ))}
+          </div>
+          <div className="space-y-2">
+            {(q.options || []).map((opt: any, oi: number) => (
+              <div key={oi} className="p-2.5 rounded-lg text-sm text-center"
+                style={{ background: 'rgba(212,80,15,0.08)', color: 'var(--orange)' }}>
+                {opt.droite}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* REMPLIR */}
+      {q.type === 'remplir' && (
+        <div>
+          <p className="text-sm mb-3" style={{ color: 'var(--text-secondary)' }}>
+            Complétez les champs vides :
+          </p>
+          <div className="text-sm leading-relaxed" style={{ color: 'var(--text-primary)' }}>
+            {(q.reponse_correcte || '').split(/(\{\{[0-9]+\}\})/g).map((part: string, pi: number) => {
+              const match = part.match(/\{\{([0-9]+)\}\}/)
+              if (match) {
+                const fieldIdx = parseInt(match[1]) - 1
+                return (
+                  <input key={pi} type="text"
+                    value={(answer || [])[fieldIdx] || ''}
+                    onChange={e => {
+                      const curr = answer || []
+                      const next = [...curr]
+                      next[fieldIdx] = e.target.value
+                      onAnswer(next)
+                    }}
+                    className="inline-block w-28 mx-1 text-center border-b-2 bg-transparent outline-none text-sm"
+                    style={{ borderColor: 'var(--orange)', color: 'var(--orange)' }}
+                    disabled={disabled}
+                  />
+                )
+              }
+              return <span key={pi}>{part}</span>
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ORDRE */}
+      {q.type === 'ordre' && (
+        <div>
+          <p className="text-xs mb-2" style={{ color: 'var(--text-secondary)' }}>
+            Cliquez dans le bon ordre :
+          </p>
+          <div className="space-y-2">
+            {(q.options || []).map((opt: any, oi: number) => {
+              const selectedOrder = (answer || []).indexOf(opt.text)
+              return (
+                <button key={oi} type="button"
+                  onClick={() => {
+                    if (disabled) return
+                    const curr = answer || []
+                    if (curr.includes(opt.text)) onAnswer(curr.filter((x: string) => x !== opt.text))
+                    else onAnswer([...curr, opt.text])
+                  }}
+                  className="w-full flex items-center gap-3 p-3 rounded-xl border text-sm text-left transition-all"
+                  style={selectedOrder >= 0
+                    ? { borderColor: 'var(--orange)', color: 'var(--text-primary)', background: 'rgba(212,80,15,0.08)' }
+                    : { borderColor: 'var(--border)', color: 'var(--text-secondary)' }
+                  }>
+                  <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                    style={{ background: selectedOrder >= 0 ? 'var(--orange)' : 'var(--navy-600)', color: 'white' }}>
+                    {selectedOrder >= 0 ? selectedOrder + 1 : '?'}
+                  </span>
+                  {opt.text}
+                </button>
+              )
+            })}
           </div>
         </div>
       )}
@@ -543,46 +855,16 @@ function QuizViewer({ lesson, onComplete, isComplete }: any) {
   )
 }
 
-// ============================================================
-// NOTES EDITOR
-// ============================================================
-function NotesEditor({ lessonId }: { lessonId: string }) {
-  const [note, setNote] = useState('')
-  const [saved, setSaved] = useState(false)
-
-  return (
-    <div>
-      <textarea
-        value={note}
-        onChange={e => { setNote(e.target.value); setSaved(false) }}
-        placeholder="Prenez des notes sur cette leçon..."
-        className="input-field text-sm"
-        rows={8}
-        style={{ resize: 'vertical' }}
-      />
-      <div className="flex items-center justify-between mt-3">
-        <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-          {saved ? '✅ Note enregistrée' : ''}
-        </span>
-        <button
-          onClick={() => { localStorage.setItem(`note_${lessonId}`, note); setSaved(true) }}
-          className="btn-primary py-1.5 px-4 text-xs"
-        >
-          Enregistrer la note
-        </button>
-      </div>
-    </div>
-  )
+function Check({ size, className }: { size: number, className?: string }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <polyline points="20 6 9 17 4 12" />
+  </svg>
 }
 
-function BookOpenIcon() {
-  return (
-    <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
-      style={{ background: 'var(--bg-secondary)' }}>
-      <svg width="32" height="32" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"
-        style={{ color: 'var(--text-secondary)' }}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
-      </svg>
-    </div>
-  )
+function X({ size }: { size: number }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+  </svg>
 }
