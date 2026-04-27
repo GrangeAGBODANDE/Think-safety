@@ -6,27 +6,24 @@ import { supabase } from '@/lib/supabase'
 import ThemeToggle from '@/components/ThemeToggle'
 import LanguageSelector from '@/components/LanguageSelector'
 import {
-  Shield, LayoutDashboard, Users, BookOpen,
+  Shield, LayoutDashboard, Users, GraduationCap,
   AlertTriangle, ShoppingBag, Settings, Globe,
   LogOut, ChevronLeft, ChevronRight,
-  Building2, CreditCard, ShoppingCart, Star, Plus, FileText,
-  GraduationCap
+  Building2, CreditCard, ShoppingCart, Star, Plus, FileText
 } from 'lucide-react'
 
 const NAV = [
-  { href: '/admin/dashboard',        label: 'Dashboard',          icon: LayoutDashboard },
-  { href: '/admin/cours',            label: 'Cours & Formations',  icon: GraduationCap, highlight: true },
-  { href: '/admin/utilisateurs',     label: 'Utilisateurs',        icon: Users },
-  { href: '/admin/entreprises',      label: 'Entreprises',         icon: Building2 },
-  { href: '/admin/contenus',         label: 'Contenus',            icon: BookOpen },
-  { href: '/admin/contenus/nouveau', label: 'Ajouter contenu',     icon: Plus },
-  { href: '/admin/alertes',          label: 'Alertes',             icon: AlertTriangle },
-  { href: '/admin/marketplace',      label: 'Marketplace',         icon: ShoppingBag },
-  { href: '/admin/commandes',        label: 'Commandes',           icon: ShoppingCart },
-  { href: '/admin/abonnements',      label: 'Abonnements',         icon: Star },
-  { href: '/admin/paiements',        label: 'Config Paiements',    icon: CreditCard },
-  { href: '/admin/parametres',       label: 'Parametres',          icon: Settings },
-  { href: '/admin/documentation',    label: 'Documentation Dev',   icon: FileText },
+  { href: '/admin/dashboard',     label: 'Dashboard',          icon: LayoutDashboard },
+  { href: '/admin/cours',         label: 'Cours & Formations', icon: GraduationCap   },
+  { href: '/admin/utilisateurs',  label: 'Utilisateurs',       icon: Users           },
+  { href: '/admin/entreprises',   label: 'Entreprises',        icon: Building2       },
+  { href: '/admin/alertes',       label: 'Alertes',            icon: AlertTriangle   },
+  { href: '/admin/marketplace',   label: 'Marketplace',        icon: ShoppingBag     },
+  { href: '/admin/commandes',     label: 'Commandes',          icon: ShoppingCart    },
+  { href: '/admin/abonnements',   label: 'Abonnements',        icon: Star            },
+  { href: '/admin/paiements',     label: 'Config Paiements',   icon: CreditCard      },
+  { href: '/admin/parametres',    label: 'Parametres',         icon: Settings        },
+  { href: '/admin/documentation', label: 'Documentation Dev',  icon: FileText        },
 ]
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -116,8 +113,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   ? { color: 'var(--orange)', background: 'rgba(212,80,15,0.1)', borderColor: 'rgba(212,80,15,0.2)' }
                   : item.href === '/admin/documentation'
                   ? { color: '#1976D2', borderColor: 'transparent' }
-                  : item.highlight && !active
-                  ? { color: 'var(--safe)', borderColor: 'transparent' }
                   : { color: 'var(--text-secondary)', borderColor: 'transparent' }
                 }
                 onMouseEnter={e => { if (!active) e.currentTarget.style.background = 'var(--navy-700)' }}
@@ -125,11 +120,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               >
                 <Icon size={16} className="flex-shrink-0" />
                 {!collapsed && <span className="truncate">{item.label}</span>}
-                {item.highlight && !collapsed && !active && (
-                  <span className="ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ background: 'rgba(0,200,150,0.15)', color: 'var(--safe)' }}>
-                    NEW
-                  </span>
-                )}
               </Link>
             )
           })}
@@ -174,8 +164,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="flex items-center gap-2">
             <LanguageSelector />
             <ThemeToggle />
-            <Link href="/admin/contenus/nouveau" className="btn-primary py-1.5 px-4 text-xs">
-              <Plus size={13} />Nouveau contenu
+            <Link href="/admin/cours/nouveau" className="btn-primary py-1.5 px-4 text-xs">
+              <Plus size={13} />Nouveau cours
             </Link>
           </div>
         </header>
