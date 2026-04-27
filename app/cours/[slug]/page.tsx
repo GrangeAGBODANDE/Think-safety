@@ -295,7 +295,7 @@ export default function CoursePlayerPage() {
 function LessonContent({ lesson, isComplete, onMarkComplete, activeTab, setActiveTab, quizCompleted, onQuizComplete }: any) {
   const [videoWatched, setVideoWatched] = useState(false)
   const [textReadProgress, setTextReadProgress] = useState(0)
-  const [showCompletionWarning, setShowCompletionWarning] = useState(false)
+  const [showCompletionWarning, setShowCompletionWarning] = useState<string | false>(false)
   const textRef = useRef<HTMLDivElement>(null)
   const playerRef = useRef<any>(null)
   const progressInterval = useRef<any>(null)
@@ -334,7 +334,7 @@ function LessonContent({ lesson, isComplete, onMarkComplete, activeTab, setActiv
     const needsText = lesson.contenu_riche && textReadProgress < 90
     if (needsVideo) {
       setShowCompletionWarning('Regardez la vidéo jusqu\'à la fin avant de continuer.')
-      setTimeout(() => setShowCompletionWarning(false as any), 4000)
+      setTimeout(() => setShowCompletionWarning(false), 4000)
       return
     }
     onMarkComplete()
