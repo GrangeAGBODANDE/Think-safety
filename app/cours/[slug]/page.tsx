@@ -312,7 +312,7 @@ export default function CoursePlayerPage() {
 
         {/* Sidebar */}
         <aside
-          className={`${sidebarOpen ? 'w-72 xl:w-80' : 'w-0'} transition-all duration-300 flex-shrink-0 fixed left-0 top-14 bottom-0 z-40 border-r overflow-y-auto`}
+          className={`${sidebarOpen ? 'w-72 xl:w-80' : 'w-0'} transition-all duration-300 flex-shrink-0 fixed left-0 top-14 bottom-0 z-40 border-r overflow-y-auto flex flex-col`}
           style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
 
           <div className="p-4 border-b" style={{ borderColor: 'var(--border)' }}>
@@ -423,7 +423,7 @@ export default function CoursePlayerPage() {
 }
 
 // ============================================================
-// LECTEUR DE LEÇON
+// LECTEUR DE LEÇON — Style Coursera
 // ============================================================
 function LessonViewer({ lesson, isDone, onMarkComplete, activeTab, setActiveTab, onQuizPass }: any) {
   const [videoReady, setVideoReady] = useState(isDone)
@@ -447,72 +447,114 @@ function LessonViewer({ lesson, isDone, onMarkComplete, activeTab, setActiveTab,
   }
 
   const tabs = [
-    { key: 'contenu', label: 'Contenu' },
-    { key: 'quiz', label: 'Quiz' },
+    { key: 'contenu',         label: 'Contenu' },
+    { key: 'quiz',            label: 'Quiz' },
     ...(lesson.pdf_url ? [{ key: 'telechargements', label: 'Téléchargements' }] : []),
   ]
 
   return (
-    <div>
+    <div className="flex flex-col" style={{ height: '100%' }}>
+
+      {/* ===== VIDÉO — taille Coursera ===== */}
       {ytId && (
-        <div style={{ background: '#000' }}>
+        <div style={{ background: '#000', flexShrink: 0 }}>
           <YtNoLogo videoId={ytId} alreadyWatched={isDone} onWatched={() => setVideoReady(true)} />
         </div>
       )}
 
+      {/* PDF viewer */}
       {lesson.type === 'pdf' && lesson.pdf_url && (
-        <div style={{ height: '50vh' }}>
+        <div style={{ height: '45vh', flexShrink: 0 }}>
           <iframe src={lesson.pdf_url} className="w-full h-full border-0" title={lesson.titre} />
         </div>
       )}
 
+      {/* Avertissement */}
       {showWarn && (
-        <div className="mx-5 mt-3 p-3 rounded-xl flex items-center gap-2 text-sm"
+        <div className="mx-5 mt-3 p-3 rounded-xl flex items-center gap-2 text-sm flex-shrink-0"
           style={{ background: 'rgba(255,71,87,0.1)', border: '1px solid rgba(255,71,87,0.3)', color: 'var(--danger)' }}>
           <AlertTriangle size={15} />{showWarn}
         </div>
       )}
 
-      <div className="px-5 py-4 border-b flex items-center justify-between gap-4 flex-wrap"
-        style={{ borderColor: 'var(--border)' }}>
-        <h2 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>{lesson.titre}</h2>
-        {lesson.type !== 'quiz' && (
-          isDone
-            ? <span className="badge badge-safe text-sm px-4 py-1.5"><CheckCircle size={14} className="mr-1.5" />Terminé</span>
-            : <button onClick={handleComplete} className="btn-primary py-2 px-5 text-sm"><CheckCircle size={14} />Marquer comme terminé</button>
-        )}
-      </div>
+      {/* ===== ZONE TEXTE — scrollable ===== */}
+      <div className="flex-1 overflow-y-auto">
 
-      <div className="flex border-b" style={{ borderColor: 'var(--border)' }}>
-        {tabs.map(t => (
-          <button key={t.key} onClick={() => setActiveTab(t.key as any)}
-            className="px-5 py-3 text-sm font-medium transition-all relative"
-            style={activeTab === t.key ? { color: 'var(--text-primary)' } : { color: 'var(--text-secondary)' }}>
-            {t.label}
-            {activeTab === t.key && <div className="absolute bottom-0 left-0 right-0 h-0.5" style={{ background: 'var(--orange)' }} />}
-          </button>
-        ))}
-      </div>
+        {/* Titre + bouton */}
+        <div className="px-6 pt-5 pb-4 border-b flex items-start justify-between gap-4 flex-wrap"
+          style={{ borderColor: 'var(--border)' }}>
+          <div>
+            <h2 className="text-xl font-bold mb-0.5" style={{ color: 'var(--text-primary)' }}>
+              {lesson.titre}
+            </h2>
+          </div>
+          {lesson.type !== 'quiz' && (
+            isDone
+              ? <span className="badge badge-safe text-sm px-4 py-1.5 flex-shrink-0">
+                  <CheckCircle size={14} className="mr-1.5" />Terminé
+                </span>
+              : <button onClick={handleComplete} className="btn-primary py-2 px-5 text-sm flex-shrink-0">
+                  <CheckCircle size={14} />Marquer comme terminé
+                </button>
+          )}
+        </div>
 
-      <div className="p-5">
-        {activeTab === 'contenu' && (
-          lesson.contenu_riche
-            ? <div className="prose max-w-none text-sm" style={{ color: 'var(--text-primary)' }} dangerouslySetInnerHTML={{ __html: lesson.contenu_riche }} />
-            : <p className="text-sm italic" style={{ color: 'var(--text-secondary)' }}>Aucun contenu textuel pour cette leçon.</p>
+        {/* Onglets */}
+        <div className="flex border-b px-2" style={{ borderColor: 'var(--border)' }}>
+          {tabs.map(t => (
+            <button key={t.key} onClick={() => setActiveTab(t.key as any)}
+              className="px-4 py-3 text-sm font-medium transition-all relative"
+              style={activeTab === t.key ? { color: 'var(--text-primary)' } : { color: 'var(--text-secondary)' }}>
+              {t.label}
+              {activeTab === t.key && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5" style={{ background: 'var(--orange)' }} />
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* Contenu */}
+        <div className="px-6 py-5">
+          {activeTab === 'contenu' && (
+            lesson.contenu_riche
+              ? <div className="prose max-w-none text-sm leading-relaxed" style={{ color: 'var(--text-primary)' }}
+                  dangerouslySetInnerHTML={{ __html: lesson.contenu_riche }} />
+              : <p className="text-sm italic" style={{ color: 'var(--text-secondary)' }}>
+                  Aucun contenu textuel pour cette leçon.
+                </p>
+          )}
+          {activeTab === 'quiz' && <QuizViewer lessonId={lesson.id} onPass={onQuizPass} />}
+          {activeTab === 'telechargements' && lesson.pdf_url && (
+            <a href={lesson.pdf_url} target="_blank" rel="noreferrer" download
+              className="flex items-center gap-3 p-4 rounded-xl border transition-all hover:border-orange-500"
+              style={{ borderColor: 'var(--border)' }}>
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: 'rgba(212,80,15,0.1)' }}>
+                <FileText size={22} style={{ color: 'var(--orange)' }} />
+              </div>
+              <div>
+                <div className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>
+                  {lesson.pdf_nom || `${lesson.titre}.pdf`}
+                </div>
+                <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>PDF · Cliquez pour télécharger</div>
+              </div>
+            </a>
+          )}
+        </div>
+
+        {/* Bouton "Leçon suivante" style Coursera */}
+        {!isDone && lesson.type !== 'quiz' && (
+          <div className="px-6 pb-6 flex justify-end border-t pt-4" style={{ borderColor: 'var(--border)' }}>
+            <button onClick={handleComplete} className="btn-primary py-2.5 px-6 text-sm">
+              Aller à l&apos;élément suivant <ChevronDown size={14} className="-rotate-90" />
+            </button>
+          </div>
         )}
-        {activeTab === 'quiz' && <QuizViewer lessonId={lesson.id} onPass={onQuizPass} />}
-        {activeTab === 'telechargements' && lesson.pdf_url && (
-          <a href={lesson.pdf_url} target="_blank" rel="noreferrer" download
-            className="flex items-center gap-3 p-4 rounded-xl border transition-all"
-            style={{ borderColor: 'var(--border)' }}>
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: 'rgba(212,80,15,0.1)' }}>
-              <FileText size={22} style={{ color: 'var(--orange)' }} />
-            </div>
-            <div>
-              <div className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>{lesson.pdf_nom || `${lesson.titre}.pdf`}</div>
-              <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>PDF · Cliquez pour télécharger</div>
-            </div>
-          </a>
+        {isDone && (
+          <div className="px-6 pb-6 flex justify-end border-t pt-4" style={{ borderColor: 'var(--border)' }}>
+            <span className="text-sm flex items-center gap-2" style={{ color: 'var(--safe)' }}>
+              <CheckCircle size={16} />Leçon terminée
+            </span>
+          </div>
         )}
       </div>
     </div>
