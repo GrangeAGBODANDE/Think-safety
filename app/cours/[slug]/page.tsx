@@ -400,7 +400,8 @@ export default function CoursePlayerPage() {
         </aside>
 
         {/* Contenu principal */}
-        <main className={`flex-1 ${sidebarOpen ? 'ml-72 xl:ml-80' : 'ml-0'} transition-all duration-300 min-h-screen overflow-y-auto`}>
+        <main className={`flex-1 ${sidebarOpen ? 'ml-72 xl:ml-80' : 'ml-0'} transition-all duration-300 overflow-y-auto`}
+          style={{ height: 'calc(100vh - 56px)' }}>
           {currentLesson ? (
             <LessonViewer
               lesson={currentLesson}
@@ -454,11 +455,13 @@ function LessonViewer({ lesson, isDone, onMarkComplete, activeTab, setActiveTab,
   return (
     <div>
       {ytId && (
-        <YtNoLogo videoId={ytId} alreadyWatched={isDone} onWatched={() => setVideoReady(true)} />
+        <div style={{ background: '#000' }}>
+          <YtNoLogo videoId={ytId} alreadyWatched={isDone} onWatched={() => setVideoReady(true)} />
+        </div>
       )}
 
       {lesson.type === 'pdf' && lesson.pdf_url && (
-        <div style={{ height: '70vh' }}>
+        <div style={{ height: '50vh' }}>
           <iframe src={lesson.pdf_url} className="w-full h-full border-0" title={lesson.titre} />
         </div>
       )}
@@ -517,7 +520,7 @@ function LessonViewer({ lesson, isDone, onMarkComplete, activeTab, setActiveTab,
 }
 
 // ============================================================
-// YOUTUBE SANS BRANDING
+// YOUTUBE SANS BRANDING + LOGO THINKS SAFETY
 // ============================================================
 function YtNoLogo({ videoId, onWatched, alreadyWatched }: any) {
   const timer   = useRef<any>(null)
@@ -528,8 +531,23 @@ function YtNoLogo({ videoId, onWatched, alreadyWatched }: any) {
 
   const src = `https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1&iv_load_policy=3&showinfo=0&color=white&fs=1`
 
+  // Logo Thinks Safety SVG inline
+  const Logo = () => (
+    <div className="flex items-center gap-1.5">
+      <div className="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0"
+        style={{ background: 'var(--orange)' }}>
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="white">
+          <path d="M12 2L3 7v10l9 5 9-5V7L12 2zm0 2.5L19 8.5v7L12 19.5 5 15.5v-7L12 4.5z"/>
+        </svg>
+      </div>
+      <span style={{ color: 'white', fontSize: '11px', fontWeight: 700, letterSpacing: '0.05em', fontFamily: 'var(--font-rajdhani, sans-serif)' }}>
+        THINKS <span style={{ color: 'var(--orange)' }}>SAFETY</span>
+      </span>
+    </div>
+  )
+
   return (
-    <div className="relative bg-black w-full" style={{ aspectRatio: '16/9' }}>
+    <div className="relative bg-black w-full" style={{ aspectRatio: '16/9', maxHeight: '420px' }}>
       <iframe
         src={src}
         title="Leçon vidéo"
@@ -541,10 +559,14 @@ function YtNoLogo({ videoId, onWatched, alreadyWatched }: any) {
           timer.current = setTimeout(() => { watched.current = true; onWatched() }, 10000)
         }}
       />
-      {/* Masquer logo YouTube bas droite */}
-      <div style={{ position: 'absolute', bottom: 0, right: 0, width: '240px', height: '48px', background: '#000', zIndex: 10, pointerEvents: 'none' }} />
-      {/* Masquer "Plus de vidéos" haut droite */}
-      <div style={{ position: 'absolute', top: 0, right: 0, width: '240px', height: '48px', background: '#000', zIndex: 10, pointerEvents: 'none' }} />
+      {/* Overlay bas droite — remplace logo YouTube */}
+      <div style={{ position: 'absolute', bottom: 0, right: 0, width: '220px', height: '44px', background: 'rgba(0,0,0,0.92)', zIndex: 10, pointerEvents: 'none', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingRight: '12px' }}>
+        <Logo />
+      </div>
+      {/* Overlay haut droite — remplace "Plus de vidéos" */}
+      <div style={{ position: 'absolute', top: 0, right: 0, width: '220px', height: '44px', background: 'rgba(0,0,0,0.85)', zIndex: 10, pointerEvents: 'none', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingRight: '12px' }}>
+        <Logo />
+      </div>
       {alreadyWatched && (
         <div className="absolute top-3 left-3 badge badge-safe text-xs z-20">
           <CheckCircle size={11} className="mr-1" />Déjà vue
