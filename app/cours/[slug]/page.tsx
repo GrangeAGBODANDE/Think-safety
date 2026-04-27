@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useRouter, useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import {
-  ChevronLeft, CheckCircle, Play, FileText, HelpCircle,
+  ChevronLeft, CheckCircle, Check, Play, FileText, HelpCircle,
   Lock, Menu, X, Award, Clock, ChevronDown, AlertTriangle
 } from 'lucide-react'
 
@@ -853,18 +853,4 @@ function QuizQuestion({ question: q, index, answer, onAnswer, disabled }: any) {
       )}
     </div>
   )
-}
-
-function Check({ size, className }: { size: number, className?: string }) {
-  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"
-    strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <polyline points="20 6 9 17 4 12" />
-  </svg>
-}
-
-function X({ size }: { size: number }) {
-  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"
-    strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-  </svg>
 }
