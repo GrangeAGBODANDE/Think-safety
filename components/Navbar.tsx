@@ -1,297 +1,230 @@
 'use client'
-import { useState, useEffect, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useRouter, usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import CartButton from '@/components/CartButton'
 import ThemeToggle from '@/components/ThemeToggle'
 import LanguageSelector from '@/components/LanguageSelector'
-import { useLang } from '@/contexts/LanguageContext'
 import {
-  Shield, Bell, Menu, X, LogIn, LogOut,
-  User, Settings, LayoutDashboard,
-  ShoppingBag, AlertTriangle, Home, Search, ChevronDown, BookOpen
+  Search, Bell, ShoppingCart, Menu, X,
+  User, LogOut, Settings, Shield
 } from 'lucide-react'
 
+const NAV_LINKS = [
+  { href: '/',            label: 'Accueil' },
+  { href: '/secteurs',    label: 'Formations' },
+  { href: '/marketplace', label: 'Marketplace' },
+  { href: '/alertes',     label: 'Alertes' },
+  { href: '/abonnements', label: 'Abonnements' },
+]
+
 export default function Navbar() {
-  const router = useRouter()
   const pathname = usePathname()
-  const { t } = useLang()
-  const [user, setUser] = useState<any>(null)
-  const [profile, setProfile] = useState<any>(null)
-  const [menuOpen, setMenuOpen] = useState(false)
-  const [scrolled, setScrolled] = useState(false)
-  const [userMenuOpen, setUserMenuOpen] = useState(false)
-  const userMenuRef = useRef<HTMLDivElement>(null)
+  const router   = useRouter()
+  const [user,        setUser]        = useState<any>(null)
+  const [profile,     setProfile]     = useState<any>(null)
+  const [menuOpen,    setMenuOpen]    = useState(false)
+  const [userMenu,    setUserMenu]    = useState(false)
+  const [searchOpen,  setSearchOpen]  = useState(false)
+  const [searchQ,     setSearchQ]     = useState('')
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user)
-      if (data.user) fetchProfile(data.user.id)
-    })
-    const { data: listener } = supabase.auth.onAuthStateChange((_, session) => {
-      setUser(session?.user ?? null)
-      if (session?.user) fetchProfile(session.user.id)
-      else setProfile(null)
-    })
-    return () => listener.subscription.unsubscribe()
-  }, [])
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20)
-    window.addEventListener('scroll', onScroll)
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
-
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
-        setUserMenuOpen(false)
+    supabase.auth.getUser().then(({ data: { user: u } }) => {
+      setUser(u)
+      if (u) {
+        supabase.from('profiles').select('*').eq('id', u.id).single()
+          .then(({ data: p }) => setProfile(p))
       }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
+    })
   }, [])
 
-  async function fetchProfile(userId: string) {
-    const { data } = await supabase.from('profiles').select('*').eq('id', userId).single()
-    if (data) setProfile(data)
-  }
-
-  async function handleLogout() {
+  async function signOut() {
     await supabase.auth.signOut()
-    setUserMenuOpen(false)
-    setMenuOpen(false)
+    setUser(null); setProfile(null); setUserMenu(false)
     router.push('/')
   }
 
-  const navLinks = [
-    { href: '/',             label: t('nav.home'),          icon: Home },
-    { href: '/secteurs',     label: t('nav.sectors'),       icon: BookOpen },
-    { href: '/marketplace',  label: t('nav.marketplace'),   icon: ShoppingBag },
-    { href: '/alertes',      label: t('nav.alerts'),        icon: AlertTriangle },
-    { href: '/abonnements',  label: t('nav.subscriptions'), icon: Shield },
-  ]
+  function handleSearch(e: React.FormEvent) {
+    e.preventDefault()
+    if (searchQ.trim()) {
+      router.push(`/recherche?q=${encodeURIComponent(searchQ.trim())}`)
+      setSearchOpen(false)
+      setSearchQ('')
+    }
+  }
 
-  const isActive = (href: string) => pathname === href
+  const isAdmin = profile?.role === 'admin' || profile?.role === 'superadmin' || profile?.role === 'moderateur'
 
   return (
-    <>
-      <nav
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'border-b' : ''}`}
-        style={scrolled
-          ? { background: 'var(--bg-card)', borderColor: 'var(--border)', backdropFilter: 'blur(12px)', boxShadow: 'var(--shadow)' }
-          : { background: 'transparent' }
-        }
-      >
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-center justify-between h-16 gap-3">
+    <header className="fixed top-0 left-0 right-0 z-50 border-b"
+      style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
 
-            {/* Logo */}
-            <Link href="/" className="flex items-center gap-2 flex-shrink-0">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--orange)' }}>
-                <Shield size={18} className="text-white" fill="white" />
-              </div>
-              <div className="hidden sm:block font-display text-base font-bold leading-none" style={{ color: 'var(--text-primary)' }}>
-                THINKS <span style={{ color: 'var(--orange)' }}>SAFETY</span>
-              </div>
-            </Link>
+      {/* Barre principale */}
+      <div className="max-w-7xl mx-auto px-4 h-16 flex items-center gap-4">
 
-            {/* Nav desktop */}
-            <div className="hidden md:flex items-center gap-0.5 flex-1 justify-center">
-              {navLinks.map((link) => (
-                <Link key={link.href} href={link.href}
-                  className="px-3 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap"
-                  style={isActive(link.href)
-                    ? { color: 'var(--orange)', background: 'rgba(212,80,15,0.1)' }
-                    : { color: 'var(--text-secondary)' }
-                  }
-                  onMouseEnter={e => { if (!isActive(link.href)) { e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.background = 'var(--navy-700)' } }}
-                  onMouseLeave={e => { if (!isActive(link.href)) { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.background = 'transparent' } }}
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </div>
-
-            {/* Actions droite */}
-            <div className="flex items-center gap-1.5 flex-shrink-0">
-              <Link href="/recherche"
-                className="hidden md:flex items-center justify-center w-9 h-9 rounded-lg transition-all"
-                style={{ color: 'var(--text-secondary)' }}
-                onMouseEnter={e => e.currentTarget.style.background = 'var(--navy-700)'}
-                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                <Search size={18} />
-              </Link>
-
-              <Link href="/alertes"
-                className="relative flex items-center justify-center w-9 h-9 rounded-lg transition-all"
-                style={{ color: 'var(--text-secondary)' }}
-                onMouseEnter={e => e.currentTarget.style.background = 'var(--navy-700)'}
-                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                <Bell size={18} />
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
-              </Link>
-
-              <CartButton />
-              <LanguageSelector />
-              <ThemeToggle />
-
-              {user ? (
-                <div className="relative" ref={userMenuRef}>
-                  <button type="button" onClick={() => setUserMenuOpen(p => !p)}
-                    className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 transition-all border"
-                    style={{ background: 'var(--bg-input)', borderColor: 'var(--border)' }}>
-                    <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: 'rgba(212,80,15,0.2)' }}>
-                      <User size={12} style={{ color: 'var(--orange)' }} />
-                    </div>
-                    <span className="text-sm hidden sm:block max-w-[80px] truncate" style={{ color: 'var(--text-primary)' }}>
-                      {profile?.prenom || '...'}
-                    </span>
-                    <ChevronDown size={12} style={{ color: 'var(--text-secondary)' }}
-                      className={`hidden sm:block transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
-                  </button>
-
-                  {userMenuOpen && (
-                    <div className="absolute right-0 top-full mt-2 w-52 rounded-xl shadow-2xl overflow-hidden z-[100] border"
-                      style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
-                      <div className="p-3 border-b" style={{ borderColor: 'var(--border)' }}>
-                        <div className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>{profile?.prenom} {profile?.nom}</div>
-                        <div className="text-xs truncate" style={{ color: 'var(--text-secondary)' }}>{user.email}</div>
-                        <span className={`badge text-[10px] mt-1.5 inline-block ${
-                          profile?.role === 'superadmin' ? 'badge-danger' :
-                          profile?.role === 'admin' ? 'badge-orange' :
-                          profile?.role === 'moderateur' ? 'badge-info' : 'badge-safe'
-                        }`}>{profile?.role || 'user'}</span>
-                      </div>
-                      <div className="p-1.5">
-                        <Link href="/dashboard" onClick={() => setUserMenuOpen(false)}
-                          className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all"
-                          style={{ color: 'var(--text-secondary)' }}
-                          onMouseEnter={e => e.currentTarget.style.background = 'var(--navy-700)'}
-                          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                          <LayoutDashboard size={15} />{t('nav.myspace')}
-                        </Link>
-                        {profile?.is_seller && (
-                          <Link href="/mes-commandes" onClick={() => setUserMenuOpen(false)}
-                            className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all"
-                            style={{ color: 'var(--text-secondary)' }}
-                            onMouseEnter={e => e.currentTarget.style.background = 'var(--navy-700)'}
-                            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                            <ShoppingBag size={15} />{t('nav.orders')}
-                          </Link>
-                        )}
-                        {(profile?.role === 'admin' || profile?.role === 'superadmin' || profile?.role === 'moderateur') && (
-                          <Link href="/admin" onClick={() => setUserMenuOpen(false)}
-                            className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all hover:bg-orange-500/10"
-                            style={{ color: 'var(--orange)' }}>
-                            <Settings size={15} />{t('nav.admin')}
-                          </Link>
-                        )}
-                      </div>
-                      <div className="p-1.5 border-t" style={{ borderColor: 'var(--border)' }}>
-                        <button onClick={handleLogout}
-                          className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-red-400 hover:bg-red-500/10 transition-all w-full">
-                          <LogOut size={15} />{t('nav.logout')}
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <Link href="/auth" className="btn-primary text-xs py-2 px-3 whitespace-nowrap">
-                  <LogIn size={14} />
-                  <span className="hidden sm:inline">{t('nav.login')}</span>
-                </Link>
-              )}
-
-              <button
-                className="md:hidden flex items-center justify-center w-9 h-9 rounded-lg transition-all"
-                style={{ color: 'var(--text-secondary)' }}
-                onClick={() => setMenuOpen(!menuOpen)}>
-                {menuOpen ? <X size={20} /> : <Menu size={20} />}
-              </button>
-            </div>
+        {/* Logo */}
+        <Link href="/" className="flex items-center gap-2 flex-shrink-0 hover:no-underline">
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center"
+            style={{ background: 'var(--orange)' }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+              <path d="M12 2L3 7v10l9 5 9-5V7L12 2zm0 2.5L19 8.5v7L12 19.5 5 15.5v-7L12 4.5z"/>
+            </svg>
           </div>
+          <span className="font-bold text-base hidden sm:block" style={{ color: 'var(--text-primary)' }}>
+            THINKS <span style={{ color: 'var(--orange)' }}>SAFETY</span>
+          </span>
+        </Link>
+
+        {/* Navigation desktop */}
+        <nav className="hidden md:flex items-center gap-1 flex-1 ml-4">
+          {NAV_LINKS.map(link => (
+            <Link key={link.href} href={link.href}
+              className="px-3 py-2 rounded-lg text-sm font-medium transition-all hover:no-underline"
+              style={pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href))
+                ? { color: 'var(--orange)', background: 'rgba(212,80,15,0.08)' }
+                : { color: 'var(--text-secondary)' }
+              }
+              onMouseEnter={e => { if (!(pathname === link.href)) e.currentTarget.style.background = 'var(--navy-700)' }}
+              onMouseLeave={e => { if (!(pathname === link.href)) e.currentTarget.style.background = 'transparent' }}>
+              {link.label}
+            </Link>
+          ))}
+        </nav>
+
+        {/* Actions droite */}
+        <div className="flex items-center gap-1 ml-auto">
+
+          {/* Recherche */}
+          {searchOpen ? (
+            <form onSubmit={handleSearch} className="flex items-center gap-2">
+              <input
+                autoFocus
+                type="text"
+                value={searchQ}
+                onChange={e => setSearchQ(e.target.value)}
+                placeholder="Rechercher une formation..."
+                className="input-field py-1.5 px-3 text-sm w-48 sm:w-64"
+              />
+              <button type="button" onClick={() => setSearchOpen(false)}
+                className="p-2 rounded-lg" style={{ color: 'var(--text-secondary)' }}>
+                <X size={16} />
+              </button>
+            </form>
+          ) : (
+            <button onClick={() => setSearchOpen(true)}
+              className="p-2 rounded-lg transition-all"
+              style={{ color: 'var(--text-secondary)' }}
+              onMouseEnter={e => e.currentTarget.style.background = 'var(--navy-700)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+              <Search size={18} />
+            </button>
+          )}
+
+          <Link href="/alertes"
+            className="p-2 rounded-lg transition-all relative hover:no-underline"
+            style={{ color: 'var(--text-secondary)' }}
+            onMouseEnter={e => e.currentTarget.style.background = 'var(--navy-700)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+            <Bell size={18} />
+          </Link>
+
+          <Link href="/panier"
+            className="p-2 rounded-lg transition-all hover:no-underline"
+            style={{ color: 'var(--text-secondary)' }}
+            onMouseEnter={e => e.currentTarget.style.background = 'var(--navy-700)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+            <ShoppingCart size={18} />
+          </Link>
+
+          {/* Langue + Thème */}
+          <div className="hidden sm:flex items-center gap-1">
+            <LanguageSelector />
+            <ThemeToggle />
+          </div>
+
+          {/* Utilisateur */}
+          {user ? (
+            <div className="relative">
+              <button
+                onClick={() => setUserMenu(!userMenu)}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-medium transition-all"
+                style={{ background: 'var(--navy-700)', color: 'var(--text-primary)' }}>
+                <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white"
+                  style={{ background: 'var(--orange)' }}>
+                  {profile?.prenom?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase()}
+                </div>
+                <span className="hidden sm:block">{profile?.prenom || 'Mon compte'}</span>
+              </button>
+
+              {userMenu && (
+                <div className="absolute right-0 top-full mt-2 w-48 rounded-xl shadow-xl py-2 z-50 border"
+                  style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
+                  {isAdmin && (
+                    <Link href="/admin/dashboard"
+                      className="flex items-center gap-2 px-4 py-2 text-sm hover:no-underline transition-all"
+                      style={{ color: 'var(--orange)' }}
+                      onClick={() => setUserMenu(false)}
+                      onMouseEnter={e => e.currentTarget.style.background = 'var(--navy-700)'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                      <Shield size={14} />Administration
+                    </Link>
+                  )}
+                  <Link href="/profil"
+                    className="flex items-center gap-2 px-4 py-2 text-sm hover:no-underline transition-all"
+                    style={{ color: 'var(--text-secondary)' }}
+                    onClick={() => setUserMenu(false)}
+                    onMouseEnter={e => e.currentTarget.style.background = 'var(--navy-700)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                    <User size={14} />Mon profil
+                  </Link>
+                  <div className="border-t my-1" style={{ borderColor: 'var(--border)' }} />
+                  <button onClick={signOut}
+                    className="flex items-center gap-2 px-4 py-2 text-sm w-full text-left transition-all text-red-400"
+                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,71,87,0.08)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                    <LogOut size={14} />Déconnexion
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <Link href="/auth"
+              className="px-4 py-1.5 rounded-xl text-sm font-medium transition-all hover:no-underline"
+              style={{ background: 'var(--orange)', color: 'white' }}
+              onMouseEnter={e => e.currentTarget.style.opacity = '0.9'}
+              onMouseLeave={e => e.currentTarget.style.opacity = '1'}>
+              Se connecter
+            </Link>
+          )}
+
+          {/* Hamburger mobile */}
+          <button onClick={() => setMenuOpen(!menuOpen)}
+            className="md:hidden p-2 rounded-lg"
+            style={{ color: 'var(--text-secondary)' }}>
+            {menuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
         </div>
-      </nav>
+      </div>
 
       {/* Menu mobile */}
       {menuOpen && (
-        <div className="fixed inset-0 z-40 md:hidden">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setMenuOpen(false)} />
-          <div className="absolute top-0 right-0 h-full w-[280px] border-l flex flex-col shadow-2xl"
-            style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
-
-            <div className="flex items-center justify-between p-4 border-b" style={{ borderColor: 'var(--border)' }}>
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--orange)' }}>
-                  <Shield size={16} className="text-white" fill="white" />
-                </div>
-                <span className="font-display font-bold" style={{ color: 'var(--text-primary)' }}>Thinks Safety</span>
-              </div>
-              <button onClick={() => setMenuOpen(false)} style={{ color: 'var(--text-secondary)' }}><X size={20} /></button>
-            </div>
-
-            <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-              {navLinks.map((link) => {
-                const Icon = link.icon
-                return (
-                  <Link key={link.href} href={link.href} onClick={() => setMenuOpen(false)}
-                    className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-medium"
-                    style={isActive(link.href)
-                      ? { color: 'var(--orange)', background: 'rgba(212,80,15,0.1)', border: '1px solid rgba(212,80,15,0.2)' }
-                      : { color: 'var(--text-secondary)', border: '1px solid transparent' }
-                    }>
-                    <Icon size={18} />{link.label}
-                  </Link>
-                )
-              })}
-              <Link href="/panier" onClick={() => setMenuOpen(false)}
-                className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium"
-                style={{ color: 'var(--text-secondary)', border: '1px solid transparent' }}>
-                <ShoppingBag size={18} />{t('nav.cart')}
-              </Link>
-            </nav>
-
-            <div className="px-4 py-3 border-t flex items-center gap-3" style={{ borderColor: 'var(--border)' }}>
-              <LanguageSelector />
-              <ThemeToggle />
-            </div>
-
-            <div className="p-3 border-t" style={{ borderColor: 'var(--border)' }}>
-              {user ? (
-                <div className="space-y-1">
-                  <div className="px-4 py-3 rounded-xl" style={{ background: 'var(--bg-secondary)' }}>
-                    <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{profile?.prenom} {profile?.nom}</p>
-                    <p className="text-xs truncate" style={{ color: 'var(--text-secondary)' }}>{user.email}</p>
-                  </div>
-                  <Link href="/dashboard" onClick={() => setMenuOpen(false)}
-                    className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm"
-                    style={{ color: 'var(--text-secondary)' }}>
-                    <LayoutDashboard size={16} />{t('nav.myspace')}
-                  </Link>
-                  {(profile?.role === 'admin' || profile?.role === 'superadmin') && (
-                    <Link href="/admin" onClick={() => setMenuOpen(false)}
-                      className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm"
-                      style={{ color: 'var(--orange)' }}>
-                      <Settings size={16} />{t('nav.admin')}
-                    </Link>
-                  )}
-                  <button onClick={handleLogout}
-                    className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-red-400 hover:bg-red-500/10 w-full">
-                    <LogOut size={16} />{t('nav.logout')}
-                  </button>
-                </div>
-              ) : (
-                <Link href="/auth" onClick={() => setMenuOpen(false)} className="btn-primary w-full justify-center py-3">
-                  <LogIn size={16} />{t('nav.login')}
-                </Link>
-              )}
-            </div>
+        <div className="md:hidden border-t px-4 py-3 space-y-1" style={{ borderColor: 'var(--border)', background: 'var(--bg-card)' }}>
+          {NAV_LINKS.map(link => (
+            <Link key={link.href} href={link.href}
+              onClick={() => setMenuOpen(false)}
+              className="block px-3 py-2.5 rounded-lg text-sm font-medium hover:no-underline"
+              style={pathname === link.href
+                ? { color: 'var(--orange)', background: 'rgba(212,80,15,0.08)' }
+                : { color: 'var(--text-secondary)' }}>
+              {link.label}
+            </Link>
+          ))}
+          <div className="flex items-center gap-2 pt-2">
+            <LanguageSelector />
+            <ThemeToggle />
           </div>
         </div>
       )}
-    </>
+    </header>
   )
 }
