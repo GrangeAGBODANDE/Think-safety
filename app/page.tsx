@@ -1,251 +1,323 @@
 'use client'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { supabase } from '@/lib/supabase'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
-import { supabase } from '@/lib/supabase'
-import { Shield, BookOpen, AlertTriangle, ShoppingBag, Search, ArrowRight, Star } from 'lucide-react'
+import { ChevronRight, Play, FileText, AlertTriangle } from 'lucide-react'
 
-const SECTEURS_HOME = [
-  { slug: 'construction-btp', nom: 'Construction BTP', icon: '🏗️' },
-  { slug: 'sante-medical', nom: 'Sante & Medical', icon: '🏥' },
-  { slug: 'industrie-manufacturiere', nom: 'Industrie', icon: '⚙️' },
-  { slug: 'transport-logistique', nom: 'Transport & Logistique', icon: '🚛' },
-  { slug: 'agriculture', nom: 'Agriculture', icon: '🌾' },
-  { slug: 'bureaux-tertiaire', nom: 'Bureaux & Tertiaire', icon: '🏢' },
-  { slug: 'energie', nom: 'Energie', icon: '⚡' },
-  { slug: 'chimie-pharmacie', nom: 'Chimie & Pharmacie', icon: '🧪' },
-  { slug: 'mines-carrieres', nom: 'Mines & Carrieres', icon: '⛏️' },
-  { slug: 'restauration-hotellerie', nom: 'Restauration', icon: '👨‍🍳' },
-  { slug: 'maritime-peche', nom: 'Maritime & Peche', icon: '⚓' },
-  { slug: 'securite-defense', nom: 'Securite & Defense', icon: '🛡️' },
+// Secteurs avec images de fond
+const SECTEURS = [
+  { slug: 'construction-btp',        nom: 'Construction & BTP',         emoji: '🏗️', color: '#E67E22' },
+  { slug: 'sante-medical',           nom: 'Santé & Médical',             emoji: '🏥', color: '#E74C3C' },
+  { slug: 'industrie-manufacturiere',nom: 'Industrie Manufacturière',    emoji: '🏭', color: '#3498DB' },
+  { slug: 'transport-logistique',    nom: 'Transport & Logistique',      emoji: '🚛', color: '#2ECC71' },
+  { slug: 'agriculture',             nom: 'Agriculture',                 emoji: '🌾', color: '#27AE60' },
+  { slug: 'mines-carrieres',         nom: 'Mines & Carrières',           emoji: '⛏️', color: '#8E44AD' },
+  { slug: 'petrole-gaz',             nom: 'Pétrole & Gaz',               emoji: '⚡', color: '#F39C12' },
+  { slug: 'bureaux-services',        nom: 'Bureaux & Services',          emoji: '🏢', color: '#1ABC9C' },
+  { slug: 'education-formation',     nom: 'Éducation & Formation',       emoji: '📚', color: '#2980B9' },
 ]
 
-const NIVEAU_COLOR: Record<string, string> = {
-  info: '#2196F3', attention: '#FFD700', danger: '#FF4757', urgence: '#FF4757'
-}
-
 export default function HomePage() {
-  const [search, setSearch] = useState('')
-  const [alertes, setAlertes] = useState<any[]>([])
-  const [annonces, setAnnonces] = useState<any[]>([])
+  const [featured,    setFeatured]    = useState<any[]>([])
+  const [videos,      setVideos]      = useState<any[]>([])
+  const [alertes,     setAlertes]     = useState<any[]>([])
+  const [heroContent, setHeroContent] = useState<any>(null)
+  const [loading,     setLoading]     = useState(true)
 
   useEffect(() => {
-    supabase.from('alertes').select('*').eq('status', 'active')
-      .order('created_at', { ascending: false }).limit(3)
-      .then(({ data }) => setAlertes(data || []))
+    async function load() {
+      // Contenus en vedette (3 premiers cours publiés)
+      const { data: feat } = await supabase
+        .from('courses')
+        .select('id, slug, titre, description_courte, image_couverture, secteur_slug')
+        .eq('statut', 'published')
+        .limit(4)
 
-    supabase.from('marketplace_annonces')
-      .select('id,titre,categorie,prix,prix_type,localisation')
-      .eq('status', 'approved').limit(6)
-      .then(({ data }) => setAnnonces(data || []))
+      const list = feat || []
+      setHeroContent(list[0] || null)
+      setFeatured(list.slice(1, 4))
+
+      // Vidéos récentes
+      const { data: vids } = await supabase
+        .from('course_lessons')
+        .select('id, titre, youtube_url, duree_minutes, course_id, courses(slug, titre, secteur_slug)')
+        .eq('type', 'video')
+        .not('youtube_url', 'is', null)
+        .limit(6)
+      setVideos(vids || [])
+
+      // Alertes récentes
+      const { data: al } = await supabase
+        .from('alertes')
+        .select('*')
+        .eq('statut', 'active')
+        .order('created_at', { ascending: false })
+        .limit(1)
+      setAlertes(al || [])
+
+      setLoading(false)
+    }
+    load()
   }, [])
 
+  function getYtThumb(url: string) {
+    const m = (url || '').match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/)
+    return m ? `https://img.youtube.com/vi/${m[1]}/mqdefault.jpg` : null
+  }
+
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen" style={{ background: 'var(--bg-main)' }}>
       <Navbar />
 
-      {/* HERO */}
-      <section className="hero-bg grid-overlay min-h-screen flex items-center pt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 w-full">
-          <div className="max-w-3xl">
-            <div className="section-eyebrow mb-4 animate-fade-up">
-              Plateforme 100% Gratuite • 18 Secteurs
-            </div>
-            <h1 className="section-title mb-6 animate-fade-up animate-fade-up-delay-1" style={{ color: 'var(--text-primary)' }}>
-              La Securite, ca s&apos;apprend.{' '}
-              <span className="gradient-text">Ensemble.</span>
-            </h1>
-            <p className="text-lg mb-8 max-w-xl leading-relaxed animate-fade-up animate-fade-up-delay-2" style={{ color: 'var(--text-secondary)' }}>
-              Formez-vous gratuitement aux regles de securite dans{' '}
-              <strong style={{ color: 'var(--text-primary)' }}>tous les secteurs d&apos;activite</strong>.
-              Videos, documents, quiz, alertes locales et marketplace.
-            </p>
+      <div className="pt-16">
 
-            <div className="flex gap-3 mb-8 animate-fade-up animate-fade-up-delay-3 flex-wrap">
-              <div className="relative flex-1 min-w-64">
-                <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-secondary)' }} />
-                <input
-                  type="text"
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter' && search) window.location.href = `/recherche?q=${search}` }}
-                  placeholder="Rechercher un secteur, un risque..."
-                  className="input-field pl-11 py-4 text-base"
-                  style={{ borderRadius: '12px' }}
-                />
+        {/* ===================================================
+            BANNIÈRE HERO — Contenu en vedette
+        =================================================== */}
+        {heroContent && (
+          <div className="relative overflow-hidden" style={{ minHeight: '380px' }}>
+            {/* Image de fond */}
+            {heroContent.image_couverture && (
+              <div className="absolute inset-0">
+                <img src={heroContent.image_couverture} alt=""
+                  className="w-full h-full object-cover"
+                  style={{ filter: 'brightness(0.35)' }} />
               </div>
-              <Link href={search ? `/recherche?q=${search}` : '/recherche'} className="btn-primary py-4 px-8">
-                <Search size={18} />RECHERCHER
-              </Link>
-            </div>
+            )}
+            {!heroContent.image_couverture && (
+              <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, var(--navy-800), var(--navy-900))' }} />
+            )}
+            {/* Dégradé gauche */}
+            <div className="absolute inset-0" style={{ background: 'linear-gradient(to right, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 60%, transparent 100%)' }} />
 
-            <div className="flex flex-wrap gap-4 animate-fade-up animate-fade-up-delay-4">
-              <Link href="/auth" className="btn-primary py-3.5 px-8">
-                <Shield size={18} />COMMENCER GRATUITEMENT
-              </Link>
-              <Link href="/secteurs" className="btn-secondary py-3.5 px-8">
-                <BookOpen size={18} />EXPLORER LES SECTEURS
-              </Link>
-            </div>
-
-            <div className="flex items-center gap-3 mt-8">
-              <div className="flex">
-                {[1,2,3,4,5].map(i => (
-                  <Star key={i} size={16} className="fill-yellow-400 text-yellow-400" style={{ marginRight: '-2px' }} />
-                ))}
+            {/* Contenu */}
+            <div className="relative max-w-6xl mx-auto px-4 py-16 flex flex-col justify-center" style={{ minHeight: '380px' }}>
+              <div className="max-w-lg">
+                <span className="inline-block text-xs font-bold uppercase tracking-widest mb-3 px-3 py-1 rounded"
+                  style={{ background: 'var(--orange)', color: 'white' }}>
+                  À la une
+                </span>
+                <h1 className="text-3xl md:text-4xl font-bold leading-tight mb-4 font-display"
+                  style={{ color: 'white' }}>
+                  {heroContent.titre}
+                </h1>
+                <p className="text-base mb-6 leading-relaxed" style={{ color: 'rgba(255,255,255,0.8)' }}>
+                  {heroContent.description_courte}
+                </p>
+                <Link href={`/cours/${heroContent.slug}`}
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm transition-all hover:opacity-90"
+                  style={{ background: 'var(--orange)', color: 'white' }}>
+                  Découvrir <ChevronRight size={16} />
+                </Link>
               </div>
-              <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>4.9/5</span>
-              <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>| 12 400+ professionnels formes</span>
             </div>
           </div>
-        </div>
-      </section>
+        )}
 
-      {/* STATS */}
-      <section className="py-16 border-y" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
-        <div className="max-w-5xl mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {[
-              { value: '18+', label: 'Secteurs couverts' },
-              { value: '450+', label: 'Contenus disponibles' },
-              { value: '12 400+', label: 'Utilisateurs actifs' },
-              { value: '98%', label: 'Satisfaction' },
-            ].map((s, i) => (
-              <div key={i} className="text-center">
-                <div className="stat-number">{s.value}</div>
-                <div className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>{s.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* SECTEURS */}
-      <section className="py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <div className="section-eyebrow mb-3">Formations par secteur</div>
-            <h2 className="section-title mb-4" style={{ color: 'var(--text-primary)' }}>
-              Votre secteur, <span className="gradient-text">vos risques</span>
-            </h2>
-            <p className="text-base max-w-xl mx-auto" style={{ color: 'var(--text-secondary)' }}>
-              Des contenus specialises pour chaque metier — videos, documents, FAQ et alertes adaptees a votre domaine.
-            </p>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-10">
-            {SECTEURS_HOME.map(s => (
-              <Link key={s.slug} href={`/secteurs/${s.slug}`}
-                className="card sector-card p-5 text-center group hover:no-underline">
-                <div className="text-4xl mb-3 sector-icon">{s.icon}</div>
-                <div className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{s.nom}</div>
-                <div className="flex items-center justify-center gap-1 mt-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
-                  Commencer <ArrowRight size={11} />
-                </div>
-              </Link>
-            ))}
-          </div>
-          <div className="text-center">
-            <Link href="/secteurs" className="btn-secondary py-3 px-8">Voir tous les secteurs</Link>
-          </div>
-        </div>
-      </section>
-
-      {/* ALERTES */}
-      {alertes.length > 0 && (
-        <section className="py-20 border-y" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
-          <div className="max-w-4xl mx-auto px-4">
-            <div className="flex items-start justify-between mb-10">
-              <div>
-                <div className="section-eyebrow mb-3">Alertes en temps reel</div>
-                <h2 className="section-title" style={{ color: 'var(--text-primary)' }}>
-                  Restez informe, <span className="gradient-text">restez en securite</span>
-                </h2>
-              </div>
-              <Link href="/alertes" className="btn-secondary py-2.5 px-6 text-sm flex-shrink-0 mt-4">
-                Toutes les alertes →
+        {/* Alerte sécurité si active */}
+        {alertes.length > 0 && (
+          <div className="py-3 px-4" style={{ background: 'rgba(255,71,87,0.08)', borderBottom: '1px solid rgba(255,71,87,0.2)' }}>
+            <div className="max-w-6xl mx-auto flex items-center gap-3">
+              <AlertTriangle size={16} style={{ color: 'var(--danger)', flexShrink: 0 }} />
+              <p className="text-sm font-medium" style={{ color: 'var(--danger)' }}>
+                {alertes[0].titre}
+              </p>
+              <Link href="/alertes" className="ml-auto text-xs underline flex-shrink-0" style={{ color: 'var(--danger)' }}>
+                Voir l&apos;alerte
               </Link>
             </div>
-            <div className="space-y-4">
-              {alertes.map(a => (
-                <div key={a.id} className="card p-5" style={{ borderLeft: `4px solid ${NIVEAU_COLOR[a.niveau] || '#2196F3'}` }}>
-                  <div className="flex items-start gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <span className="badge text-[10px]" style={{
-                          background: `${NIVEAU_COLOR[a.niveau] || '#2196F3'}20`,
-                          color: NIVEAU_COLOR[a.niveau] || '#2196F3',
-                          border: `1px solid ${NIVEAU_COLOR[a.niveau] || '#2196F3'}40`
-                        }}>{a.niveau?.toUpperCase()}</span>
-                        {a.secteur_slug && <span className="badge badge-orange text-[10px]">{a.secteur_slug}</span>}
-                      </div>
-                      <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>{a.titre}</h3>
-                      <p className="text-sm mt-1 line-clamp-2" style={{ color: 'var(--text-secondary)' }}>{a.contenu}</p>
-                    </div>
-                    <AlertTriangle size={20} className="flex-shrink-0" style={{ color: NIVEAU_COLOR[a.niveau] }} />
+          </div>
+        )}
+
+        {/* ===================================================
+            NOTRE SÉLECTION — 3 articles en avant
+        =================================================== */}
+        {featured.length > 0 && (
+          <div className="max-w-6xl mx-auto px-4 py-10">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-xl font-bold font-display" style={{ color: 'var(--text-primary)' }}>
+                Notre sélection
+              </h2>
+              <Link href="/secteurs" className="text-sm flex items-center gap-1 hover:underline"
+                style={{ color: 'var(--orange)' }}>
+                Voir plus <ChevronRight size={14} />
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+              {featured.map(c => (
+                <Link key={c.id} href={`/cours/${c.slug}`}
+                  className="group hover:no-underline">
+                  <div className="overflow-hidden rounded-xl mb-3" style={{ aspectRatio: '16/9', background: 'var(--bg-secondary)' }}>
+                    {c.image_couverture
+                      ? <img src={c.image_couverture} alt={c.titre}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                      : <div className="w-full h-full flex items-center justify-center text-4xl">📚</div>}
                   </div>
-                </div>
+                  <p className="text-xs font-mono uppercase mb-1" style={{ color: 'var(--orange)' }}>
+                    {c.secteur_slug?.replace(/-/g, ' ')}
+                  </p>
+                  <h3 className="font-semibold text-sm leading-snug group-hover:text-orange-500 transition-colors"
+                    style={{ color: 'var(--text-primary)' }}>
+                    {c.titre}
+                  </h3>
+                  <p className="text-xs mt-1 line-clamp-2" style={{ color: 'var(--text-secondary)' }}>
+                    {c.description_courte}
+                  </p>
+                </Link>
               ))}
             </div>
           </div>
-        </section>
-      )}
+        )}
 
-      {/* MARKETPLACE */}
-      {annonces.length > 0 && (
-        <section className="py-20">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12">
-              <div className="section-eyebrow mb-3">Marketplace securite</div>
-              <h2 className="section-title mb-4" style={{ color: 'var(--text-primary)' }}>
-                Equipements & <span className="gradient-text">Services HSE</span>
+        {/* ===================================================
+            GRILLE DES SECTEURS — style JW.org 3x3
+        =================================================== */}
+        <div className="max-w-6xl mx-auto px-4 py-8 border-t" style={{ borderColor: 'var(--border)' }}>
+          <h2 className="text-xl font-bold font-display mb-5" style={{ color: 'var(--text-primary)' }}>
+            Choisissez votre secteur
+          </h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {SECTEURS.map(s => (
+              <Link key={s.slug} href={`/secteurs/${s.slug}`}
+                className="relative overflow-hidden rounded-xl group hover:no-underline"
+                style={{ aspectRatio: '3/2', minHeight: '100px' }}>
+                {/* Fond coloré */}
+                <div className="absolute inset-0 transition-all duration-300 group-hover:scale-105"
+                  style={{ background: `linear-gradient(135deg, ${s.color}cc, ${s.color}66)` }} />
+                {/* Overlay sombre */}
+                <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.35)' }} />
+                {/* Contenu */}
+                <div className="absolute inset-0 flex flex-col items-start justify-end p-3">
+                  <span className="text-2xl mb-1">{s.emoji}</span>
+                  <span className="text-white text-xs font-semibold leading-tight">
+                    {s.nom}
+                  </span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        {/* ===================================================
+            VIDÉOS RÉCENTES
+        =================================================== */}
+        {videos.length > 0 && (
+          <div className="max-w-6xl mx-auto px-4 py-8 border-t" style={{ borderColor: 'var(--border)' }}>
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-xl font-bold font-display" style={{ color: 'var(--text-primary)' }}>
+                Vidéos
               </h2>
-              <p className="text-base max-w-lg mx-auto" style={{ color: 'var(--text-secondary)' }}>
-                Trouvez des equipements certifies, formations et services HSE aupres de fournisseurs verifies.
-              </p>
+              <Link href="/secteurs" className="text-sm flex items-center gap-1 hover:underline"
+                style={{ color: 'var(--orange)' }}>
+                Tout voir <ChevronRight size={14} />
+              </Link>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-10">
-              {annonces.map(a => (
-                <div key={a.id} className="card overflow-hidden group">
-                  <div className="h-28 flex items-center justify-center" style={{ background: 'var(--bg-secondary)' }}>
-                    <span className="text-5xl">
-                      {a.categorie === 'EPI' ? '🦺' : a.categorie === 'Formation' ? '🎓' : '🛡️'}
-                    </span>
+
+            {/* Vidéo principale en grand */}
+            {videos[0] && (() => {
+              const v = videos[0]
+              const thumb = getYtThumb(v.youtube_url)
+              const courseSlug = (v.courses as any)?.slug
+              return (
+                <Link href={`/cours/${courseSlug}?lecon=${v.id}`}
+                  className="flex flex-col md:flex-row gap-5 mb-6 group hover:no-underline">
+                  <div className="relative overflow-hidden rounded-xl md:w-2/3 flex-shrink-0"
+                    style={{ aspectRatio: '16/9', background: 'var(--bg-secondary)' }}>
+                    {thumb && <img src={thumb} alt={v.titre} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-14 h-14 rounded-full flex items-center justify-center"
+                        style={{ background: 'rgba(212,80,15,0.9)' }}>
+                        <Play size={24} className="text-white" fill="white" style={{ marginLeft: '3px' }} />
+                      </div>
+                    </div>
+                    {v.duree_minutes > 0 && (
+                      <div className="absolute bottom-2 right-2 px-2 py-0.5 rounded text-xs font-medium text-white"
+                        style={{ background: 'rgba(0,0,0,0.75)' }}>
+                        {v.duree_minutes}min
+                      </div>
+                    )}
                   </div>
-                  <div className="p-4">
-                    <span className="badge badge-orange text-[10px] mb-2 inline-block">{a.categorie}</span>
-                    <h3 className="text-sm font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>{a.titre}</h3>
-                    <p className="text-sm font-bold" style={{ color: 'var(--orange)' }}>
-                      {a.prix > 0 ? `${a.prix.toLocaleString()} FCFA` : 'Sur devis'}
+                  <div className="flex flex-col justify-center">
+                    <p className="text-xs font-mono uppercase mb-1" style={{ color: 'var(--orange)' }}>
+                      {(v.courses as any)?.secteur_slug?.replace(/-/g, ' ')}
+                    </p>
+                    <h3 className="text-lg font-bold mb-2 group-hover:text-orange-500 transition-colors"
+                      style={{ color: 'var(--text-primary)' }}>
+                      {v.titre}
+                    </h3>
+                    <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                      {(v.courses as any)?.titre}
                     </p>
                   </div>
-                </div>
-              ))}
-            </div>
-            <div className="text-center">
-              <Link href="/marketplace" className="btn-primary py-3 px-8">
-                <ShoppingBag size={18} />EXPLORER LE MARKETPLACE
-              </Link>
+                </Link>
+              )
+            })()}
+
+            {/* Autres vidéos en grille */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+              {videos.slice(1, 5).map(v => {
+                const thumb = getYtThumb(v.youtube_url)
+                const courseSlug = (v.courses as any)?.slug
+                return (
+                  <Link key={v.id} href={`/cours/${courseSlug}?lecon=${v.id}`}
+                    className="group hover:no-underline">
+                    <div className="relative overflow-hidden rounded-xl mb-2"
+                      style={{ aspectRatio: '16/9', background: 'var(--bg-secondary)' }}>
+                      {thumb && <img src={thumb} alt={v.titre} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />}
+                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="w-10 h-10 rounded-full flex items-center justify-center"
+                          style={{ background: 'rgba(212,80,15,0.9)' }}>
+                          <Play size={16} className="text-white" fill="white" style={{ marginLeft: '2px' }} />
+                        </div>
+                      </div>
+                      {v.duree_minutes > 0 && (
+                        <div className="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 rounded text-[10px] font-medium text-white"
+                          style={{ background: 'rgba(0,0,0,0.75)' }}>
+                          {v.duree_minutes}min
+                        </div>
+                      )}
+                    </div>
+                    <h4 className="text-xs font-medium line-clamp-2 group-hover:text-orange-500 transition-colors"
+                      style={{ color: 'var(--text-primary)' }}>
+                      {v.titre}
+                    </h4>
+                    <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+                      {(v.courses as any)?.titre}
+                    </p>
+                  </Link>
+                )
+              })}
             </div>
           </div>
-        </section>
-      )}
+        )}
 
-      {/* CTA FINAL */}
-      <section className="py-24" style={{ background: 'var(--bg-card)' }}>
-        <div className="max-w-2xl mx-auto text-center px-4">
-          <div className="section-eyebrow mb-4">Thinks Safety</div>
-          <h2 className="section-title mb-4" style={{ color: 'var(--text-primary)' }}>
-            Pret a commencer ?
-          </h2>
-          <p className="text-lg mb-8" style={{ color: 'var(--text-secondary)' }}>
-            Rejoignez des milliers de professionnels qui se forment gratuitement.
-          </p>
-          <Link href="/auth" className="btn-primary py-4 px-10 text-lg">
-            <Shield size={20} />CREER UN COMPTE GRATUIT
-          </Link>
+        {/* ===================================================
+            CTA FINAL — 3 actions comme JW.org
+        =================================================== */}
+        <div className="border-t py-12 px-4" style={{ borderColor: 'var(--border)' }}>
+          <div className="max-w-4xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-8 text-center">
+            {[
+              { icon: '🎓', titre: 'Accédez aux formations', desc: 'Des contenus gratuits pour tous les secteurs d\'activité.', href: '/secteurs', cta: 'Voir les formations' },
+              { icon: '🚨', titre: 'Alertes sécurité', desc: 'Restez informé des dernières alertes et incidents.', href: '/alertes', cta: 'Voir les alertes' },
+              { icon: '🛒', titre: 'Marketplace', desc: 'Équipements EPI et matériel de sécurité certifiés.', href: '/marketplace', cta: 'Explorer' },
+            ].map((item, i) => (
+              <div key={i} className="flex flex-col items-center">
+                <div className="text-4xl mb-3">{item.icon}</div>
+                <h3 className="font-bold text-sm mb-2" style={{ color: 'var(--text-primary)' }}>{item.titre}</h3>
+                <p className="text-xs mb-4 max-w-48" style={{ color: 'var(--text-secondary)' }}>{item.desc}</p>
+                <Link href={item.href}
+                  className="text-sm font-medium hover:underline"
+                  style={{ color: 'var(--orange)' }}>
+                  {item.cta}
+                </Link>
+              </div>
+            ))}
+          </div>
         </div>
-      </section>
+
+      </div>
 
       <Footer />
     </div>
