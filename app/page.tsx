@@ -1,413 +1,666 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
-import { ArrowRight, Bell, AlertTriangle, BookOpen, Shield, Play, Clock, ChevronRight, Lock, Users, Zap, CheckCircle, Star, TrendingUp, Award, Globe } from 'lucide-react'
+import { ArrowRight, Bell, AlertTriangle, BookOpen, Shield, Play, Clock, Users, Zap, CheckCircle, Star, Award, Globe, TrendingUp, Target, Heart, Eye, Lock } from 'lucide-react'
 
 const SECTEURS = [
-  {slug:'construction-btp',        nom:'Construction & BTP',  img:'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=600&q=80', emoji:'🏗️', count:48},
-  {slug:'sante-medical',           nom:'Sante & Medical',      img:'https://images.unsplash.com/photo-1584515933487-779824d29309?w=600&q=80', emoji:'🏥', count:36},
-  {slug:'industrie-manufacturiere',nom:'Industrie',            img:'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=600&q=80', emoji:'🏭', count:52},
-  {slug:'transport-logistique',    nom:'Transport',            img:'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&q=80', emoji:'🚛', count:29},
-  {slug:'agriculture',             nom:'Agriculture',          img:'https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=600&q=80', emoji:'🌾', count:31},
-  {slug:'mines-carrieres',         nom:'Mines & Carrieres',    img:'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=600&q=80', emoji:'⛏️', count:24},
-  {slug:'petrole-gaz',             nom:'Petrole & Gaz',        img:'https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=600&q=80', emoji:'⚡', count:27},
-  {slug:'bureaux-services',        nom:'Bureaux & Services',   img:'https://images.unsplash.com/photo-1497366216548-37526070297c?w=600&q=80', emoji:'🏢', count:41},
-  {slug:'education-formation',     nom:'Education',            img:'https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=600&q=80', emoji:'📚', count:33},
+  {slug:'construction-btp',        nom:'Construction & BTP',  img:'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=600&q=80', emoji:'🏗️',count:48},
+  {slug:'sante-medical',           nom:'Sante & Medical',      img:'https://images.unsplash.com/photo-1584515933487-779824d29309?w=600&q=80', emoji:'🏥',count:36},
+  {slug:'industrie-manufacturiere',nom:'Industrie',            img:'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=600&q=80', emoji:'🏭',count:52},
+  {slug:'transport-logistique',    nom:'Transport',            img:'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&q=80', emoji:'🚛',count:29},
+  {slug:'agriculture',             nom:'Agriculture',          img:'https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=600&q=80', emoji:'🌾',count:31},
+  {slug:'mines-carrieres',         nom:'Mines & Carrieres',    img:'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=600&q=80', emoji:'⛏️',count:24},
+  {slug:'petrole-gaz',             nom:'Petrole & Gaz',        img:'https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=600&q=80', emoji:'⚡',count:27},
+  {slug:'bureaux-services',        nom:'Bureaux & Services',   img:'https://images.unsplash.com/photo-1497366216548-37526070297c?w=600&q=80', emoji:'🏢',count:41},
+  {slug:'education-formation',     nom:'Education',            img:'https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=600&q=80', emoji:'📚',count:33},
+]
+
+const STATS = [
+  {val:500,suffix:'+',label:'Formations disponibles',icon:BookOpen,color:'#f97316'},
+  {val:18, suffix:'', label:'Secteurs couverts',     icon:Globe,   color:'#3b82f6'},
+  {val:12, suffix:'k+',label:'Professionnels formes', icon:Users,   color:'#22c55e'},
+  {val:100,suffix:'%', label:'Acces gratuit',         icon:Award,   color:'#a855f7'},
 ]
 
 const TEMOIGNAGES = [
-  {nom:'Jean-Michel D.',titre:'Chef de chantier BTP',texte:'Grace a Think Safety, nos equipes sont mieux preparees. Notre taux d incidents a baisse de 40% en 6 mois.', stars:5},
-  {nom:'Marie K.',titre:'Responsable HSE',texte:'Les alertes en temps reel nous ont permis d eviter un incident majeur. Je recommande a toutes les entreprises.', stars:5},
-  {nom:'Kofi A.',titre:'Directeur Operations',texte:'Les formations sont precises, adaptees a notre secteur et facilement accessibles. Un outil indispensable.', stars:5},
+  {nom:'Jean-Michel D.',titre:'Chef de chantier BTP',texte:'Grace a Think Safety, nos equipes sont mieux preparees. Notre taux d incidents a baisse de 40% en 6 mois.',stars:5,img:'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80'},
+  {nom:'Marie K.',titre:'Responsable HSE Industrie',texte:'Les alertes en temps reel nous ont permis d eviter un incident majeur. Je recommande a toutes les entreprises.',stars:5,img:'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&q=80'},
+  {nom:'Kofi A.',titre:'Directeur Operations Transport',texte:'Les formations sont precises, adaptees a notre secteur et facilement accessibles depuis n importe quel appareil.',stars:5,img:'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&q=80'},
 ]
 
-export default function HomePage() {
-  const [courses, setCourses] = useState<any[]>([])
-  const [videos, setVideos] = useState<any[]>([])
-  const [alerte, setAlerte] = useState<any>(null)
-  const [loaded, setLoaded] = useState(false)
+function useReveal() {
+  const ref = useRef<HTMLDivElement>(null)
+  const [vis, setVis] = useState(false)
+  useEffect(()=>{
+    const obs = new IntersectionObserver(([e])=>{ if(e.isIntersecting)setVis(true) },{threshold:0.1})
+    if(ref.current)obs.observe(ref.current)
+    return ()=>obs.disconnect()
+  },[])
+  return {ref,vis}
+}
 
-  useEffect(() => {
-    async function load() {
-      const {data:c} = await supabase.from('courses').select('id,slug,titre,description_courte,image_couverture,secteur_slug').eq('statut','published').order('created_at',{ascending:false}).limit(6)
+function Reveal({children,delay=0,className='',style={}}:any) {
+  const {ref,vis} = useReveal()
+  return (
+    <div ref={ref} className={className} style={{...style,opacity:vis?1:0,transform:vis?'translateY(0)':'translateY(32px)',transition:'opacity 0.7s ease '+delay+'ms, transform 0.7s ease '+delay+'ms'}}>
+      {children}
+    </div>
+  )
+}
+
+function CountUp({target,suffix='',duration=2000}:{target:number,suffix:string,duration?:number}) {
+  const [val,setVal] = useState(0)
+  const {ref,vis} = useReveal()
+  useEffect(()=>{
+    if(!vis)return
+    const step = target/60; let cur=0
+    const t = setInterval(()=>{ cur=Math.min(cur+step,target); setVal(Math.floor(cur)); if(cur>=target)clearInterval(t) },duration/60)
+    return ()=>clearInterval(t)
+  },[vis,target])
+  return <span ref={ref}>{val}{suffix}</span>
+}
+
+export default function HomePage() {
+  const [courses,setCourses] = useState<any[]>([])
+  const [videos,setVideos] = useState<any[]>([])
+  const [alerte,setAlerte] = useState<any>(null)
+  const [loaded,setLoaded] = useState(false)
+  const [heroImg,setHeroImg] = useState(0)
+
+  const heroImages = [
+    'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=1600&q=80',
+    'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=1600&q=80',
+    'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=1600&q=80',
+  ]
+
+  useEffect(()=>{ const t=setInterval(()=>setHeroImg(i=>(i+1)%heroImages.length),6000); return()=>clearInterval(t) },[])
+
+  useEffect(()=>{
+    async function load(){
+      const {data:c}=await supabase.from('courses').select('id,slug,titre,description_courte,image_couverture,secteur_slug').eq('statut','published').order('created_at',{ascending:false}).limit(6)
       setCourses(c||[])
-      const {data:v} = await supabase.from('course_lessons').select('id,titre,youtube_url,duree_minutes,course_id,courses(slug,titre,secteur_slug)').eq('type','video').not('youtube_url','is',null).limit(3)
+      const {data:v}=await supabase.from('course_lessons').select('id,titre,youtube_url,duree_minutes,course_id,courses(slug,titre,secteur_slug)').eq('type','video').not('youtube_url','is',null).limit(3)
       setVideos(v||[])
-      const {data:a} = await supabase.from('alertes').select('*').eq('statut','active').limit(1)
-      if (a?.length) setAlerte(a[0])
-      setTimeout(()=>setLoaded(true),150)
+      const {data:a}=await supabase.from('alertes').select('*').eq('statut','active').limit(1)
+      if(a?.length)setAlerte(a[0])
+      setTimeout(()=>setLoaded(true),100)
     }
     load()
   },[])
 
   function ytId(url:string){const m=(url||'').match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);return m?m[1]:null}
-  const show=(d=0,y=20)=>({opacity:loaded?1:0,transform:loaded?'translateY(0)':'translateY('+y+'px)',transition:'opacity 0.7s ease '+d+'ms, transform 0.7s ease '+d+'ms'})
 
   return (
     <div className="min-h-screen" style={{background:'var(--bg-main)'}}>
+      <style>{`
+        @keyframes fadeUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+        @keyframes pulse2{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.7;transform:scale(1.05)}}
+        @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        .hover-lift{transition:transform 0.3s ease,box-shadow 0.3s ease}
+        .hover-lift:hover{transform:translateY(-6px);box-shadow:0 20px 40px rgba(0,0,0,0.15)}
+        .hover-scale{transition:transform 0.3s ease}
+        .hover-scale:hover{transform:scale(1.03)}
+        .card-hover{transition:all 0.3s ease}
+        .card-hover:hover{transform:translateY(-4px)}
+      `}</style>
+
       <Navbar/>
 
       {alerte&&(
-        <Link href="/alertes" className="flex items-center gap-3 px-6 py-2.5 hover:no-underline hover:opacity-90 transition-opacity" style={{background:'#c0392b',paddingTop:'66px'}}>
-          <AlertTriangle size={14} className="text-white animate-pulse flex-shrink-0"/>
+        <Link href="/alertes" className="flex items-center gap-3 px-6 py-2.5 hover:no-underline hover:opacity-90 transition-opacity" style={{background:'#c0392b',paddingTop:'68px'}}>
+          <AlertTriangle size={14} className="text-white flex-shrink-0" style={{animation:'pulse2 1.5s ease-in-out infinite'}}/>
           <span className="text-white text-sm font-bold flex-1 truncate">Alerte securite : {alerte.titre}</span>
-          <span className="text-white/70 text-xs flex-shrink-0">Voir les details →</span>
+          <span className="text-white text-xs underline flex-shrink-0">Voir les details →</span>
         </Link>
       )}
 
-      {/* ═══════════════════════════════════════════════
-          HERO — Split layout avec image
-      ═══════════════════════════════════════════════ */}
-      <section className="relative overflow-hidden" style={{background:'linear-gradient(135deg,#0a1628 0%,#0d1f3c 100%)',paddingTop:'64px',minHeight:'100vh',display:'flex',alignItems:'center'}}>
-        {/* Grille deco */}
-        <div className="absolute inset-0 opacity-[0.04]" style={{backgroundImage:'linear-gradient(rgba(255,255,255,1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,1) 1px,transparent 1px)',backgroundSize:'56px 56px'}}/>
-        {/* Glow */}
-        <div className="absolute top-0 right-0 w-96 h-96 rounded-full pointer-events-none" style={{background:'radial-gradient(circle,rgba(212,80,15,0.15),transparent 70%)',filter:'blur(60px)'}}/>
-        <div className="absolute bottom-0 left-0 w-80 h-80 rounded-full pointer-events-none" style={{background:'radial-gradient(circle,rgba(59,130,246,0.08),transparent 70%)',filter:'blur(60px)'}}/>
+      {/* ═══════ HERO ═══════ */}
+      <section style={{minHeight:'100vh',paddingTop:'64px',position:'relative',overflow:'hidden',background:'#05101f',display:'flex',alignItems:'center'}}>
+        {heroImages.map((img,i)=>(
+          <div key={i} style={{position:'absolute',inset:0,opacity:i===heroImg?1:0,transition:'opacity 1.5s ease'}}>
+            <img src={img} alt="" style={{width:'100%',height:'100%',objectFit:'cover',filter:'brightness(0.22) saturate(0.6)'}}/>
+          </div>
+        ))}
+        <div style={{position:'absolute',inset:0,background:'linear-gradient(115deg,rgba(5,16,31,0.97) 0%,rgba(5,16,31,0.75) 50%,rgba(5,16,31,0.2) 100%)'}}/>
+        <div style={{position:'absolute',top:'-20%',right:'-10%',width:'600px',height:'600px',borderRadius:'50%',background:'radial-gradient(circle,rgba(212,80,15,0.12),transparent 65%)',filter:'blur(60px)',animation:'float 10s ease-in-out infinite'}}/>
+        <div style={{position:'absolute',bottom:'-10%',left:'-5%',width:'400px',height:'400px',borderRadius:'50%',background:'radial-gradient(circle,rgba(59,130,246,0.08),transparent 65%)',filter:'blur(60px)'}}/>
+        <div style={{position:'absolute',inset:0,opacity:0.03,backgroundImage:'linear-gradient(rgba(255,255,255,1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,1) 1px,transparent 1px)',backgroundSize:'56px 56px'}}/>
 
-        <div className="relative max-w-7xl mx-auto px-6 w-full py-20">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
-            {/* Texte */}
+        <div style={{position:'relative',maxWidth:'1280px',margin:'0 auto',padding:'80px 24px',width:'100%'}}>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'64px',alignItems:'center'}}>
             <div>
-              <div style={show(0)}>
-                <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-black uppercase tracking-wider text-white mb-7" style={{background:'rgba(212,80,15,0.25)',border:'1px solid rgba(212,80,15,0.4)'}}>
-                  <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse"/>
-                  Plateforme de formation professionnelle
+              <div style={{opacity:loaded?1:0,transform:loaded?'translateY(0)':'translateY(24px)',transition:'all 0.7s ease'}}>
+                <span style={{display:'inline-flex',alignItems:'center',gap:'8px',padding:'8px 18px',borderRadius:'99px',fontSize:'11px',fontWeight:900,textTransform:'uppercase',letterSpacing:'0.08em',color:'white',background:'rgba(212,80,15,0.25)',border:'1px solid rgba(212,80,15,0.4)',marginBottom:'28px'}}>
+                  <span style={{width:'6px',height:'6px',borderRadius:'50%',background:'var(--orange)',animation:'pulse2 1.5s ease-in-out infinite'}}/>
+                  Plateforme mondiale de formation securite
                 </span>
               </div>
-              <h1 style={{...show(80),color:'white',fontSize:'clamp(2.8rem,5.5vw,4.5rem)',fontWeight:900,lineHeight:1.04,letterSpacing:'-0.03em',marginBottom:'24px'}}>
+              <h1 style={{opacity:loaded?1:0,transform:loaded?'translateY(0)':'translateY(24px)',transition:'all 0.7s ease 80ms',color:'white',fontSize:'clamp(2.6rem,5.5vw,4.2rem)',fontWeight:900,lineHeight:1.05,letterSpacing:'-0.03em',marginBottom:'24px'}}>
                 Formez vos equipes.<br/>
-                <span style={{background:'linear-gradient(90deg,#f97316,var(--orange))',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text'}}>Protegez vos salaries.</span>
+                <span style={{background:'linear-gradient(90deg,#fb923c,var(--orange))',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text'}}>Protegez chaque</span><br/>
+                professionnel.
               </h1>
-              <p style={{...show(160),color:'rgba(255,255,255,0.65)',fontSize:'1.1rem',lineHeight:1.8,marginBottom:'36px',maxWidth:'480px'}}>
-                La premiere plateforme africaine de formation en securite au travail. Gratuit, certifie, accessible a tous les secteurs.
+              <p style={{opacity:loaded?1:0,transform:loaded?'translateY(0)':'translateY(24px)',transition:'all 0.7s ease 160ms',color:'rgba(255,255,255,0.65)',fontSize:'1.1rem',lineHeight:1.8,marginBottom:'36px',maxWidth:'460px'}}>
+                La premiere plateforme de formation en securite au travail. Gratuit, certifie et accessible partout dans le monde. 500+ formations dans 9 secteurs professionnels.
               </p>
-              <div className="flex flex-wrap gap-3 mb-12" style={show(240)}>
-                <Link href="/secteurs" className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl font-black text-sm text-white hover:no-underline transition-all hover:scale-105" style={{background:'var(--orange)',boxShadow:'0 8px 32px rgba(212,80,15,0.4)'}}>
+              <div style={{opacity:loaded?1:0,transform:loaded?'translateY(0)':'translateY(24px)',transition:'all 0.7s ease 240ms',display:'flex',flexWrap:'wrap',gap:'12px',marginBottom:'48px'}}>
+                <Link href="/secteurs" style={{display:'inline-flex',alignItems:'center',gap:'8px',padding:'14px 32px',borderRadius:'16px',fontWeight:900,fontSize:'14px',color:'white',textDecoration:'none',background:'var(--orange)',boxShadow:'0 8px 32px rgba(212,80,15,0.45)',transition:'transform 0.2s, box-shadow 0.2s'}}
+                  onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.transform='scale(1.05)';(e.currentTarget as HTMLElement).style.boxShadow='0 12px 40px rgba(212,80,15,0.55)'}}
+                  onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.transform='scale(1)';(e.currentTarget as HTMLElement).style.boxShadow='0 8px 32px rgba(212,80,15,0.45)'}}>
                   Explorer les formations <ArrowRight size={16}/>
                 </Link>
-                <Link href="/marketplace" className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl font-bold text-sm hover:no-underline transition-all" style={{background:'rgba(255,255,255,0.08)',color:'rgba(255,255,255,0.9)',border:'1px solid rgba(255,255,255,0.15)'}}>
-                  <Shield size={15}/>Marketplace EPI
+                <Link href="/alertes" style={{display:'inline-flex',alignItems:'center',gap:'8px',padding:'14px 28px',borderRadius:'16px',fontWeight:700,fontSize:'14px',color:'rgba(255,255,255,0.88)',textDecoration:'none',background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.15)',transition:'all 0.2s'}}
+                  onMouseEnter={e=>(e.currentTarget as HTMLElement).style.background='rgba(255,255,255,0.14)'}
+                  onMouseLeave={e=>(e.currentTarget as HTMLElement).style.background='rgba(255,255,255,0.08)'}>
+                  <Bell size={15}/>Alertes securite
                 </Link>
               </div>
-              <div className="flex items-center gap-6 flex-wrap" style={show(320)}>
-                {[{v:'500+',l:'Formations',icon:BookOpen},{v:'18',l:'Secteurs',icon:Globe},{v:'12k+',l:'Apprenants',icon:Users},{v:'100%',l:'Gratuit',icon:Award}].map((s,i)=>{const Icon=s.icon;return(
-                  <div key={i} className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{background:'rgba(212,80,15,0.2)'}}><Icon size={15} style={{color:'var(--orange)'}}/></div>
-                    <div><div className="text-white font-black text-lg leading-none">{s.v}</div><div className="text-xs" style={{color:'rgba(255,255,255,0.45)'}}>{s.l}</div></div>
+              <div style={{opacity:loaded?1:0,transition:'opacity 0.7s ease 320ms',display:'flex',alignItems:'center',gap:'24px',flexWrap:'wrap'}}>
+                {STATS.map((s,i)=>{const Icon=s.icon;return(
+                  <div key={i} style={{display:'flex',alignItems:'center',gap:'10px'}}>
+                    <div style={{width:'36px',height:'36px',borderRadius:'12px',display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(255,255,255,0.08)',flexShrink:0}}>
+                      <Icon size={16} style={{color:s.color}}/>
+                    </div>
+                    <div>
+                      <div style={{color:'white',fontWeight:900,fontSize:'1.2rem',lineHeight:1}}><CountUp target={s.val} suffix={s.suffix}/></div>
+                      <div style={{color:'rgba(255,255,255,0.45)',fontSize:'10px',marginTop:'2px'}}>{s.label}</div>
+                    </div>
                   </div>
                 )})}
               </div>
             </div>
 
-            {/* Visuel droit — Mosaic de secteurs */}
-            <div className="hidden lg:block" style={show(200)}>
-              <div className="grid grid-cols-2 gap-3">
+            {/* Mosaique d images */}
+            <div className="hidden lg:block" style={{opacity:loaded?1:0,transform:loaded?'translateX(0)':'translateX(30px)',transition:'all 0.9s ease 300ms'}}>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'12px'}}>
+                <div style={{gridColumn:'1/-1',height:'220px',borderRadius:'24px',overflow:'hidden',position:'relative'}}>
+                  <img src="https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=800&q=80" alt="Construction" style={{width:'100%',height:'100%',objectFit:'cover',transition:'transform 0.7s ease'}}
+                    onMouseEnter={e=>(e.currentTarget as HTMLElement).style.transform='scale(1.05)'}
+                    onMouseLeave={e=>(e.currentTarget as HTMLElement).style.transform='scale(1)'}/>
+                  <div style={{position:'absolute',inset:0,background:'linear-gradient(to top,rgba(0,0,0,0.55) 0%,transparent 60%)'}}/>
+                  <div style={{position:'absolute',bottom:'14px',left:'16px'}}>
+                    <p style={{color:'white',fontSize:'11px',fontWeight:900,textTransform:'uppercase',letterSpacing:'0.08em'}}>Construction & BTP</p>
+                    <p style={{color:'rgba(255,255,255,0.7)',fontSize:'10px',marginTop:'2px'}}>48 formations disponibles</p>
+                  </div>
+                </div>
                 {[
-                  {img:'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=500&q=80',label:'Construction & BTP',span:'col-span-2'},
-                  {img:'https://images.unsplash.com/photo-1584515933487-779824d29309?w=500&q=80',label:'Sante & Medical'},
-                  {img:'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=500&q=80',label:'Industrie'},
+                  {img:'https://images.unsplash.com/photo-1584515933487-779824d29309?w=400&q=80',label:'Sante & Medical',count:36},
+                  {img:'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=400&q=80',label:'Industrie',count:52},
                 ].map((item,i)=>(
-                  <div key={i} className={'relative overflow-hidden rounded-3xl '+item.span} style={{height:i===0?'240px':'140px'}}>
-                    <img src={item.img} alt={item.label} className="w-full h-full object-cover"/>
-                    <div className="absolute inset-0" style={{background:'linear-gradient(to top,rgba(0,0,0,0.7) 0%,rgba(0,0,0,0.1) 60%,transparent 100%)'}}/>
-                    <div className="absolute bottom-3 left-4">
-                      <p className="text-white text-xs font-black uppercase tracking-wider">{item.label}</p>
+                  <div key={i} style={{height:'150px',borderRadius:'18px',overflow:'hidden',position:'relative'}}>
+                    <img src={item.img} alt={item.label} style={{width:'100%',height:'100%',objectFit:'cover',transition:'transform 0.7s ease'}}
+                      onMouseEnter={e=>(e.currentTarget as HTMLElement).style.transform='scale(1.06)'}
+                      onMouseLeave={e=>(e.currentTarget as HTMLElement).style.transform='scale(1)'}/>
+                    <div style={{position:'absolute',inset:0,background:'linear-gradient(to top,rgba(0,0,0,0.6) 0%,transparent 60%)'}}/>
+                    <div style={{position:'absolute',bottom:'10px',left:'12px'}}>
+                      <p style={{color:'white',fontSize:'10px',fontWeight:900}}>{item.label}</p>
+                      <p style={{color:'rgba(255,255,255,0.65)',fontSize:'9px'}}>{item.count} formations</p>
                     </div>
                   </div>
                 ))}
               </div>
-              {/* Badge flottant */}
-              <div className="mt-3 flex items-center gap-3 p-4 rounded-2xl" style={{background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.1)'}}>
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{background:'rgba(74,222,128,0.2)'}}>
+              <div style={{marginTop:'12px',padding:'16px',borderRadius:'18px',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.08)',display:'flex',alignItems:'center',gap:'14px'}}>
+                <div style={{width:'40px',height:'40px',borderRadius:'12px',background:'rgba(74,222,128,0.2)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
                   <CheckCircle size={20} style={{color:'#4ade80'}}/>
                 </div>
                 <div>
-                  <p className="text-white text-sm font-black">Formations certifiees</p>
-                  <p className="text-xs" style={{color:'rgba(255,255,255,0.5)'}}>Reconnues en Afrique de l Ouest</p>
+                  <p style={{color:'white',fontSize:'13px',fontWeight:900,margin:0}}>Formations certifiees</p>
+                  <p style={{color:'rgba(255,255,255,0.55)',fontSize:'11px',margin:'2px 0 0 0'}}>Validees par des experts en securite internationale</p>
                 </div>
-                <div className="ml-auto flex -space-x-2">
-                  {['#f97316','#60a5fa','#4ade80','#c084fc'].map((c,i)=><div key={i} className="w-7 h-7 rounded-full border-2 border-gray-800" style={{background:c}}/>)}
+                <div style={{marginLeft:'auto',display:'flex',gap:'-6px'}}>
+                  {['#f97316','#60a5fa','#4ade80','#c084fc','#facc15'].map((c,i)=>(
+                    <div key={i} style={{width:'28px',height:'28px',borderRadius:'50%',background:c,border:'2px solid rgba(5,16,31,0.8)',marginLeft:i>0?'-6px':'0',position:'relative',zIndex:5-i}}/>
+                  ))}
                 </div>
+              </div>
+              {/* Indicateurs */}
+              <div style={{display:'flex',gap:'8px',marginTop:'10px',justifyContent:'center'}}>
+                {heroImages.map((_,i)=>(
+                  <button key={i} onClick={()=>setHeroImg(i)} style={{height:'3px',width:i===heroImg?'28px':'8px',borderRadius:'99px',background:i===heroImg?'var(--orange)':'rgba(255,255,255,0.25)',transition:'all 0.4s ease',border:'none',cursor:'pointer'}}/>
+                ))}
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════
-          BANDE DE CONFIANCE
-      ═══════════════════════════════════════════════ */}
-      <section className="py-6 border-y" style={{borderColor:'var(--border)',background:'var(--bg-card)'}}>
-        <div className="max-w-6xl mx-auto px-4 flex items-center justify-center gap-8 flex-wrap">
+      {/* ═══════ BANDE CONFIANCE ═══════ */}
+      <section style={{padding:'16px 0',background:'var(--bg-card)',borderBottom:'1px solid var(--border)'}}>
+        <div style={{maxWidth:'1280px',margin:'0 auto',padding:'0 24px',display:'flex',alignItems:'center',justifyContent:'center',gap:'32px',flexWrap:'wrap'}}>
           {[
-            {icon:CheckCircle,label:'Formations certifiees',color:'#4ade80'},
+            {icon:CheckCircle,label:'Formations certifiees',color:'#22c55e'},
+            {icon:Globe,label:'Accessible dans le monde entier',color:'#3b82f6'},
             {icon:Shield,label:'Securite validee',color:'var(--orange)'},
-            {icon:Globe,label:'Disponible en Afrique',color:'#60a5fa'},
-            {icon:Users,label:'12 000+ apprenants',color:'#c084fc'},
-            {icon:Zap,label:'Alertes temps reel',color:'#facc15'},
+            {icon:Users,label:'12 000+ professionnels',color:'#a855f7'},
+            {icon:Zap,label:'Alertes en temps reel',color:'#facc15'},
+            {icon:Award,label:'100% gratuit',color:'#f97316'},
           ].map((s,i)=>{const Icon=s.icon;return(
-            <div key={i} className="flex items-center gap-2">
-              <Icon size={15} style={{color:s.color,flexShrink:0}}/>
-              <span className="text-sm font-semibold" style={{color:'var(--text-secondary)'}}>{s.label}</span>
+            <div key={i} style={{display:'flex',alignItems:'center',gap:'8px'}}>
+              <Icon size={14} style={{color:s.color,flexShrink:0}}/>
+              <span style={{fontSize:'12px',fontWeight:600,color:'var(--text-secondary)'}}>{s.label}</span>
             </div>
           )})}
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════
-          FEATURES — 3 avantages
-      ═══════════════════════════════════════════════ */}
-      <section className="py-20" style={{background:'var(--bg-main)'}}>
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="text-center mb-14">
-            <p className="text-xs font-black uppercase tracking-widest mb-2" style={{color:'var(--orange)'}}>Pourquoi Think Safety</p>
-            <h2 className="text-4xl font-black" style={{color:'var(--text-primary)'}}>La plateforme pensee pour l Afrique</h2>
-          </div>
-          <div className="grid sm:grid-cols-3 gap-8">
+      {/* ═══════ FEATURES ═══════ */}
+      <section style={{padding:'96px 0',background:'var(--bg-main)'}}>
+        <div style={{maxWidth:'1280px',margin:'0 auto',padding:'0 24px'}}>
+          <Reveal style={{textAlign:'center',marginBottom:'64px'}}>
+            <p style={{fontSize:'11px',fontWeight:900,textTransform:'uppercase',letterSpacing:'0.1em',color:'var(--orange)',marginBottom:'12px'}}>Pourquoi Think Safety</p>
+            <h2 style={{fontSize:'clamp(2rem,4vw,3rem)',fontWeight:900,color:'var(--text-primary)',margin:'0 0 16px 0',lineHeight:1.1}}>La securite, c est notre mission</h2>
+            <p style={{fontSize:'1.05rem',color:'var(--text-secondary)',maxWidth:'560px',margin:'0 auto',lineHeight:1.8}}>
+              Think Safety est la plateforme de reference pour la formation en securite au travail, accessible a tous les professionnels du monde entier.
+            </p>
+          </Reveal>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'28px'}}>
             {[
-              {icon:BookOpen,titre:'Formations gratuites',desc:'Acces illimite a 500+ formations certifiees dans tous les secteurs. Sans abonnement, sans carte bancaire.',color:'#f97316',gradient:'rgba(249,115,22,0.1)'},
-              {icon:Bell,    titre:'Alertes en temps reel',desc:'Systeme d alertes instantanees pour vous informer des risques et incidents dans votre secteur et region.',color:'#ef4444',gradient:'rgba(239,68,68,0.1)'},
-              {icon:Award,   titre:'Certifications reconnues',desc:'Nos formations sont validees par des experts en securite. Obtenez des certifications valorisees par les employeurs.',color:'#4ade80',gradient:'rgba(74,222,128,0.1)'},
+              {icon:BookOpen,titre:'500+ Formations gratuites',desc:'Un catalogue complet de modules de formation couvrant tous les aspects de la securite professionnelle, accessibles sans abonnement.',color:'#f97316',img:'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=400&q=80'},
+              {icon:Bell,    titre:'Alertes en temps reel',  desc:'Systeme de notifications instantanees pour informer vos equipes des risques emergents, incidents et nouvelles reglementations dans votre secteur.',color:'#ef4444',img:'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=400&q=80'},
+              {icon:Award,   titre:'Certifications reconnues',desc:'Obtenez des certifications valorisees par les employeurs du monde entier. Nos formations sont validees par des experts internationaux en securite.',color:'#22c55e',img:'https://images.unsplash.com/photo-1434030216411-0b793f4b6f6f?w=400&q=80'},
             ].map((f,i)=>{const Icon=f.icon;return(
-              <div key={i} className="relative p-8 rounded-3xl border transition-all hover:-translate-y-1 hover:shadow-xl" style={{background:'var(--bg-card)',borderColor:'var(--border)'}}>
-                <div className="absolute inset-x-0 top-0 h-1 rounded-t-3xl" style={{background:'linear-gradient(90deg,'+f.color+',transparent)'}}/>
-                <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-6" style={{background:f.gradient}}>
-                  <Icon size={26} style={{color:f.color}}/>
+              <Reveal key={i} delay={i*120} className="hover-lift" style={{borderRadius:'28px',overflow:'hidden',border:'1px solid var(--border)',background:'var(--bg-card)',cursor:'default'}}>
+                <div style={{height:'180px',overflow:'hidden',position:'relative'}}>
+                  <img src={f.img} alt={f.titre} style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+                  <div style={{position:'absolute',inset:0,background:'linear-gradient(to bottom,transparent 40%,rgba(0,0,0,0.5) 100%)'}}/>
+                  <div style={{position:'absolute',top:'16px',left:'16px',width:'44px',height:'44px',borderRadius:'14px',background:'white',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:'0 4px 16px rgba(0,0,0,0.15)'}}>
+                    <Icon size={22} style={{color:f.color}}/>
+                  </div>
                 </div>
-                <h3 className="text-xl font-black mb-3" style={{color:'var(--text-primary)'}}>{f.titre}</h3>
-                <p className="text-sm leading-relaxed" style={{color:'var(--text-secondary)',lineHeight:'1.8'}}>{f.desc}</p>
-              </div>
+                <div style={{padding:'24px'}}>
+                  <div style={{height:'3px',width:'48px',borderRadius:'99px',background:f.color,marginBottom:'16px'}}/>
+                  <h3 style={{fontSize:'1.1rem',fontWeight:900,color:'var(--text-primary)',margin:'0 0 10px 0'}}>{f.titre}</h3>
+                  <p style={{fontSize:'14px',color:'var(--text-secondary)',lineHeight:'1.75',margin:0}}>{f.desc}</p>
+                </div>
+              </Reveal>
             )})}
           </div>
         </div>
       </section>
 
-      {/* FORMATIONS EN VEDETTE */}
-      {courses.length>0&&(
-        <section className="py-20 border-t" style={{borderColor:'var(--border)',background:'var(--bg-secondary)'}}>
-          <div className="max-w-7xl mx-auto px-4">
-            <div className="flex items-end justify-between mb-12">
-              <div>
-                <p className="text-xs font-black uppercase tracking-widest mb-2" style={{color:'var(--orange)'}}>Catalogue</p>
-                <h2 className="text-4xl font-black" style={{color:'var(--text-primary)'}}>Formations en vedette</h2>
+      {/* ═══════ STATS COMPTEURS ═══════ */}
+      <section style={{padding:'72px 0',background:'linear-gradient(135deg,var(--orange) 0%,#c0390a 100%)',position:'relative',overflow:'hidden'}}>
+        <div style={{position:'absolute',inset:0,opacity:0.07,backgroundImage:'radial-gradient(circle,white 1.5px,transparent 1.5px)',backgroundSize:'28px 28px'}}/>
+        <div style={{position:'absolute',top:'-50%',right:'-10%',width:'500px',height:'500px',borderRadius:'50%',background:'radial-gradient(circle,rgba(255,255,255,0.15),transparent 65%)'}}/>
+        <div style={{maxWidth:'1200px',margin:'0 auto',padding:'0 24px'}}>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:'24px',textAlign:'center'}}>
+            {STATS.map((s,i)=>{const Icon=s.icon;return(
+              <Reveal key={i} delay={i*100}>
+                <div style={{padding:'28px 16px',borderRadius:'20px',background:'rgba(255,255,255,0.12)',border:'1px solid rgba(255,255,255,0.2)',backdropFilter:'blur(10px)'}}>
+                  <div style={{width:'52px',height:'52px',borderRadius:'16px',background:'rgba(255,255,255,0.2)',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 14px auto'}}>
+                    <Icon size={24} style={{color:'white'}}/>
+                  </div>
+                  <div style={{fontSize:'2.5rem',fontWeight:900,color:'white',lineHeight:1,marginBottom:'6px'}}>
+                    <CountUp target={s.val} suffix={s.suffix}/>
+                  </div>
+                  <div style={{fontSize:'13px',fontWeight:600,color:'rgba(255,255,255,0.85)'}}>{s.label}</div>
+                </div>
+              </Reveal>
+            )})}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════ NOTRE VISION ═══════ */}
+      <section style={{padding:'96px 0',background:'var(--bg-secondary)'}}>
+        <div style={{maxWidth:'1280px',margin:'0 auto',padding:'0 24px'}}>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'80px',alignItems:'center'}}>
+            <Reveal>
+              <div style={{position:'relative'}}>
+                <img src="https://images.unsplash.com/photo-1552664730-d307ca884978?w=700&q=80" alt="Vision" style={{width:'100%',borderRadius:'28px',objectFit:'cover',height:'480px'}}/>
+                <div style={{position:'absolute',bottom:'-20px',right:'-20px',padding:'20px 24px',borderRadius:'20px',background:'var(--orange)',boxShadow:'0 16px 48px rgba(212,80,15,0.35)',animation:'float 6s ease-in-out infinite'}}>
+                  <div style={{fontSize:'2rem',fontWeight:900,color:'white',lineHeight:1}}>40%</div>
+                  <div style={{fontSize:'12px',color:'rgba(255,255,255,0.9)',marginTop:'4px',fontWeight:600}}>Reduction des accidents</div>
+                  <div style={{fontSize:'10px',color:'rgba(255,255,255,0.7)'}}>chez nos utilisateurs</div>
+                </div>
+                <div style={{position:'absolute',top:'-16px',left:'-16px',padding:'14px 18px',borderRadius:'16px',background:'var(--bg-card)',border:'1px solid var(--border)',boxShadow:'0 8px 24px rgba(0,0,0,0.1)'}}>
+                  <div style={{display:'flex',alignItems:'center',gap:'10px'}}>
+                    <div style={{width:'36px',height:'36px',borderRadius:'12px',background:'rgba(74,222,128,0.15)',display:'flex',alignItems:'center',justifyContent:'center'}}><CheckCircle size={18} style={{color:'#4ade80'}}/></div>
+                    <div>
+                      <p style={{fontSize:'12px',fontWeight:900,color:'var(--text-primary)',margin:0}}>Certifie</p>
+                      <p style={{fontSize:'10px',color:'var(--text-secondary)',margin:'2px 0 0 0'}}>Experts internationaux</p>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <Link href="/secteurs" className="hidden sm:inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl text-sm font-bold hover:no-underline transition-all hover:scale-105" style={{background:'rgba(212,80,15,0.1)',color:'var(--orange)',border:'1px solid rgba(212,80,15,0.25)'}}>
-                Voir tout le catalogue <ArrowRight size={14}/>
+            </Reveal>
+            <Reveal delay={150}>
+              <p style={{fontSize:'11px',fontWeight:900,textTransform:'uppercase',letterSpacing:'0.1em',color:'var(--orange)',marginBottom:'16px'}}>Notre vision</p>
+              <h2 style={{fontSize:'clamp(2rem,4vw,3rem)',fontWeight:900,color:'var(--text-primary)',margin:'0 0 20px 0',lineHeight:1.1}}>
+                Un monde ou chaque travailleur rentre chez lui sain et sauf
+              </h2>
+              <p style={{fontSize:'1rem',color:'var(--text-secondary)',lineHeight:1.85,margin:'0 0 24px 0'}}>
+                Chaque annee, des millions de travailleurs sont victimes d accidents professionnels evitables. Chez Think Safety, nous croyons que la formation est le moyen le plus efficace de prevenir ces tragedies.
+              </p>
+              <p style={{fontSize:'1rem',color:'var(--text-secondary)',lineHeight:1.85,margin:'0 0 32px 0'}}>
+                Notre plateforme offre des formations gratuites, accessibles depuis n importe quel appareil, dans tous les secteurs professionnels. Nous travaillons avec des experts du monde entier pour garantir la qualite et la pertinence de chaque contenu.
+              </p>
+              <div style={{display:'flex',flexDirection:'column',gap:'14px',marginBottom:'36px'}}>
+                {['Formation gratuite et accessible universellement','Contenu valide par des experts certifies','Alertes et mises a jour en temps reel','Disponible dans plusieurs langues'].map((item,i)=>(
+                  <div key={i} style={{display:'flex',alignItems:'center',gap:'12px'}}>
+                    <div style={{width:'24px',height:'24px',borderRadius:'8px',background:'rgba(212,80,15,0.12)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}><CheckCircle size={14} style={{color:'var(--orange)'}}/></div>
+                    <span style={{fontSize:'14px',color:'var(--text-primary)',fontWeight:500}}>{item}</span>
+                  </div>
+                ))}
+              </div>
+              <Link href="/a-propos" style={{display:'inline-flex',alignItems:'center',gap:'8px',padding:'12px 24px',borderRadius:'14px',fontSize:'14px',fontWeight:700,color:'var(--orange)',textDecoration:'none',background:'rgba(212,80,15,0.1)',border:'1px solid rgba(212,80,15,0.25)',transition:'all 0.2s'}}
+                onMouseEnter={e=>Object.assign((e.currentTarget as HTMLElement).style,{background:'rgba(212,80,15,0.18)',transform:'translateX(4px)'})}
+                onMouseLeave={e=>Object.assign((e.currentTarget as HTMLElement).style,{background:'rgba(212,80,15,0.1)',transform:'translateX(0)'})}>
+                En savoir plus sur nous <ArrowRight size={14}/>
               </Link>
-            </div>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            </Reveal>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════ FORMATIONS EN VEDETTE ═══════ */}
+      {courses.length>0&&(
+        <section style={{padding:'96px 0',background:'var(--bg-main)'}}>
+          <div style={{maxWidth:'1280px',margin:'0 auto',padding:'0 24px'}}>
+            <Reveal style={{display:'flex',alignItems:'flex-end',justifyContent:'space-between',marginBottom:'48px',flexWrap:'wrap',gap:'16px'}}>
+              <div>
+                <p style={{fontSize:'11px',fontWeight:900,textTransform:'uppercase',letterSpacing:'0.1em',color:'var(--orange)',marginBottom:'10px'}}>Catalogue</p>
+                <h2 style={{fontSize:'clamp(2rem,4vw,3rem)',fontWeight:900,color:'var(--text-primary)',margin:0,lineHeight:1.1}}>Formations en vedette</h2>
+              </div>
+              <Link href="/secteurs" style={{display:'inline-flex',alignItems:'center',gap:'8px',padding:'10px 20px',borderRadius:'14px',fontSize:'13px',fontWeight:700,color:'var(--orange)',textDecoration:'none',background:'rgba(212,80,15,0.1)',border:'1px solid rgba(212,80,15,0.25)'}}>
+                Voir tout le catalogue <ArrowRight size={13}/>
+              </Link>
+            </Reveal>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'24px'}}>
               {courses.map((c,i)=>(
-                <Link key={c.id} href={'/cours/'+c.slug} className="group overflow-hidden rounded-3xl border hover:no-underline transition-all hover:shadow-2xl hover:-translate-y-1" style={{background:'var(--bg-card)',borderColor:'var(--border)'}}>
-                  <div className="relative overflow-hidden" style={{aspectRatio:'16/9',background:'var(--bg-secondary)'}}>
-                    {c.image_couverture?<img src={c.image_couverture} alt="" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"/>:<div className="w-full h-full flex items-center justify-center text-5xl">🛡️</div>}
-                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{background:'rgba(212,80,15,0.12)'}}/>
-                    {i===0&&<div className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-black text-white uppercase tracking-wide" style={{background:'var(--orange)'}}>Populaire</div>}
-                    <div className="absolute top-3 right-3 flex items-center gap-1 px-2 py-1 rounded-full" style={{background:'rgba(0,0,0,0.6)'}}>
-                      {[1,2,3,4,5].map(n=><Star key={n} size={9} style={{color:'#facc15'}} fill="#facc15"/>)}
+                <Reveal key={c.id} delay={i*80} className="card-hover" style={{borderRadius:'24px',overflow:'hidden',border:'1px solid var(--border)',background:'var(--bg-card)',cursor:'pointer'}}>
+                  <Link href={'/cours/'+c.slug} style={{textDecoration:'none',display:'block'}}>
+                    <div style={{aspectRatio:'16/9',overflow:'hidden',position:'relative',background:'var(--bg-secondary)'}}>
+                      {c.image_couverture?<img src={c.image_couverture} alt="" style={{width:'100%',height:'100%',objectFit:'cover',transition:'transform 0.7s ease'}} onMouseEnter={e=>(e.currentTarget as HTMLElement).style.transform='scale(1.06)'} onMouseLeave={e=>(e.currentTarget as HTMLElement).style.transform='scale(1)'}/>:<div style={{width:'100%',height:'100%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'3rem'}}>🛡️</div>}
+                      {i===0&&<div style={{position:'absolute',top:'12px',left:'12px',padding:'4px 10px',borderRadius:'99px',fontSize:'10px',fontWeight:900,color:'white',background:'var(--orange)',textTransform:'uppercase',letterSpacing:'0.06em'}}>Populaire</div>}
+                      <div style={{position:'absolute',top:'12px',right:'12px',display:'flex',gap:'2px'}}>{[1,2,3,4,5].map(n=><Star key={n} size={9} style={{color:'#facc15'}} fill="#facc15"/>)}</div>
                     </div>
-                  </div>
-                  <div className="p-5">
-                    <p className="text-[10px] font-black uppercase tracking-wider mb-2" style={{color:'var(--orange)'}}>{c.secteur_slug?.replace(/-/g,' ')}</p>
-                    <h3 className="font-black text-base leading-snug line-clamp-2 mb-3 group-hover:text-orange-500 transition-colors" style={{color:'var(--text-primary)'}}>{c.titre}</h3>
-                    <p className="text-sm line-clamp-2 mb-4" style={{color:'var(--text-secondary)'}}>{c.description_courte}</p>
-                    <div className="flex items-center justify-between pt-3 border-t" style={{borderColor:'var(--border)'}}>
-                      <div className="flex items-center gap-1.5 text-xs font-semibold" style={{color:'#4ade80'}}><CheckCircle size={12}/>100% Gratuit</div>
-                      <div className="text-xs font-black" style={{color:'var(--orange)'}}>Voir la formation →</div>
+                    <div style={{padding:'20px'}}>
+                      <p style={{fontSize:'10px',fontWeight:900,textTransform:'uppercase',letterSpacing:'0.08em',color:'var(--orange)',marginBottom:'8px'}}>{c.secteur_slug?.replace(/-/g,' ')}</p>
+                      <h3 style={{fontSize:'15px',fontWeight:900,color:'var(--text-primary)',margin:'0 0 8px 0',lineHeight:1.4,display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden'}}>{c.titre}</h3>
+                      <p style={{fontSize:'13px',color:'var(--text-secondary)',margin:'0 0 16px 0',lineHeight:1.6,display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden'}}>{c.description_courte}</p>
+                      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',paddingTop:'12px',borderTop:'1px solid var(--border)'}}>
+                        <div style={{display:'flex',alignItems:'center',gap:'6px',fontSize:'12px',fontWeight:600,color:'#22c55e'}}><CheckCircle size={12}/>100% Gratuit</div>
+                        <span style={{fontSize:'12px',fontWeight:900,color:'var(--orange)'}}>Voir →</span>
+                      </div>
                     </div>
-                  </div>
-                </Link>
+                  </Link>
+                </Reveal>
               ))}
             </div>
           </div>
         </section>
       )}
 
-      {/* SECTEURS */}
-      <section className="py-20 border-t" style={{borderColor:'var(--border)',background:'var(--bg-main)'}}>
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-end justify-between mb-12">
-            <div>
-              <p className="text-xs font-black uppercase tracking-widest mb-2" style={{color:'var(--orange)'}}>9 domaines couverts</p>
-              <h2 className="text-4xl font-black" style={{color:'var(--text-primary)'}}>Votre secteur, vos formations</h2>
-            </div>
-            <Link href="/secteurs" className="hidden sm:inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl text-sm font-bold hover:no-underline transition-all hover:scale-105" style={{background:'rgba(212,80,15,0.1)',color:'var(--orange)',border:'1px solid rgba(212,80,15,0.25)'}}>
-              Tous les secteurs <ArrowRight size={14}/>
-            </Link>
+      {/* ═══════ AVANTAGES ═══════ */}
+      <section style={{padding:'96px 0',background:'var(--bg-secondary)'}}>
+        <div style={{maxWidth:'1280px',margin:'0 auto',padding:'0 24px'}}>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'80px',alignItems:'center'}}>
+            <Reveal>
+              <p style={{fontSize:'11px',fontWeight:900,textTransform:'uppercase',letterSpacing:'0.1em',color:'var(--orange)',marginBottom:'16px'}}>Nos avantages</p>
+              <h2 style={{fontSize:'clamp(2rem,4vw,3rem)',fontWeight:900,color:'var(--text-primary)',margin:'0 0 40px 0',lineHeight:1.1}}>
+                Tout ce qu il faut pour une securite optimale
+              </h2>
+              <div style={{display:'flex',flexDirection:'column',gap:'20px'}}>
+                {[
+                  {icon:Globe,     titre:'Accessible partout dans le monde',  desc:'Disponible sur tous les appareils, en ligne ou hors ligne. Aucun equipement special requis.',color:'#3b82f6'},
+                  {icon:Target,    titre:'Formations adaptees a votre metier', desc:'Chaque formation est specifiquement concue pour les risques et realites de votre secteur professionnel.',color:'var(--orange)'},
+                  {icon:TrendingUp,titre:'Mises a jour regulieres',            desc:'Notre equipe d experts met a jour en permanence les contenus selon les nouvelles reglementations.',color:'#22c55e'},
+                  {icon:Heart,     titre:'Support et communaute active',       desc:'Rejoignez une communaute de professionnels de la securite et beneficiez d un support dedie.',color:'#ef4444'},
+                  {icon:Eye,       titre:'Suivi de progression',               desc:'Visualisez vos avancees, obtenez vos certifications et partagez vos accomplissements.',color:'#a855f7'},
+                ].map((item,i)=>{const Icon=item.icon;return(
+                  <div key={i} style={{display:'flex',gap:'16px',alignItems:'flex-start',padding:'16px',borderRadius:'16px',transition:'background 0.2s',cursor:'default'}}
+                    onMouseEnter={e=>e.currentTarget.style.background='var(--bg-card)'}
+                    onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
+                    <div style={{width:'44px',height:'44px',borderRadius:'14px',background:item.color+'15',border:'1px solid '+item.color+'25',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                      <Icon size={20} style={{color:item.color}}/>
+                    </div>
+                    <div>
+                      <h3 style={{fontSize:'15px',fontWeight:900,color:'var(--text-primary)',margin:'0 0 6px 0'}}>{item.titre}</h3>
+                      <p style={{fontSize:'13px',color:'var(--text-secondary)',margin:0,lineHeight:1.65}}>{item.desc}</p>
+                    </div>
+                  </div>
+                )})}
+              </div>
+            </Reveal>
+            <Reveal delay={200}>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'16px'}}>
+                {[
+                  {img:'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&q=80',label:'Mines & Carrieres'},
+                  {img:'https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=400&q=80',label:'Agriculture'},
+                  {img:'https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=400&q=80',label:'Petrole & Gaz'},
+                  {img:'https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=400&q=80',label:'Education'},
+                ].map((item,i)=>(
+                  <div key={i} style={{height:'180px',borderRadius:'20px',overflow:'hidden',position:'relative'}} className="hover-scale">
+                    <img src={item.img} alt={item.label} style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+                    <div style={{position:'absolute',inset:0,background:'linear-gradient(to top,rgba(0,0,0,0.65) 0%,transparent 60%)'}}/>
+                    <div style={{position:'absolute',bottom:'10px',left:'12px'}}>
+                      <p style={{color:'white',fontSize:'11px',fontWeight:900,margin:0}}>{item.label}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Reveal>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+        </div>
+      </section>
+
+      {/* ═══════ SECTEURS ═══════ */}
+      <section style={{padding:'96px 0',background:'var(--bg-main)'}}>
+        <div style={{maxWidth:'1280px',margin:'0 auto',padding:'0 24px'}}>
+          <Reveal style={{display:'flex',alignItems:'flex-end',justifyContent:'space-between',marginBottom:'48px',flexWrap:'wrap',gap:'16px'}}>
+            <div>
+              <p style={{fontSize:'11px',fontWeight:900,textTransform:'uppercase',letterSpacing:'0.1em',color:'var(--orange)',marginBottom:'10px'}}>9 domaines couverts</p>
+              <h2 style={{fontSize:'clamp(2rem,4vw,3rem)',fontWeight:900,color:'var(--text-primary)',margin:0,lineHeight:1.1}}>Votre secteur, vos formations</h2>
+            </div>
+            <Link href="/secteurs" style={{display:'inline-flex',alignItems:'center',gap:'8px',padding:'10px 20px',borderRadius:'14px',fontSize:'13px',fontWeight:700,color:'var(--orange)',textDecoration:'none',background:'rgba(212,80,15,0.1)',border:'1px solid rgba(212,80,15,0.25)'}}>
+              Tous les secteurs <ArrowRight size={13}/>
+            </Link>
+          </Reveal>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:'16px'}}>
             {SECTEURS.slice(0,2).map(s=>(
-              <Link key={s.slug} href={'/secteurs/'+s.slug} className="group relative overflow-hidden rounded-3xl hover:no-underline transition-all hover:-translate-y-1.5 hover:shadow-2xl sm:col-span-1" style={{aspectRatio:'1',background:'var(--bg-secondary)'}}>
-                <img src={s.img} alt={s.nom} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"/>
-                <div className="absolute inset-0" style={{background:'linear-gradient(to top,rgba(0,0,0,0.88) 0%,rgba(0,0,0,0.2) 60%,transparent 100%)'}}/>
-                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{background:'rgba(212,80,15,0.2)'}}/>
-                <div className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity" style={{boxShadow:'inset 0 0 0 2px var(--orange)'}}/>
-                <div className="absolute bottom-0 left-0 right-0 p-4">
-                  <p className="text-white text-sm font-black">{s.nom}</p>
-                  <p className="text-white/60 text-xs mt-0.5">{s.count} formations</p>
-                </div>
-                <div className="absolute top-3 right-3 text-2xl">{s.emoji}</div>
-              </Link>
+              <Reveal key={s.slug} className="hover-lift" style={{gridColumn:'span 1',borderRadius:'24px',overflow:'hidden',aspectRatio:'1',cursor:'pointer',position:'relative',background:'var(--bg-secondary)'}}>
+                <Link href={'/secteurs/'+s.slug} style={{display:'block',width:'100%',height:'100%',textDecoration:'none',position:'relative'}}>
+                  <img src={s.img} alt={s.nom} style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',transition:'transform 0.7s ease'}} onMouseEnter={e=>(e.currentTarget as HTMLElement).style.transform='scale(1.08)'} onMouseLeave={e=>(e.currentTarget as HTMLElement).style.transform='scale(1)'}/>
+                  <div style={{position:'absolute',inset:0,background:'linear-gradient(to top,rgba(0,0,0,0.82) 0%,rgba(0,0,0,0.15) 70%,transparent 100%)'}}/>
+                  <div style={{position:'absolute',top:'12px',right:'12px',fontSize:'1.6rem'}}>{s.emoji}</div>
+                  <div style={{position:'absolute',bottom:0,left:0,right:0,padding:'14px'}}>
+                    <p style={{color:'white',fontSize:'12px',fontWeight:900,margin:'0 0 2px 0'}}>{s.nom}</p>
+                    <p style={{color:'rgba(255,255,255,0.6)',fontSize:'10px',margin:0}}>{s.count} formations</p>
+                  </div>
+                </Link>
+              </Reveal>
             ))}
             {SECTEURS.slice(2).map(s=>(
-              <Link key={s.slug} href={'/secteurs/'+s.slug} className="group relative overflow-hidden rounded-2xl hover:no-underline transition-all hover:-translate-y-1 hover:shadow-xl" style={{aspectRatio:'4/3',background:'var(--bg-secondary)'}}>
-                <img src={s.img} alt={s.nom} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"/>
-                <div className="absolute inset-0" style={{background:'linear-gradient(to top,rgba(0,0,0,0.82) 0%,transparent 70%)'}}/>
-                <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" style={{boxShadow:'inset 0 0 0 2px var(--orange)'}}/>
-                <div className="absolute bottom-0 left-0 right-0 p-3">
-                  <p className="text-white text-xs font-black">{s.nom}</p>
-                  <p className="text-white/55 text-[10px]">{s.count} formations</p>
-                </div>
-                <div className="absolute top-2.5 right-2.5 text-lg">{s.emoji}</div>
-              </Link>
+              <Reveal key={s.slug} className="hover-lift" style={{borderRadius:'18px',overflow:'hidden',aspectRatio:'3/4',cursor:'pointer',position:'relative',background:'var(--bg-secondary)'}}>
+                <Link href={'/secteurs/'+s.slug} style={{display:'block',width:'100%',height:'100%',textDecoration:'none',position:'relative'}}>
+                  <img src={s.img} alt={s.nom} style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',transition:'transform 0.7s ease'}} onMouseEnter={e=>(e.currentTarget as HTMLElement).style.transform='scale(1.08)'} onMouseLeave={e=>(e.currentTarget as HTMLElement).style.transform='scale(1)'}/>
+                  <div style={{position:'absolute',inset:0,background:'linear-gradient(to top,rgba(0,0,0,0.8) 0%,transparent 60%)'}}/>
+                  <div style={{position:'absolute',top:'8px',right:'8px',fontSize:'1.3rem'}}>{s.emoji}</div>
+                  <div style={{position:'absolute',bottom:0,left:0,right:0,padding:'10px'}}>
+                    <p style={{color:'white',fontSize:'11px',fontWeight:900,margin:'0 0 2px 0'}}>{s.nom}</p>
+                    <p style={{color:'rgba(255,255,255,0.55)',fontSize:'9px',margin:0}}>{s.count} formations</p>
+                  </div>
+                </Link>
+              </Reveal>
             ))}
           </div>
         </div>
       </section>
 
-      {/* COMMENT CA MARCHE */}
-      <section className="py-20 border-t" style={{borderColor:'var(--border)',background:'var(--bg-secondary)'}}>
-        <div className="max-w-5xl mx-auto px-4">
-          <div className="text-center mb-14">
-            <p className="text-xs font-black uppercase tracking-widest mb-2" style={{color:'var(--orange)'}}>Simple et efficace</p>
-            <h2 className="text-4xl font-black" style={{color:'var(--text-primary)'}}>Comment ca marche ?</h2>
-          </div>
-          <div className="grid sm:grid-cols-3 gap-6 relative">
-            <div className="absolute top-10 left-[20%] right-[20%] h-px hidden sm:block" style={{background:'linear-gradient(to right,transparent,rgba(212,80,15,0.4),transparent)'}}/>
+      {/* ═══════ COMMENT CA MARCHE ═══════ */}
+      <section style={{padding:'96px 0',background:'var(--bg-secondary)'}}>
+        <div style={{maxWidth:'1200px',margin:'0 auto',padding:'0 24px'}}>
+          <Reveal style={{textAlign:'center',marginBottom:'64px'}}>
+            <p style={{fontSize:'11px',fontWeight:900,textTransform:'uppercase',letterSpacing:'0.1em',color:'var(--orange)',marginBottom:'12px'}}>Simple et efficace</p>
+            <h2 style={{fontSize:'clamp(2rem,4vw,3rem)',fontWeight:900,color:'var(--text-primary)',margin:'0 0 16px 0',lineHeight:1.1}}>Commencez en 3 etapes</h2>
+            <p style={{fontSize:'1rem',color:'var(--text-secondary)',maxWidth:'480px',margin:'0 auto',lineHeight:1.8}}>Notre plateforme est concue pour etre simple, rapide et efficace. Aucune inscription requise pour acceder aux formations.</p>
+          </Reveal>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'32px',position:'relative'}}>
+            <div style={{position:'absolute',top:'40px',left:'20%',right:'20%',height:'2px',background:'linear-gradient(to right,transparent,rgba(212,80,15,0.4),transparent)',display:'none'}}/>
             {[
-              {n:'01',icon:BookOpen,titre:'Choisissez votre secteur',desc:'Parcourez les 9 domaines professionnels et trouvez les formations adaptees a votre metier.',color:'var(--orange)'},
-              {n:'02',icon:Play,     titre:'Suivez les formations',  desc:'Videos, ressources pratiques, fiches techniques — avancez a votre propre rythme, depuis n importe quel appareil.',color:'#2563eb'},
-              {n:'03',icon:Shield,   titre:'Protegez vos equipes',   desc:'Appliquez les connaissances acquises et utilisez nos alertes pour prevenir accidents et incidents.',color:'#16a34a'},
+              {n:'01',icon:BookOpen,titre:'Choisissez votre secteur',desc:'Parcourez les 9 domaines professionnels et selectionnez les formations adaptees a votre metier et a vos besoins.',color:'var(--orange)',href:'/secteurs'},
+              {n:'02',icon:Play,     titre:'Suivez les formations',  desc:'Videos, fiches pratiques, quiz — avancez a votre propre rythme depuis n importe quel appareil, partout dans le monde.',color:'#3b82f6',href:'/secteurs'},
+              {n:'03',icon:Shield,   titre:'Protegez vos equipes',   desc:'Mettez en pratique vos connaissances, utilisez nos alertes et partagez les formations avec vos collaborateurs.',color:'#22c55e',href:'/secteurs'},
             ].map((s,i)=>{const Icon=s.icon;return(
-              <div key={i} className="relative p-8 rounded-3xl border text-center hover:-translate-y-1 hover:shadow-xl transition-all" style={{background:'var(--bg-card)',borderColor:'var(--border)'}}>
-                <div className="absolute -top-5 left-1/2 -translate-x-1/2 w-10 h-10 rounded-2xl flex items-center justify-center text-sm font-black text-white shadow-lg" style={{background:'var(--orange)'}}>
-                  {s.n}
+              <Reveal key={i} delay={i*130} className="hover-lift" style={{borderRadius:'24px',border:'1px solid var(--border)',background:'var(--bg-card)',cursor:'pointer',position:'relative',overflow:'hidden'}}>
+                <div style={{height:'4px',background:s.color}}/>
+                <div style={{padding:'32px 28px'}}>
+                  <div style={{width:'48px',height:'48px',borderRadius:'16px',background:'rgba(5,16,31,0.8)',display:'flex',alignItems:'center',justifyContent:'center',marginBottom:'20px'}}>
+                    <span style={{color:'var(--orange)',fontSize:'14px',fontWeight:900}}>{s.n}</span>
+                  </div>
+                  <div style={{width:'56px',height:'56px',borderRadius:'18px',background:s.color+'15',border:'1px solid '+s.color+'30',display:'flex',alignItems:'center',justifyContent:'center',marginBottom:'20px'}}>
+                    <Icon size={26} style={{color:s.color}}/>
+                  </div>
+                  <h3 style={{fontSize:'1.1rem',fontWeight:900,color:'var(--text-primary)',margin:'0 0 12px 0'}}>{s.titre}</h3>
+                  <p style={{fontSize:'14px',color:'var(--text-secondary)',lineHeight:1.75,margin:'0 0 20px 0'}}>{s.desc}</p>
+                  <Link href={s.href} style={{display:'inline-flex',alignItems:'center',gap:'6px',fontSize:'13px',fontWeight:700,color:s.color,textDecoration:'none'}}>
+                    Commencer <ArrowRight size={13}/>
+                  </Link>
                 </div>
-                <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mt-6 mb-5" style={{background:s.color+'18',border:'1px solid '+s.color+'30'}}>
-                  <Icon size={28} style={{color:s.color}}/>
-                </div>
-                <h3 className="font-black text-lg mb-3" style={{color:'var(--text-primary)'}}>{s.titre}</h3>
-                <p className="text-sm leading-relaxed" style={{color:'var(--text-secondary)',lineHeight:'1.8'}}>{s.desc}</p>
-              </div>
+              </Reveal>
             )})}
           </div>
         </div>
       </section>
 
-      {/* VIDEOS */}
-      <section className="py-20 border-t" style={{borderColor:'var(--border)',background:'var(--bg-main)'}}>
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-end justify-between mb-12">
+      {/* ═══════ VIDEOS ═══════ */}
+      <section style={{padding:'96px 0',background:'var(--bg-main)'}}>
+        <div style={{maxWidth:'1280px',margin:'0 auto',padding:'0 24px'}}>
+          <Reveal style={{display:'flex',alignItems:'flex-end',justifyContent:'space-between',marginBottom:'48px',flexWrap:'wrap',gap:'16px'}}>
             <div>
-              <p className="text-xs font-black uppercase tracking-widest mb-2" style={{color:'var(--orange)'}}>Ressources video</p>
-              <h2 className="text-4xl font-black" style={{color:'var(--text-primary)'}}>Apprenez en video</h2>
+              <p style={{fontSize:'11px',fontWeight:900,textTransform:'uppercase',letterSpacing:'0.1em',color:'var(--orange)',marginBottom:'10px'}}>Ressources video</p>
+              <h2 style={{fontSize:'clamp(2rem,4vw,3rem)',fontWeight:900,color:'var(--text-primary)',margin:0,lineHeight:1.1}}>Apprenez en video</h2>
             </div>
-            {videos.length>0&&<Link href="/secteurs" className="hidden sm:inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl text-sm font-bold hover:no-underline" style={{background:'rgba(212,80,15,0.1)',color:'var(--orange)',border:'1px solid rgba(212,80,15,0.25)'}}>Voir tout <ArrowRight size={14}/></Link>}
-          </div>
+            {videos.length>0&&<Link href="/secteurs" style={{display:'inline-flex',alignItems:'center',gap:'8px',padding:'10px 20px',borderRadius:'14px',fontSize:'13px',fontWeight:700,color:'var(--orange)',textDecoration:'none',background:'rgba(212,80,15,0.1)',border:'1px solid rgba(212,80,15,0.25)'}}>Voir tout <ArrowRight size={13}/></Link>}
+          </Reveal>
           {videos.length>0?(
-            <div className="grid sm:grid-cols-3 gap-6">
-              {videos.map(v=>{const id=ytId(v.youtube_url);const thumb=id?'https://img.youtube.com/vi/'+id+'/mqdefault.jpg':null;const cSlug=(v.courses as any)?.slug;return(
-                <Link key={v.id} href={'/cours/'+cSlug+'?lecon='+v.id} className="group overflow-hidden rounded-3xl border hover:no-underline transition-all hover:shadow-2xl hover:-translate-y-1" style={{background:'var(--bg-card)',borderColor:'var(--border)'}}>
-                  <div className="relative overflow-hidden" style={{aspectRatio:'16/9',background:'var(--bg-secondary)'}}>
-                    {thumb&&<img src={thumb} alt={v.titre} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"/>}
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity" style={{background:'rgba(0,0,0,0.35)'}}>
-                      <div className="w-14 h-14 rounded-full flex items-center justify-center shadow-2xl" style={{background:'var(--orange)'}}><Play size={20} className="text-white" fill="white" style={{marginLeft:'3px'}}/></div>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'24px'}}>
+              {videos.map((v,i)=>{const id=ytId(v.youtube_url);const thumb=id?'https://img.youtube.com/vi/'+id+'/mqdefault.jpg':null;const cSlug=(v.courses as any)?.slug;return(
+                <Reveal key={v.id} delay={i*100} className="card-hover" style={{borderRadius:'22px',overflow:'hidden',border:'1px solid var(--border)',background:'var(--bg-card)',cursor:'pointer'}}>
+                  <Link href={'/cours/'+cSlug+'?lecon='+v.id} style={{display:'block',textDecoration:'none'}}>
+                    <div style={{aspectRatio:'16/9',overflow:'hidden',position:'relative',background:'var(--bg-secondary)'}}>
+                      {thumb&&<img src={thumb} alt={v.titre} style={{width:'100%',height:'100%',objectFit:'cover',transition:'transform 0.6s'}} onMouseEnter={e=>(e.currentTarget as HTMLElement).style.transform='scale(1.05)'} onMouseLeave={e=>(e.currentTarget as HTMLElement).style.transform='scale(1)'}/>}
+                      <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',opacity:0,transition:'opacity 0.3s',background:'rgba(0,0,0,0.35)'}} onMouseEnter={e=>{e.currentTarget.style.opacity='1'}} onMouseLeave={e=>{e.currentTarget.style.opacity='0'}}>
+                        <div style={{width:'56px',height:'56px',borderRadius:'50%',background:'var(--orange)',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:'0 8px 24px rgba(212,80,15,0.5)'}}><Play size={20} style={{color:'white',marginLeft:'3px'}} fill="white"/></div>
+                      </div>
+                      {v.duree_minutes>0&&<div style={{position:'absolute',bottom:'10px',right:'10px',padding:'4px 10px',borderRadius:'8px',fontSize:'11px',fontWeight:700,color:'white',background:'rgba(0,0,0,0.75)',display:'flex',alignItems:'center',gap:'4px'}}><Clock size={10}/>{v.duree_minutes}min</div>}
                     </div>
-                    {v.duree_minutes>0&&<div className="absolute bottom-2.5 right-2.5 px-2.5 py-1 rounded-lg text-xs font-bold text-white flex items-center gap-1.5" style={{background:'rgba(0,0,0,0.75)'}}><Clock size={10}/>{v.duree_minutes}min</div>}
-                  </div>
-                  <div className="p-5">
-                    <p className="text-[10px] font-black uppercase tracking-wider mb-2" style={{color:'var(--orange)'}}>{(v.courses as any)?.secteur_slug?.replace(/-/g,' ')}</p>
-                    <h4 className="font-black text-sm leading-snug line-clamp-2 group-hover:text-orange-500 transition-colors" style={{color:'var(--text-primary)'}}>{v.titre}</h4>
-                  </div>
-                </Link>
+                    <div style={{padding:'18px'}}>
+                      <p style={{fontSize:'10px',fontWeight:900,textTransform:'uppercase',letterSpacing:'0.08em',color:'var(--orange)',marginBottom:'6px'}}>{(v.courses as any)?.secteur_slug?.replace(/-/g,' ')}</p>
+                      <h4 style={{fontSize:'14px',fontWeight:900,color:'var(--text-primary)',margin:0,lineHeight:1.4,display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden'}}>{v.titre}</h4>
+                    </div>
+                  </Link>
+                </Reveal>
               )})}
             </div>
           ):(
-            <div className="py-14 rounded-3xl border text-center" style={{borderColor:'rgba(212,80,15,0.2)',background:'rgba(212,80,15,0.04)'}}>
-              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{background:'rgba(212,80,15,0.1)'}}><Play size={26} style={{color:'var(--orange)'}}/></div>
-              <h3 className="font-black text-xl mb-2" style={{color:'var(--text-primary)'}}>Videos de formation a venir</h3>
-              <p className="text-sm mb-6 max-w-sm mx-auto" style={{color:'var(--text-secondary)'}}>Notre equipe prepare des contenus video de qualite pour chaque secteur professionnel.</p>
-              <Link href="/secteurs" className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl font-black text-sm text-white hover:no-underline hover:opacity-90" style={{background:'var(--orange)'}}>Voir les formations texte <ArrowRight size={14}/></Link>
-            </div>
+            <Reveal>
+              <div style={{padding:'64px 32px',borderRadius:'28px',border:'1px solid rgba(212,80,15,0.2)',background:'rgba(212,80,15,0.04)',textAlign:'center'}}>
+                <div style={{width:'64px',height:'64px',borderRadius:'20px',background:'rgba(212,80,15,0.12)',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 20px auto'}}><Play size={28} style={{color:'var(--orange)'}}/></div>
+                <h3 style={{fontSize:'1.3rem',fontWeight:900,color:'var(--text-primary)',margin:'0 0 10px 0'}}>Videos de formation a venir</h3>
+                <p style={{fontSize:'14px',color:'var(--text-secondary)',margin:'0 0 24px 0',maxWidth:'400px',marginLeft:'auto',marginRight:'auto',lineHeight:1.7}}>Notre equipe prepare des contenus video de haute qualite pour chaque secteur professionnel.</p>
+                <Link href="/secteurs" style={{display:'inline-flex',alignItems:'center',gap:'8px',padding:'12px 24px',borderRadius:'14px',fontSize:'14px',fontWeight:900,color:'white',textDecoration:'none',background:'var(--orange)'}}>Explorer les formations <ArrowRight size={14}/></Link>
+              </div>
+            </Reveal>
           )}
         </div>
       </section>
 
-      {/* TEMOIGNAGES */}
-      <section className="py-20 border-t" style={{borderColor:'var(--border)',background:'var(--bg-secondary)'}}>
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="text-center mb-12">
-            <p className="text-xs font-black uppercase tracking-widest mb-2" style={{color:'var(--orange)'}}>Ils nous font confiance</p>
-            <h2 className="text-4xl font-black" style={{color:'var(--text-primary)'}}>Ce que disent nos apprenants</h2>
-          </div>
-          <div className="grid sm:grid-cols-3 gap-6">
+      {/* ═══════ TEMOIGNAGES ═══════ */}
+      <section style={{padding:'96px 0',background:'var(--bg-secondary)'}}>
+        <div style={{maxWidth:'1200px',margin:'0 auto',padding:'0 24px'}}>
+          <Reveal style={{textAlign:'center',marginBottom:'60px'}}>
+            <p style={{fontSize:'11px',fontWeight:900,textTransform:'uppercase',letterSpacing:'0.1em',color:'var(--orange)',marginBottom:'12px'}}>Ils nous font confiance</p>
+            <h2 style={{fontSize:'clamp(2rem,4vw,3rem)',fontWeight:900,color:'var(--text-primary)',margin:'0 0 16px 0',lineHeight:1.1}}>Ce que disent nos utilisateurs</h2>
+          </Reveal>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'24px'}}>
             {TEMOIGNAGES.map((t,i)=>(
-              <div key={i} className="p-7 rounded-3xl border" style={{background:'var(--bg-card)',borderColor:'var(--border)'}}>
-                <div className="flex items-center gap-1 mb-4">
-                  {[1,2,3,4,5].map(n=><Star key={n} size={14} style={{color:'#facc15'}} fill="#facc15"/>)}
-                </div>
-                <p className="text-sm leading-relaxed mb-6" style={{color:'var(--text-secondary)',lineHeight:'1.8',fontStyle:'italic'}}>"{t.texte}"</p>
-                <div className="flex items-center gap-3 pt-4 border-t" style={{borderColor:'var(--border)'}}>
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center font-black text-white" style={{background:'var(--orange)'}}>{t.nom[0]}</div>
+              <Reveal key={i} delay={i*100} className="hover-lift" style={{padding:'28px',borderRadius:'24px',border:'1px solid var(--border)',background:'var(--bg-card)',cursor:'default'}}>
+                <div style={{display:'flex',gap:'2px',marginBottom:'18px'}}>{[1,2,3,4,5].map(n=><Star key={n} size={15} style={{color:'#facc15'}} fill="#facc15"/>)}</div>
+                <p style={{fontSize:'14px',color:'var(--text-secondary)',lineHeight:1.8,margin:'0 0 20px 0',fontStyle:'italic'}}>"{t.texte}"</p>
+                <div style={{display:'flex',alignItems:'center',gap:'12px',paddingTop:'18px',borderTop:'1px solid var(--border)'}}>
+                  <img src={t.img} alt={t.nom} style={{width:'42px',height:'42px',borderRadius:'50%',objectFit:'cover',flexShrink:0}}/>
                   <div>
-                    <p className="font-black text-sm" style={{color:'var(--text-primary)'}}>{t.nom}</p>
-                    <p className="text-xs" style={{color:'var(--text-secondary)'}}>{t.titre}</p>
+                    <p style={{fontSize:'14px',fontWeight:900,color:'var(--text-primary)',margin:0}}>{t.nom}</p>
+                    <p style={{fontSize:'11px',color:'var(--text-secondary)',margin:'3px 0 0 0'}}>{t.titre}</p>
                   </div>
                 </div>
-              </div>
+              </Reveal>
             ))}
           </div>
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="py-28 relative overflow-hidden">
-        <div className="absolute inset-0" style={{background:'linear-gradient(135deg,#b84500 0%,var(--orange) 45%,#e06010 100%)'}}/>
-        <div className="absolute inset-0 opacity-[0.07]" style={{backgroundImage:'radial-gradient(circle,white 1.5px,transparent 1.5px)',backgroundSize:'28px 28px'}}/>
-        <div className="absolute -top-32 -right-32 w-96 h-96 rounded-full pointer-events-none" style={{background:'radial-gradient(circle,rgba(255,255,255,0.2),transparent 70%)'}}/>
-        <div className="relative max-w-3xl mx-auto px-4 text-center">
-          <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full mb-6 text-xs font-black uppercase tracking-wider text-white" style={{background:'rgba(255,255,255,0.15)',border:'1px solid rgba(255,255,255,0.25)'}}>
-            <Zap size={12}/>Rejoignez 12 000+ professionnels
-          </div>
-          <h2 className="text-5xl font-black text-white mb-5 leading-tight" style={{textShadow:'0 4px 20px rgba(0,0,0,0.2)'}}>
-            La securite au travail commence par la formation
-          </h2>
-          <p className="text-white/80 text-xl mb-12 max-w-lg mx-auto">100% gratuit. 500+ formations. Alertes instantanees. Equipements certifies.</p>
-          <div className="flex flex-wrap justify-center gap-4">
-            <Link href="/secteurs" className="inline-flex items-center gap-2.5 px-10 py-4.5 rounded-2xl font-black text-sm hover:no-underline transition-all hover:scale-105" style={{background:'white',color:'var(--orange)',boxShadow:'0 12px 40px rgba(0,0,0,0.25)'}}>
-              Commencer gratuitement <ArrowRight size={16}/>
-            </Link>
-            <Link href="/alertes" className="inline-flex items-center gap-2.5 px-10 py-4.5 rounded-2xl font-bold text-sm hover:no-underline border-2 border-white/40 text-white hover:bg-white/15 hover:border-white/60 transition-all">
-              <Bell size={15}/>Alertes securite
-            </Link>
-          </div>
+      {/* ═══════ CTA ═══════ */}
+      <section style={{padding:'112px 0',position:'relative',overflow:'hidden'}}>
+        <div style={{position:'absolute',inset:0,background:'linear-gradient(135deg,#9a3c0a 0%,var(--orange) 50%,#e06010 100%)'}}/>
+        <div style={{position:'absolute',inset:0,opacity:0.07,backgroundImage:'radial-gradient(circle,white 1.5px,transparent 1.5px)',backgroundSize:'24px 24px'}}/>
+        <div style={{position:'absolute',top:'-30%',right:'-5%',width:'500px',height:'500px',borderRadius:'50%',background:'radial-gradient(circle,rgba(255,255,255,0.2),transparent 65%)',filter:'blur(40px)'}}/>
+        <div style={{position:'relative',maxWidth:'800px',margin:'0 auto',padding:'0 24px',textAlign:'center'}}>
+          <Reveal>
+            <div style={{display:'inline-flex',alignItems:'center',gap:'8px',padding:'8px 20px',borderRadius:'99px',fontSize:'11px',fontWeight:900,textTransform:'uppercase',letterSpacing:'0.08em',color:'white',background:'rgba(255,255,255,0.15)',border:'1px solid rgba(255,255,255,0.25)',marginBottom:'24px'}}>
+              <Zap size={12}/>Rejoignez 12 000+ professionnels dans le monde
+            </div>
+            <h2 style={{fontSize:'clamp(2.5rem,5vw,4rem)',fontWeight:900,color:'white',margin:'0 0 20px 0',lineHeight:1.08,textShadow:'0 4px 24px rgba(0,0,0,0.2)'}}>
+              La securite au travail commence par la formation
+            </h2>
+            <p style={{fontSize:'1.15rem',color:'rgba(255,255,255,0.85)',margin:'0 0 48px 0',maxWidth:'560px',marginLeft:'auto',marginRight:'auto',lineHeight:1.8}}>
+              100% gratuit. 500+ formations. 9 secteurs. Alertes en temps reel. Marketplace EPI. Tout ce dont vous avez besoin pour proteger vos equipes.
+            </p>
+            <div style={{display:'flex',flexWrap:'wrap',justifyContent:'center',gap:'16px'}}>
+              <Link href="/secteurs" style={{display:'inline-flex',alignItems:'center',gap:'10px',padding:'16px 40px',borderRadius:'18px',fontWeight:900,fontSize:'15px',color:'var(--orange)',textDecoration:'none',background:'white',boxShadow:'0 12px 40px rgba(0,0,0,0.2)',transition:'transform 0.2s, box-shadow 0.2s'}}
+                onMouseEnter={e=>Object.assign((e.currentTarget as HTMLElement).style,{transform:'scale(1.05)',boxShadow:'0 20px 50px rgba(0,0,0,0.3)'})}
+                onMouseLeave={e=>Object.assign((e.currentTarget as HTMLElement).style,{transform:'scale(1)',boxShadow:'0 12px 40px rgba(0,0,0,0.2)'})}>
+                Commencer gratuitement <ArrowRight size={17}/>
+              </Link>
+              <Link href="/marketplace" style={{display:'inline-flex',alignItems:'center',gap:'10px',padding:'16px 40px',borderRadius:'18px',fontWeight:700,fontSize:'15px',color:'white',textDecoration:'none',background:'rgba(255,255,255,0.15)',border:'2px solid rgba(255,255,255,0.35)',transition:'all 0.2s'}}
+                onMouseEnter={e=>(e.currentTarget as HTMLElement).style.background='rgba(255,255,255,0.22)'}
+                onMouseLeave={e=>(e.currentTarget as HTMLElement).style.background='rgba(255,255,255,0.15)'}>
+                <Shield size={16}/>Marketplace EPI
+              </Link>
+            </div>
+          </Reveal>
         </div>
       </section>
 
-      {/* 3 SERVICES */}
-      <section className="py-20 border-t" style={{borderColor:'var(--border)',background:'var(--bg-main)'}}>
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="text-center mb-14">
-            <p className="text-xs font-black uppercase tracking-widest mb-2" style={{color:'var(--orange)'}}>Notre ecosysteme</p>
-            <h2 className="text-4xl font-black" style={{color:'var(--text-primary)'}}>Tout ce dont vous avez besoin</h2>
-          </div>
-          <div className="grid sm:grid-cols-3 gap-8">
+      {/* ═══════ 3 SERVICES ═══════ */}
+      <section style={{padding:'96px 0',background:'var(--bg-main)'}}>
+        <div style={{maxWidth:'1200px',margin:'0 auto',padding:'0 24px'}}>
+          <Reveal style={{textAlign:'center',marginBottom:'60px'}}>
+            <p style={{fontSize:'11px',fontWeight:900,textTransform:'uppercase',letterSpacing:'0.1em',color:'var(--orange)',marginBottom:'12px'}}>Nos services</p>
+            <h2 style={{fontSize:'clamp(2rem,4vw,3rem)',fontWeight:900,color:'var(--text-primary)',margin:0,lineHeight:1.1}}>Un ecosysteme complet pour la securite</h2>
+          </Reveal>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'28px'}}>
             {[
-              {icon:BookOpen,titre:'Formations gratuites',desc:'Des centaines de modules de formation professionnelle, accessibles sans inscription. Certifies par des experts.',href:'/secteurs',cta:'Explorer',color:'#2563eb'},
-              {icon:Bell,    titre:'Alertes securite',    desc:'Restez informe en temps reel des incidents et risques dans votre secteur. Ne soyez jamais pris au depourvu.',href:'/alertes',cta:'Voir les alertes',color:'#dc2626'},
-              {icon:Shield,  titre:'Marketplace EPI',    desc:'Equipements de protection individuelle certifies, disponibles a l achat. Livraison directe pour vos equipes.',href:'/marketplace',cta:'Acceder',color:'#16a34a'},
+              {icon:BookOpen,titre:'Formations gratuites',   desc:'Acces illimite a 500+ modules de formation couvrant tous les risques professionnels, sans abonnement requis.',href:'/secteurs',    cta:'Explorer le catalogue',color:'#2563eb',img:'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=500&q=80'},
+              {icon:Bell,    titre:'Alertes securite',        desc:'Systeme d alertes en temps reel pour votre secteur et votre region. Ne soyez jamais pris au depourvu.',href:'/alertes',      cta:'Voir les alertes',    color:'#dc2626',img:'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=500&q=80'},
+              {icon:Shield,  titre:'Marketplace EPI',         desc:'Equipements de protection individuelle certifies, disponibles a l achat avec livraison directe pour vos equipes.',href:'/marketplace',cta:'Acceder au marketplace',color:'#16a34a',img:'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=500&q=80'},
             ].map((item,i)=>{const Icon=item.icon;return(
-              <Link key={i} href={item.href} className="group p-8 rounded-3xl border hover:no-underline transition-all hover:shadow-2xl hover:-translate-y-2" style={{background:'var(--bg-card)',borderColor:'var(--border)'}}>
-                <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-7 group-hover:scale-110 group-hover:rotate-3 transition-all" style={{background:item.color+'15',border:'1px solid '+item.color+'30'}}>
-                  <Icon size={28} style={{color:item.color}}/>
+              <Reveal key={i} delay={i*120} className="hover-lift" style={{borderRadius:'28px',overflow:'hidden',border:'1px solid var(--border)',background:'var(--bg-card)',cursor:'pointer'}}>
+                <div style={{height:'200px',overflow:'hidden',position:'relative'}}>
+                  <img src={item.img} alt={item.titre} style={{width:'100%',height:'100%',objectFit:'cover',transition:'transform 0.7s'}} onMouseEnter={e=>(e.currentTarget as HTMLElement).style.transform='scale(1.06)'} onMouseLeave={e=>(e.currentTarget as HTMLElement).style.transform='scale(1)'}/>
+                  <div style={{position:'absolute',inset:0,background:'linear-gradient(to bottom,transparent 30%,rgba(0,0,0,0.5) 100%)'}}/>
+                  <div style={{position:'absolute',top:'16px',left:'16px',width:'48px',height:'48px',borderRadius:'14px',background:'white',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:'0 4px 16px rgba(0,0,0,0.2)'}}>
+                    <Icon size={22} style={{color:item.color}}/>
+                  </div>
                 </div>
-                <h3 className="font-black text-xl mb-3 group-hover:text-orange-500 transition-colors" style={{color:'var(--text-primary)'}}>{item.titre}</h3>
-                <p className="text-sm leading-relaxed mb-7" style={{color:'var(--text-secondary)',lineHeight:'1.8'}}>{item.desc}</p>
-                <div className="flex items-center gap-2 text-sm font-black group-hover:gap-3 transition-all" style={{color:'var(--orange)'}}>{item.cta}<ArrowRight size={14} className="group-hover:translate-x-1 transition-transform"/></div>
-              </Link>
+                <div style={{padding:'24px'}}>
+                  <div style={{height:'3px',width:'48px',borderRadius:'99px',background:item.color,marginBottom:'16px'}}/>
+                  <h3 style={{fontSize:'1.2rem',fontWeight:900,color:'var(--text-primary)',margin:'0 0 10px 0'}}>{item.titre}</h3>
+                  <p style={{fontSize:'14px',color:'var(--text-secondary)',lineHeight:1.75,margin:'0 0 20px 0'}}>{item.desc}</p>
+                  <Link href={item.href} style={{display:'inline-flex',alignItems:'center',gap:'6px',fontSize:'13px',fontWeight:700,color:item.color,textDecoration:'none',padding:'10px 18px',borderRadius:'12px',background:item.color+'12',border:'1px solid '+item.color+'20',transition:'all 0.2s'}}
+                    onMouseEnter={e=>(e.currentTarget as HTMLElement).style.background=item.color+'20'}
+                    onMouseLeave={e=>(e.currentTarget as HTMLElement).style.background=item.color+'12'}>
+                    {item.cta} <ArrowRight size={13}/>
+                  </Link>
+                </div>
+              </Reveal>
             )})}
           </div>
         </div>
