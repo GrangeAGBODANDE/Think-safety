@@ -81,7 +81,7 @@ export default function Navbar() {
 
             {dropdown==='formations'&&(
               <div className="absolute top-full left-0 mt-2 w-[600px] rounded-3xl border py-4 z-50" style={ddStyle}>
-                <div className="grid grid-cols-2 gap-0 divide-x" style={{divideColor:'var(--border)'}}>
+                <div className="grid grid-cols-2 gap-0 divide-x" >
                   {/* Colonne gauche — types */}
                   <div className="pr-4 pl-2">
                     <p className="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest mb-1" style={{color:'var(--orange)'}}>Types de formations</p>
