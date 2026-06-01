@@ -19,8 +19,8 @@ const SECTEURS = [
 ]
 
 const TEMOIGNAGES = [
-  {nom:'Jean-Michel D.',titre:'Chef de chantier BTP',texte:'Grace a Think Safety, nos equipes sont mieux preparees. Notre taux d'incidents a baisse de 40% en 6 mois.', stars:5},
-  {nom:'Marie K.',titre:'Responsable HSE',texte:'Les alertes en temps reel nous ont permis d'eviter un incident majeur. Je recommande a toutes les entreprises.', stars:5},
+  {nom:'Jean-Michel D.',titre:'Chef de chantier BTP',texte:'Grace a Think Safety, nos equipes sont mieux preparees. Notre taux d incidents a baisse de 40% en 6 mois.', stars:5},
+  {nom:'Marie K.',titre:'Responsable HSE',texte:'Les alertes en temps reel nous ont permis d eviter un incident majeur. Je recommande a toutes les entreprises.', stars:5},
   {nom:'Kofi A.',titre:'Directeur Operations',texte:'Les formations sont precises, adaptees a notre secteur et facilement accessibles. Un outil indispensable.', stars:5},
 ]
 
