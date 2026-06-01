@@ -120,13 +120,13 @@ export default function HomePage() {
       )}
 
       {/* ═══════ HERO ═══════ */}
-      <section style={{minHeight:'100vh',paddingTop:'64px',position:'relative',overflow:'hidden',background:'#05101f',display:'flex',alignItems:'center'}}>
+      <section style={{minHeight:'100vh',paddingTop:'64px',position:'relative',overflow:'hidden',background:'#0d1f3c',display:'flex',alignItems:'center'}}>
         {heroImages.map((img,i)=>(
           <div key={i} style={{position:'absolute',inset:0,opacity:i===heroImg?1:0,transition:'opacity 1.5s ease'}}>
-            <img src={img} alt="" style={{width:'100%',height:'100%',objectFit:'cover',filter:'brightness(0.22) saturate(0.6)'}}/>
+            <img src={img} alt="" style={{width:'100%',height:'100%',objectFit:'cover',filter:'brightness(0.38) saturate(0.75)'}}/>
           </div>
         ))}
-        <div style={{position:'absolute',inset:0,background:'linear-gradient(115deg,rgba(5,16,31,0.97) 0%,rgba(5,16,31,0.75) 50%,rgba(5,16,31,0.2) 100%)'}}/>
+        <div style={{position:'absolute',inset:0,background:'linear-gradient(115deg,rgba(10,20,50,0.88) 0%,rgba(10,20,50,0.6) 50%,rgba(10,20,50,0.15) 100%)'}}/>
         <div style={{position:'absolute',top:'-20%',right:'-10%',width:'600px',height:'600px',borderRadius:'50%',background:'radial-gradient(circle,rgba(212,80,15,0.12),transparent 65%)',filter:'blur(60px)',animation:'float 10s ease-in-out infinite'}}/>
         <div style={{position:'absolute',bottom:'-10%',left:'-5%',width:'400px',height:'400px',borderRadius:'50%',background:'radial-gradient(circle,rgba(59,130,246,0.08),transparent 65%)',filter:'blur(60px)'}}/>
         <div style={{position:'absolute',inset:0,opacity:0.03,backgroundImage:'linear-gradient(rgba(255,255,255,1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,1) 1px,transparent 1px)',backgroundSize:'56px 56px'}}/>
@@ -146,7 +146,7 @@ export default function HomePage() {
                 professionnel.
               </h1>
               <p style={{opacity:loaded?1:0,transform:loaded?'translateY(0)':'translateY(24px)',transition:'all 0.7s ease 160ms',color:'rgba(255,255,255,0.65)',fontSize:'1.1rem',lineHeight:1.8,marginBottom:'36px',maxWidth:'460px'}}>
-                La premiere plateforme de formation en securite au travail. Gratuit, certifie et accessible partout dans le monde. 500+ formations dans 9 secteurs professionnels.
+                Trouvez gratuitement toutes les ressources dont vous avez besoin pour vous former en securite au travail. 500+ modules dans 9 secteurs, accessibles a tous.
               </p>
               <div style={{opacity:loaded?1:0,transform:loaded?'translateY(0)':'translateY(24px)',transition:'all 0.7s ease 240ms',display:'flex',flexWrap:'wrap',gap:'12px',marginBottom:'48px'}}>
                 <Link href="/secteurs" style={{display:'inline-flex',alignItems:'center',gap:'8px',padding:'14px 32px',borderRadius:'16px',fontWeight:900,fontSize:'14px',color:'white',textDecoration:'none',background:'var(--orange)',boxShadow:'0 8px 32px rgba(212,80,15,0.45)',transition:'transform 0.2s, box-shadow 0.2s'}}
@@ -255,7 +255,7 @@ export default function HomePage() {
             <p style={{fontSize:'11px',fontWeight:900,textTransform:'uppercase',letterSpacing:'0.1em',color:'var(--orange)',marginBottom:'12px'}}>Pourquoi Think Safety</p>
             <h2 style={{fontSize:'clamp(2rem,4vw,3rem)',fontWeight:900,color:'var(--text-primary)',margin:'0 0 16px 0',lineHeight:1.1}}>La securite, c est notre mission</h2>
             <p style={{fontSize:'1.05rem',color:'var(--text-secondary)',maxWidth:'560px',margin:'0 auto',lineHeight:1.8}}>
-              Think Safety est la plateforme de reference pour la formation en securite au travail, accessible a tous les professionnels du monde entier.
+              Think Safety est une plateforme 100% gratuite et ouverte a tous. Aucune inscription requise pour acceder aux formations. Trouvez les ressources adaptees a votre metier.
             </p>
           </Reveal>
           <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'28px'}}>
@@ -266,7 +266,7 @@ export default function HomePage() {
             ].map((f,i)=>{const Icon=f.icon;return(
               <Reveal key={i} delay={i*120} className="hover-lift" style={{borderRadius:'28px',overflow:'hidden',border:'1px solid var(--border)',background:'var(--bg-card)',cursor:'default'}}>
                 <div style={{height:'180px',overflow:'hidden',position:'relative'}}>
-                  <img src={f.img} alt={f.titre} style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+                  <img src={f.img} alt={f.titre} style={{width:'100%',height:'100%',objectFit:'cover'}} onError={(e)=>{(e.currentTarget as HTMLImageElement).style.display='none'}}/>
                   <div style={{position:'absolute',inset:0,background:'linear-gradient(to bottom,transparent 40%,rgba(0,0,0,0.5) 100%)'}}/>
                   <div style={{position:'absolute',top:'16px',left:'16px',width:'44px',height:'44px',borderRadius:'14px',background:'white',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:'0 4px 16px rgba(0,0,0,0.15)'}}>
                     <Icon size={22} style={{color:f.color}}/>
@@ -338,7 +338,7 @@ export default function HomePage() {
                 Chaque annee, des millions de travailleurs sont victimes d accidents professionnels evitables. Chez Think Safety, nous croyons que la formation est le moyen le plus efficace de prevenir ces tragedies.
               </p>
               <p style={{fontSize:'1rem',color:'var(--text-secondary)',lineHeight:1.85,margin:'0 0 32px 0'}}>
-                Notre plateforme offre des formations gratuites, accessibles depuis n importe quel appareil, dans tous les secteurs professionnels. Nous travaillons avec des experts du monde entier pour garantir la qualite et la pertinence de chaque contenu.
+                Think Safety rassemble des ressources de formation gratuites issues d experts du monde entier. Nous ne sommes pas une ecole, mais un espace ouvert ou chaque professionnel peut trouver, apprendre et partager des connaissances en securite.
               </p>
               <div style={{display:'flex',flexDirection:'column',gap:'14px',marginBottom:'36px'}}>
                 {['Formation gratuite et accessible universellement','Contenu valide par des experts certifies','Alertes et mises a jour en temps reel','Disponible dans plusieurs langues'].map((item,i)=>(
@@ -436,7 +436,7 @@ export default function HomePage() {
                   {img:'https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=400&q=80',label:'Petrole & Gaz'},
                   {img:'https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=400&q=80',label:'Education'},
                 ].map((item,i)=>(
-                  <div key={i} style={{height:'180px',borderRadius:'20px',overflow:'hidden',position:'relative'}} className="hover-scale">
+                  <div key={i} style={{height:'200px',borderRadius:'20px',overflow:'hidden',position:'relative',background:'#1a2a4a'}} className="hover-scale">
                     <img src={item.img} alt={item.label} style={{width:'100%',height:'100%',objectFit:'cover'}}/>
                     <div style={{position:'absolute',inset:0,background:'linear-gradient(to top,rgba(0,0,0,0.65) 0%,transparent 60%)'}}/>
                     <div style={{position:'absolute',bottom:'10px',left:'12px'}}>
@@ -467,10 +467,10 @@ export default function HomePage() {
               <Reveal key={s.slug} className="hover-lift" style={{gridColumn:'span 1',borderRadius:'24px',overflow:'hidden',aspectRatio:'1',cursor:'pointer',position:'relative',background:'var(--bg-secondary)'}}>
                 <Link href={'/secteurs/'+s.slug} style={{display:'block',width:'100%',height:'100%',textDecoration:'none',position:'relative'}}>
                   <img src={s.img} alt={s.nom} style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',transition:'transform 0.7s ease'}} onMouseEnter={e=>(e.currentTarget as HTMLElement).style.transform='scale(1.08)'} onMouseLeave={e=>(e.currentTarget as HTMLElement).style.transform='scale(1)'}/>
-                  <div style={{position:'absolute',inset:0,background:'linear-gradient(to top,rgba(0,0,0,0.82) 0%,rgba(0,0,0,0.15) 70%,transparent 100%)'}}/>
+                  <div style={{position:'absolute',inset:0,background:'linear-gradient(to top,rgba(0,0,0,0.7) 0%,rgba(0,0,0,0.1) 60%,transparent 100%)'}}/>
                   <div style={{position:'absolute',top:'12px',right:'12px',fontSize:'1.6rem'}}>{s.emoji}</div>
                   <div style={{position:'absolute',bottom:0,left:0,right:0,padding:'14px'}}>
-                    <p style={{color:'white',fontSize:'12px',fontWeight:900,margin:'0 0 2px 0'}}>{s.nom}</p>
+                    <p style={{color:'white',fontSize:'15px',fontWeight:900,margin:'0 0 3px 0'}}>{s.nom}</p>
                     <p style={{color:'rgba(255,255,255,0.6)',fontSize:'10px',margin:0}}>{s.count} formations</p>
                   </div>
                 </Link>
@@ -480,10 +480,10 @@ export default function HomePage() {
               <Reveal key={s.slug} className="hover-lift" style={{borderRadius:'18px',overflow:'hidden',aspectRatio:'3/4',cursor:'pointer',position:'relative',background:'var(--bg-secondary)'}}>
                 <Link href={'/secteurs/'+s.slug} style={{display:'block',width:'100%',height:'100%',textDecoration:'none',position:'relative'}}>
                   <img src={s.img} alt={s.nom} style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',transition:'transform 0.7s ease'}} onMouseEnter={e=>(e.currentTarget as HTMLElement).style.transform='scale(1.08)'} onMouseLeave={e=>(e.currentTarget as HTMLElement).style.transform='scale(1)'}/>
-                  <div style={{position:'absolute',inset:0,background:'linear-gradient(to top,rgba(0,0,0,0.8) 0%,transparent 60%)'}}/>
+                  <div style={{position:'absolute',inset:0,background:'linear-gradient(to top,rgba(0,0,0,0.65) 0%,transparent 55%)'}}/>
                   <div style={{position:'absolute',top:'8px',right:'8px',fontSize:'1.3rem'}}>{s.emoji}</div>
                   <div style={{position:'absolute',bottom:0,left:0,right:0,padding:'10px'}}>
-                    <p style={{color:'white',fontSize:'11px',fontWeight:900,margin:'0 0 2px 0'}}>{s.nom}</p>
+                    <p style={{color:'white',fontSize:'14px',fontWeight:900,margin:'0 0 3px 0'}}>{s.nom}</p>
                     <p style={{color:'rgba(255,255,255,0.55)',fontSize:'9px',margin:0}}>{s.count} formations</p>
                   </div>
                 </Link>
@@ -611,13 +611,13 @@ export default function HomePage() {
               La securite au travail commence par la formation
             </h2>
             <p style={{fontSize:'1.15rem',color:'rgba(255,255,255,0.85)',margin:'0 0 48px 0',maxWidth:'560px',marginLeft:'auto',marginRight:'auto',lineHeight:1.8}}>
-              100% gratuit. 500+ formations. 9 secteurs. Alertes en temps reel. Marketplace EPI. Tout ce dont vous avez besoin pour proteger vos equipes.
+              Aucune inscription. Aucun abonnement. 500+ ressources gratuites dans 9 secteurs. Alertes securite en temps reel. Tout est accessible immediatement.
             </p>
             <div style={{display:'flex',flexWrap:'wrap',justifyContent:'center',gap:'16px'}}>
               <Link href="/secteurs" style={{display:'inline-flex',alignItems:'center',gap:'10px',padding:'16px 40px',borderRadius:'18px',fontWeight:900,fontSize:'15px',color:'var(--orange)',textDecoration:'none',background:'white',boxShadow:'0 12px 40px rgba(0,0,0,0.2)',transition:'transform 0.2s, box-shadow 0.2s'}}
                 onMouseEnter={e=>Object.assign((e.currentTarget as HTMLElement).style,{transform:'scale(1.05)',boxShadow:'0 20px 50px rgba(0,0,0,0.3)'})}
                 onMouseLeave={e=>Object.assign((e.currentTarget as HTMLElement).style,{transform:'scale(1)',boxShadow:'0 12px 40px rgba(0,0,0,0.2)'})}>
-                Commencer gratuitement <ArrowRight size={17}/>
+                Trouver une formation <ArrowRight size={17}/>
               </Link>
               <Link href="/marketplace" style={{display:'inline-flex',alignItems:'center',gap:'10px',padding:'16px 40px',borderRadius:'18px',fontWeight:700,fontSize:'15px',color:'white',textDecoration:'none',background:'rgba(255,255,255,0.15)',border:'2px solid rgba(255,255,255,0.35)',transition:'all 0.2s'}}
                 onMouseEnter={e=>(e.currentTarget as HTMLElement).style.background='rgba(255,255,255,0.22)'}

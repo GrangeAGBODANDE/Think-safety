@@ -87,9 +87,9 @@ export default function Navbar() {
                     <p className="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest mb-1" style={{color:'var(--orange)'}}>Types de formations</p>
                     {[
                       {href:'/secteurs',    icon:BookOpen,   label:'Toutes les formations', desc:'500+ cours disponibles gratuitement',badge:null},
-                      {href:'/secteurs',    icon:Star,       label:'Les plus populaires',    desc:'Formations les plus suivies',badge:'Top'},
+                      {href:'/secteurs',    icon:Star,       label:'Les plus consultees',    desc:'Ressources les plus vues',badge:'Top'},
                       {href:'/secteurs',    icon:Zap,        label:'Nouvelles formations',   desc:'Ajoutees cette semaine',badge:'New'},
-                      {href:'/abonnements', icon:Users,      label:'Pour les entreprises',   desc:'Solutions pour les equipes',badge:null},
+                      {href:'/abonnements', icon:Users,      label:'Partenaires marketplace', desc:'Publiez sur le marketplace',badge:null},
                     ].map(item=>{const Icon=item.icon;return(
                       <Link key={item.label} href={item.href} onClick={()=>setDropdown(null)}
                         className="flex items-center gap-3 mx-1 px-3 py-2.5 rounded-xl hover:no-underline transition-all group"
