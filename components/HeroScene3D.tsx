@@ -26,7 +26,7 @@ function Helmet({ position }: { position: [number,number,number] }) {
     if (!ref.current) return
     ref.current.rotation.y = s.clock.elapsedTime * 0.3
     if (bounce) {
-      const elapsed = s.clock.elapsedTime - startT.current
+      const elapsed = Date.now()/1000 - startT.current
       const y = Math.abs(Math.sin(elapsed * 6)) * 0.8 * Math.max(0, 1 - elapsed * 0.5)
       ref.current.position.y = position[1] + y
       if (elapsed > 2) setBounce(false)
@@ -36,7 +36,7 @@ function Helmet({ position }: { position: [number,number,number] }) {
   })
   return (
     <Float speed={1.8} floatIntensity={0.45} rotationIntensity={0.1}>
-      <group ref={ref} position={position} onClick={() => { setBounce(true); startT.current = performance.now()/1000 }} style={{cursor:'pointer'}}>
+      <group ref={ref} position={position} onClick={() => { setBounce(true); startT.current = Date.now()/1000 }}>
         <pointLight color="#FFD700" intensity={0.8} distance={3.5} />
         <mesh>
           <sphereGeometry args={[0.78, 32, 16, 0, Math.PI*2, 0, Math.PI*0.54]} />
@@ -167,7 +167,7 @@ function Scene() {
   return (
     <>
       <ambientLight intensity={0.7} />
-      <directionalLight position={[6, 9, 6]} intensity={1.4} castShadow shadow-mapSize={[1024,1024]} />
+      <directionalLight position={[6, 9, 6]} intensity={1.4} castShadow />
       <directionalLight position={[-5, 5, -3]} intensity={0.45} color="#c8d8ff" />
       <pointLight position={[0, 6, 0]} intensity={0.3} color="#fff5e0" />
       <Helmet position={[-3.2, 0.4, 0]} />
