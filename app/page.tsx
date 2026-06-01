@@ -192,7 +192,7 @@ export default function HomePage() {
                     </div>
                   </div>
                   {/* Stats flotttantes */}
-                  <div className="grid grid-cols-3 divide-x" style={{borderTop:'1px solid rgba(255,255,255,0.06)',divideColor:'rgba(255,255,255,0.06)'}}>
+                  <div className="grid grid-cols-3 divide-x" style={{borderTop:'1px solid rgba(255,255,255,0.06)'}}>
                     {[{v:'500+',l:'Cours'},{v:'18',l:'Secteurs'},{v:'24/7',l:'Alertes'}].map((s,i) => (
                       <div key={i} className="py-3 text-center" style={{background:'rgba(6,13,26,0.6)'}}>
                         <div className="text-sm font-black text-white">{s.v}</div>
