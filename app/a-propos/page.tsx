@@ -1,3 +1,4 @@
+'use client'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
@@ -168,9 +169,7 @@ export default function AboutPage() {
           </div>
           <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:'20px'}}>
             {VALEURS.map((v,i)=>{const Icon=v.icon;return(
-              <div key={i} style={{padding:'28px 22px',borderRadius:'22px',border:'1px solid var(--border)',background:'var(--bg-card)',textAlign:'center',transition:'all 0.3s ease'}}
-                onMouseEnter={e=>Object.assign((e.currentTarget as HTMLElement).style,{transform:'translateY(-6px)',boxShadow:'0 20px 40px rgba(0,0,0,0.1)'})}
-                onMouseLeave={e=>Object.assign((e.currentTarget as HTMLElement).style,{transform:'translateY(0)',boxShadow:'none'})}>
+              <div key={i} style={{padding:'28px 22px',borderRadius:'22px',border:'1px solid var(--border)',background:'var(--bg-card)',textAlign:'center',transition:'all 0.3s ease'}})})}>
                 <div style={{width:'52px',height:'52px',borderRadius:'16px',background:v.color+'15',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 16px auto'}}>
                   <Icon size={24} style={{color:v.color}}/>
                 </div>
