@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
+import DonationBanner from '@/components/DonationBanner'
 import { ArrowRight, Bell, AlertTriangle, BookOpen, Shield, Play, Clock, Users, Zap, CheckCircle, Star, Award, Globe, TrendingUp, Target, Heart, Eye, Lock } from 'lucide-react'
 
 const SECTEURS = [
@@ -110,6 +111,7 @@ export default function HomePage() {
       `}</style>
 
       <Navbar/>
+      <DonationBanner/>
 
       {alerte&&(
         <Link href="/alertes" className="flex items-center gap-3 px-6 py-2.5 hover:no-underline hover:opacity-90 transition-opacity" style={{background:'#c0392b',paddingTop:'68px'}}>
