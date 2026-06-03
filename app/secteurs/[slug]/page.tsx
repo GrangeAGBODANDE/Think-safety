@@ -5,9 +5,9 @@ import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import { SECTEURS } from '@/lib/secteurs-data'
-import { Play, FileText, HelpCircle, ChevronRight, ChevronDown, ArrowLeft, Download, Clock, Eye, BookOpen, Shield } from 'lucide-react'
+import { Play, FileText, Image, BookOpen, ArrowLeft, Clock, ChevronRight, Shield, Users, Star, Filter, CheckCircle } from 'lucide-react'
 
-const IMGS: Record<string, string> = {
+const IMGS: Record<string,string> = {
   'construction-btp':         'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=1400&q=80',
   'industrie-manufacturiere': 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=1400&q=80',
   'sante-medical':            'https://images.unsplash.com/photo-1584515933487-779824d29309?w=1400&q=80',
@@ -28,38 +28,61 @@ const IMGS: Record<string, string> = {
   'securite-defense':         'https://images.unsplash.com/photo-1553877522-43269d4ea984?w=1400&q=80',
 }
 
-const MOCK_VIDEOS = [
-  { id: 1, titre: 'Introduction a la securite - Les fondamentaux', duree: '18 min', niveau: 'Debutant', vues: 2341, color: '#22c55e' },
-  { id: 2, titre: 'Les equipements de protection individuelle', duree: '24 min', niveau: 'Debutant', vues: 1892, color: '#22c55e' },
-  { id: 3, titre: 'Gestion des risques sur le terrain', duree: '31 min', niveau: 'Intermediaire', vues: 987, color: '#f59e0b' },
-  { id: 4, titre: 'Procedures urgence et evacuation', duree: '20 min', niveau: 'Intermediaire', vues: 1543, color: '#f59e0b' },
-  { id: 5, titre: 'Analyse des accidents - Methodes avancees', duree: '42 min', niveau: 'Avance', vues: 654, color: '#ef4444' },
-]
+type NiveauType = 'Debutant'|'Intermediaire'|'Avance'
+type ContentType = 'video'|'document'|'image'|'text'
 
-const MOCK_DOCS = [
-  { id: 1, titre: 'Guide complet EPI', pages: 42, taille: '2.1 MB', type: 'PDF' },
-  { id: 2, titre: 'Fiche reflexe urgences', pages: 4, taille: '0.3 MB', type: 'PDF' },
-  { id: 3, titre: 'Check-list inspection securite', pages: 8, taille: '0.5 MB', type: 'PDF' },
-  { id: 4, titre: 'Procedure evacuation incendie', pages: 12, taille: '0.8 MB', type: 'PDF' },
-]
+interface Module {
+  id: number
+  numero: string
+  titre: string
+  description: string
+  niveau: NiveauType
+  duree: string
+  types: ContentType[]
+  vues: number
+  slug: string
+}
 
-const MOCK_FAQ = [
-  { id: 1, q: 'Quels EPI sont obligatoires dans ce secteur ?', r: 'Les EPI obligatoires varient selon les risques identifies. En general : casque, chaussures de securite, gilet haute visibilite, gants adaptes et protection oculaire selon les taches.' },
-  { id: 2, q: 'A quelle frequence faire les formations securite ?', r: 'Formation initiale a l embauche, recyclage annuel ou bisannuel selon les risques, et formation specifique a chaque changement de poste.' },
-  { id: 3, q: 'Comment rediger un document unique d evaluation des risques ?', r: 'Le DUER doit identifier tous les risques, les evaluer selon frequence et gravite, definir les mesures de prevention et etre mis a jour au moins une fois par an.' },
-  { id: 4, q: 'Que faire en cas d accident du travail ?', r: 'Alerter les secours, prodiguer les premiers secours, securiser la zone, prevenir le superieur hierarchique, rediger le registre des accidents et declarer a la CNSS dans les 48h.' },
+const NIVEAUX_COLOR: Record<NiveauType,string> = {
+  Debutant:     '#22c55e',
+  Intermediaire:'#f59e0b',
+  Avance:       '#ef4444',
+}
+
+const TYPE_ICONS: Record<ContentType,any> = {
+  video:    Play,
+  document: FileText,
+  image:    Image,
+  text:     BookOpen,
+}
+
+const TYPE_LABELS: Record<ContentType,string> = {
+  video:    'Vidéo',
+  document: 'Document',
+  image:    'Images',
+  text:     'Cours texte',
+}
+
+const MOCK_MODULES: Module[] = [
+  { id:1,  numero:'01', titre:'Introduction et fondamentaux de la sécurité',        description:'Les bases essentielles de la sécurité au travail, réglementation et obligations de l employeur et du salarié.',                                         niveau:'Debutant',     duree:'20 min', types:['video','text'],           vues:2341, slug:'module-introduction' },
+  { id:2,  numero:'02', titre:'Équipements de protection individuelle (EPI)',        description:'Identification, utilisation et entretien des EPI adaptés à chaque risque. Choisir le bon équipement selon la situation.',                                   niveau:'Debutant',     duree:'35 min', types:['video','document','image'], vues:1892, slug:'module-epi' },
+  { id:3,  numero:'03', titre:'Identification et évaluation des risques',           description:'Méthodes d analyse des risques professionnels, construction du document unique d évaluation (DUER) et plans d action.',                                       niveau:'Debutant',     duree:'25 min', types:['text','document'],         vues:1654, slug:'module-risques' },
+  { id:4,  numero:'04', titre:'Gestion des situations d urgence',                   description:'Procédures d urgence, évacuation, premiers secours et gestion de crise. Pratique des gestes qui sauvent.',                                                   niveau:'Intermediaire', duree:'40 min', types:['video','text','image'],   vues:987,  slug:'module-urgence' },
+  { id:5,  numero:'05', titre:'Prévention des accidents du travail',                description:'Analyse des causes d accidents, mise en place de mesures préventives et culture de la sécurité en entreprise.',                                               niveau:'Intermediaire', duree:'30 min', types:['video','text'],           vues:1543, slug:'module-prevention' },
+  { id:6,  numero:'06', titre:'Réglementation et obligations légales',              description:'Cadre juridique de la sécurité au travail, rôle du CHSCT, inspections du travail et sanctions en cas de manquement.',                                        niveau:'Intermediaire', duree:'45 min', types:['document','text'],         vues:876,  slug:'module-reglementation' },
+  { id:7,  numero:'07', titre:'Ergonomie et prévention des TMS',                    description:'Troubles musculo-squelettiques, gestes et postures adaptés, aménagement du poste de travail pour réduire les risques.',                                      niveau:'Intermediaire', duree:'28 min', types:['video','image','text'],   vues:1120, slug:'module-ergonomie' },
+  { id:8,  numero:'08', titre:'Méthodes avancées d analyse des accidents',          description:'Arbre des causes, méthode RCAT, retour d expérience et mise en place d un système de management de la sécurité (SMS).',                                      niveau:'Avance',       duree:'55 min', types:['video','document','text'], vues:654,  slug:'module-analyse' },
 ]
 
 export default function SecteurPage() {
   const params = useParams()
   const slug = params.slug as string
   const secteur = SECTEURS.find(s => s.slug === slug)
-  const [tab, setTab] = useState<'videos'|'documents'|'faq'>('videos')
-  const [openFaq, setOpenFaq] = useState<number|null>(null)
+  const [filtre, setFiltre] = useState<'tous'|NiveauType>('tous')
 
   if (!secteur) return (
-    <div className="min-h-screen flex items-center justify-center" style={{background:'var(--bg-main)'}}>
-      <div className="text-center">
+    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'var(--bg-main)'}}>
+      <div style={{textAlign:'center'}}>
         <p style={{color:'var(--text-secondary)',marginBottom:'16px'}}>Secteur non trouvé</p>
         <Link href="/secteurs" style={{padding:'10px 24px',borderRadius:'12px',background:'var(--orange)',color:'white',textDecoration:'none',fontWeight:700}}>Voir tous les secteurs</Link>
       </div>
@@ -67,221 +90,159 @@ export default function SecteurPage() {
   )
 
   const img = IMGS[secteur.slug]
+  const filtered = filtre === 'tous' ? MOCK_MODULES : MOCK_MODULES.filter(m => m.niveau === filtre)
+  const totalDuree = MOCK_MODULES.reduce((acc, m) => acc + parseInt(m.duree), 0)
 
   return (
-    <div className="min-h-screen" style={{background:'var(--bg-main)'}}>
+    <div style={{minHeight:'100vh',background:'var(--bg-main)'}}>
       <Navbar />
 
       {/* ═══ HERO ═══ */}
-      <section style={{paddingTop:'64px',position:'relative',overflow:'hidden',minHeight:'320px',display:'flex',alignItems:'flex-end'}}>
-        {/* Background image */}
+      <section style={{paddingTop:'64px',position:'relative',overflow:'hidden',minHeight:'340px',display:'flex',alignItems:'flex-end'}}>
         <div style={{position:'absolute',inset:0}}>
           {img
-            ? <img src={img} alt={secteur.nom} style={{width:'100%',height:'100%',objectFit:'cover',filter:'brightness(0.3) saturate(0.6)'}}/>
-            : <div style={{width:'100%',height:'100%',background:`linear-gradient(135deg,${secteur.couleur}30,#0a1628)`}}/>
-          }
-          <div style={{position:'absolute',inset:0,background:'linear-gradient(to top,rgba(6,13,26,1) 0%,rgba(6,13,26,0.5) 60%,rgba(6,13,26,0.2) 100%)'}}/>
+            ? <img src={img} alt={secteur.nom} style={{width:'100%',height:'100%',objectFit:'cover',filter:'brightness(0.28) saturate(0.6)'}}/>
+            : <div style={{width:'100%',height:'100%',background:`linear-gradient(135deg,${secteur.couleur}30,#0a1628)`}}/>}
+          <div style={{position:'absolute',inset:0,background:'linear-gradient(to top,rgba(6,13,26,1) 0%,rgba(6,13,26,0.55) 60%,rgba(6,13,26,0.2) 100%)'}}/>
           <div style={{position:'absolute',bottom:0,left:0,right:0,height:'4px',background:`linear-gradient(to right,${secteur.couleur},${secteur.couleur}50,transparent)`}}/>
         </div>
-
-        <div style={{position:'relative',maxWidth:'1280px',margin:'0 auto',padding:'40px 24px 40px',width:'100%'}}>
-          <Link href="/secteurs" style={{display:'inline-flex',alignItems:'center',gap:'6px',color:'rgba(255,255,255,0.55)',fontSize:'13px',fontWeight:600,textDecoration:'none',marginBottom:'20px',transition:'color 0.2s'}}
+        <div style={{position:'relative',maxWidth:'1280px',margin:'0 auto',padding:'40px 24px 44px',width:'100%'}}>
+          <Link href="/secteurs" style={{display:'inline-flex',alignItems:'center',gap:'6px',color:'rgba(255,255,255,0.5)',fontSize:'13px',fontWeight:600,textDecoration:'none',marginBottom:'20px'}}
             onMouseEnter={e=>(e.currentTarget as HTMLElement).style.color='white'}
-            onMouseLeave={e=>(e.currentTarget as HTMLElement).style.color='rgba(255,255,255,0.55)'}>
+            onMouseLeave={e=>(e.currentTarget as HTMLElement).style.color='rgba(255,255,255,0.5)'}>
             <ArrowLeft size={14}/> Tous les secteurs
           </Link>
-
-          <div style={{display:'flex',alignItems:'flex-end',gap:'24px',flexWrap:'wrap'}}>
-            <div style={{flex:1,minWidth:'300px'}}>
-              {/* Accent bar */}
+          <div style={{display:'flex',alignItems:'flex-end',gap:'32px',flexWrap:'wrap'}}>
+            <div style={{flex:1,minWidth:'280px'}}>
               <div style={{height:'3px',width:'48px',borderRadius:'99px',background:secteur.couleur,marginBottom:'16px'}}/>
-              <h1 style={{fontSize:'clamp(2rem,4vw,3.2rem)',fontWeight:900,color:'white',margin:'0 0 12px 0',lineHeight:1.05,letterSpacing:'-0.02em'}}>
-                {secteur.nom}
-              </h1>
-              <p style={{fontSize:'1rem',color:'rgba(255,255,255,0.65)',margin:'0 0 16px 0',maxWidth:'580px',lineHeight:1.75}}>
-                {secteur.description}
-              </p>
-              {/* Tags risques */}
+              <h1 style={{fontSize:'clamp(1.8rem,4vw,3rem)',fontWeight:900,color:'white',margin:'0 0 12px 0',lineHeight:1.05,letterSpacing:'-0.02em'}}>{secteur.nom}</h1>
+              <p style={{fontSize:'1rem',color:'rgba(255,255,255,0.6)',margin:'0 0 16px 0',maxWidth:'560px',lineHeight:1.75}}>{secteur.description}</p>
               <div style={{display:'flex',flexWrap:'wrap',gap:'8px'}}>
                 {secteur.risques.map(r => (
-                  <span key={r} style={{padding:'5px 12px',borderRadius:'8px',fontSize:'11px',fontWeight:700,color:secteur.couleur,background:secteur.couleur+'20',border:'1px solid '+secteur.couleur+'35'}}>
-                    {r}
-                  </span>
+                  <span key={r} style={{padding:'4px 12px',borderRadius:'8px',fontSize:'11px',fontWeight:700,color:secteur.couleur,background:secteur.couleur+'22',border:'1px solid '+secteur.couleur+'35'}}>{r}</span>
                 ))}
               </div>
             </div>
-
-            {/* Stats */}
-            <div style={{display:'flex',gap:'20px',flexShrink:0}}>
+            <div style={{display:'flex',gap:'16px',flexShrink:0,flexWrap:'wrap'}}>
               {[
-                {val:secteur.nb_contenus+'+',label:'Ressources'},
-                {val:MOCK_VIDEOS.length,label:'Vidéos'},
-                {val:MOCK_DOCS.length,label:'Documents'},
-                {val:MOCK_FAQ.length,label:'FAQ'},
-              ].map((s,i) => (
-                <div key={i} style={{textAlign:'center',padding:'12px 16px',borderRadius:'16px',background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.1)',backdropFilter:'blur(10px)'}}>
-                  <div style={{fontSize:'1.4rem',fontWeight:900,color:'white',lineHeight:1}}>{s.val}</div>
-                  <div style={{fontSize:'10px',color:'rgba(255,255,255,0.5)',marginTop:'3px'}}>{s.label}</div>
-                </div>
-              ))}
+                {val:MOCK_MODULES.length,label:'Modules',icon:BookOpen},
+                {val:totalDuree+' min',label:'Durée totale',icon:Clock},
+                {val:'100%',label:'Gratuit',icon:Shield},
+              ].map((s,i) => {
+                const Icon = s.icon
+                return (
+                  <div key={i} style={{padding:'14px 18px',borderRadius:'18px',background:'rgba(255,255,255,0.07)',border:'1px solid rgba(255,255,255,0.1)',backdropFilter:'blur(10px)',textAlign:'center',minWidth:'90px'}}>
+                    <Icon size={16} style={{color:secteur.couleur,marginBottom:'6px'}}/>
+                    <div style={{fontSize:'1.3rem',fontWeight:900,color:'white',lineHeight:1}}>{s.val}</div>
+                    <div style={{fontSize:'10px',color:'rgba(255,255,255,0.45)',marginTop:'3px'}}>{s.label}</div>
+                  </div>
+                )
+              })}
             </div>
           </div>
         </div>
       </section>
 
-      {/* ═══ TABS ═══ */}
+      {/* ═══ FILTRES ═══ */}
       <div style={{position:'sticky',top:'64px',zIndex:40,background:'var(--bg-card)',borderBottom:'1px solid var(--border)',backdropFilter:'blur(20px)'}}>
-        <div style={{maxWidth:'1280px',margin:'0 auto',padding:'0 24px',display:'flex',gap:'4px'}}>
-          {([
-            {id:'videos'   as const, label:'Vidéos',    Icon:Play,      count:MOCK_VIDEOS.length},
-            {id:'documents'as const, label:'Documents',  Icon:FileText,  count:MOCK_DOCS.length},
-            {id:'faq'      as const, label:'FAQ',        Icon:HelpCircle,count:MOCK_FAQ.length},
-          ]).map(t => (
-            <button key={t.id} onClick={()=>setTab(t.id)}
-              style={{display:'flex',alignItems:'center',gap:'8px',padding:'16px 20px',fontSize:'14px',fontWeight:600,border:'none',borderBottom:'2px solid',cursor:'pointer',background:'transparent',transition:'all 0.2s',
-                color: tab===t.id ? secteur.couleur : 'var(--text-secondary)',
-                borderBottomColor: tab===t.id ? secteur.couleur : 'transparent',
+        <div style={{maxWidth:'1280px',margin:'0 auto',padding:'12px 24px',display:'flex',alignItems:'center',gap:'8px',flexWrap:'wrap'}}>
+          <div style={{display:'flex',alignItems:'center',gap:'6px',fontSize:'12px',fontWeight:700,color:'var(--text-secondary)',marginRight:'8px'}}>
+            <Filter size={13}/> Niveau :
+          </div>
+          {(['tous','Debutant','Intermediaire','Avance'] as const).map(n => (
+            <button key={n} onClick={()=>setFiltre(n)}
+              style={{padding:'6px 14px',borderRadius:'99px',fontSize:'12px',fontWeight:700,border:'1px solid',cursor:'pointer',transition:'all 0.2s',
+                background: filtre===n ? (n==='tous'?'var(--orange)':NIVEAUX_COLOR[n as NiveauType]) : 'var(--bg-secondary)',
+                color: filtre===n ? 'white' : 'var(--text-secondary)',
+                borderColor: filtre===n ? (n==='tous'?'var(--orange)':NIVEAUX_COLOR[n as NiveauType]) : 'var(--border)',
               }}>
-              <t.Icon size={15}/>
-              {t.label}
-              <span style={{padding:'2px 7px',borderRadius:'99px',fontSize:'10px',fontWeight:700,background:tab===t.id?secteur.couleur+'20':'var(--bg-secondary)',color:tab===t.id?secteur.couleur:'var(--text-secondary)'}}>
-                {t.count}
-              </span>
+              {n==='tous' ? 'Tous les modules' : n}
+              {n!=='tous' && <span style={{marginLeft:'4px',opacity:0.7}}>({MOCK_MODULES.filter(m=>m.niveau===n).length})</span>}
             </button>
           ))}
+          <div style={{marginLeft:'auto',fontSize:'12px',color:'var(--text-secondary)',fontWeight:600}}>
+            {filtered.length} module{filtered.length>1?'s':''} disponible{filtered.length>1?'s':''}
+          </div>
         </div>
       </div>
 
-      {/* ═══ CONTENU ═══ */}
+      {/* ═══ MODULES ═══ */}
       <main style={{maxWidth:'1280px',margin:'0 auto',padding:'40px 24px 96px'}}>
+        <div style={{display:'grid',gridTemplateColumns:'1fr',gap:'16px'}}>
+          {filtered.map((m, i) => {
+            const niveauColor = NIVEAUX_COLOR[m.niveau]
+            return (
+              <Link key={m.id} href={`/secteurs/${slug}/${m.slug}`} style={{textDecoration:'none',display:'block'}}>
+                <div className="hover-lift" style={{borderRadius:'20px',border:'1px solid var(--border)',background:'var(--bg-card)',padding:'0',overflow:'hidden',transition:'all 0.3s ease',cursor:'pointer'}}
+                  onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.borderColor=secteur.couleur+'60';(e.currentTarget as HTMLElement).style.transform='translateY(-3px)';(e.currentTarget as HTMLElement).style.boxShadow='0 12px 32px rgba(0,0,0,0.12)'}}
+                  onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.borderColor='var(--border)';(e.currentTarget as HTMLElement).style.transform='translateY(0)';(e.currentTarget as HTMLElement).style.boxShadow='none'}}>
+                  {/* Accent top */}
+                  <div style={{height:'3px',background:`linear-gradient(to right,${secteur.couleur},${secteur.couleur}40,transparent)`}}/>
 
-        {/* VIDEOS */}
-        {tab==='videos' && (
-          <div>
-            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'28px',flexWrap:'wrap',gap:'12px'}}>
-              <div>
-                <p style={{fontSize:'11px',fontWeight:900,textTransform:'uppercase',letterSpacing:'0.1em',color:'var(--orange)',marginBottom:'6px'}}>Catalogue vidéo</p>
-                <h2 style={{fontSize:'1.5rem',fontWeight:900,color:'var(--text-primary)',margin:0}}>Formations vidéo — {secteur.nom}</h2>
-              </div>
-              <div style={{display:'flex',alignItems:'center',gap:'6px',fontSize:'12px',fontWeight:600,color:'var(--text-secondary)'}}>
-                <Shield size={13} style={{color:'#22c55e'}}/> Toutes les vidéos sont gratuites
-              </div>
-            </div>
-            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(320px,1fr))',gap:'20px'}}>
-              {MOCK_VIDEOS.map(v => (
-                <div key={v.id} className="hover-lift" style={{borderRadius:'20px',overflow:'hidden',border:'1px solid var(--border)',background:'var(--bg-card)',cursor:'pointer',transition:'all 0.3s'}}>
-                  {/* Thumbnail placeholder */}
-                  <div style={{height:'180px',position:'relative',background:`linear-gradient(135deg,${secteur.couleur}20,${secteur.couleur}08)`,display:'flex',alignItems:'center',justifyContent:'center',overflow:'hidden'}}>
-                    <div style={{width:'64px',height:'64px',borderRadius:'50%',background:secteur.couleur,display:'flex',alignItems:'center',justifyContent:'center',boxShadow:`0 8px 24px ${secteur.couleur}60`,transition:'transform 0.3s'}}
-                      onMouseEnter={e=>(e.currentTarget as HTMLElement).style.transform='scale(1.1)'}
-                      onMouseLeave={e=>(e.currentTarget as HTMLElement).style.transform='scale(1)'}>
-                      <Play size={24} style={{color:'white',marginLeft:'3px'}} fill="white"/>
+                  <div style={{padding:'20px 24px',display:'flex',alignItems:'center',gap:'20px',flexWrap:'wrap'}}>
+                    {/* Numéro */}
+                    <div style={{width:'52px',height:'52px',borderRadius:'16px',background:secteur.couleur+'18',border:'2px solid '+secteur.couleur+'30',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                      <span style={{fontSize:'15px',fontWeight:900,color:secteur.couleur}}>{m.numero}</span>
                     </div>
-                    <div style={{position:'absolute',bottom:'10px',right:'10px',display:'flex',alignItems:'center',gap:'4px',padding:'4px 10px',borderRadius:'8px',fontSize:'11px',fontWeight:700,color:'white',background:'rgba(0,0,0,0.65)'}}>
-                      <Clock size={10}/>{v.duree}
-                    </div>
-                    <div style={{position:'absolute',top:'10px',left:'10px',padding:'3px 10px',borderRadius:'99px',fontSize:'10px',fontWeight:700,color:v.color,background:v.color+'20',border:'1px solid '+v.color+'30'}}>
-                      {v.niveau}
-                    </div>
-                  </div>
-                  {/* Info */}
-                  <div style={{padding:'16px'}}>
-                    <h3 style={{fontSize:'14px',fontWeight:700,color:'var(--text-primary)',margin:'0 0 10px 0',lineHeight:1.4}}>{v.titre}</h3>
-                    <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:'12px'}}>
-                      <div style={{display:'flex',alignItems:'center',gap:'4px',fontSize:'12px',color:'var(--text-secondary)'}}>
-                        <Eye size={12}/>{v.vues.toLocaleString()} vues
+
+                    {/* Contenu principal */}
+                    <div style={{flex:1,minWidth:'200px'}}>
+                      <div style={{display:'flex',alignItems:'center',gap:'8px',marginBottom:'6px',flexWrap:'wrap'}}>
+                        <span style={{padding:'3px 10px',borderRadius:'99px',fontSize:'10px',fontWeight:700,color:niveauColor,background:niveauColor+'18',border:'1px solid '+niveauColor+'30'}}>{m.niveau}</span>
+                        {/* Types de contenu */}
+                        {m.types.map(t => {
+                          const Icon = TYPE_ICONS[t]
+                          return (
+                            <span key={t} style={{display:'inline-flex',alignItems:'center',gap:'3px',padding:'3px 8px',borderRadius:'6px',fontSize:'10px',fontWeight:600,color:'var(--text-secondary)',background:'var(--bg-secondary)',border:'1px solid var(--border)'}}>
+                              <Icon size={9}/>{TYPE_LABELS[t]}
+                            </span>
+                          )
+                        })}
                       </div>
-                      <div style={{marginLeft:'auto',display:'flex',alignItems:'center',gap:'4px',fontSize:'12px',fontWeight:700,color:secteur.couleur}}>
-                        Regarder <ChevronRight size={13}/>
+                      <h3 style={{fontSize:'15px',fontWeight:900,color:'var(--text-primary)',margin:'0 0 6px 0',lineHeight:1.35}}>{m.titre}</h3>
+                      <p style={{fontSize:'13px',color:'var(--text-secondary)',margin:0,lineHeight:1.6,display:'-webkit-box',WebkitLineClamp:1,WebkitBoxOrient:'vertical',overflow:'hidden'}}>{m.description}</p>
+                    </div>
+
+                    {/* Méta droite */}
+                    <div style={{display:'flex',alignItems:'center',gap:'20px',flexShrink:0}}>
+                      <div style={{textAlign:'center'}}>
+                        <div style={{display:'flex',alignItems:'center',gap:'4px',fontSize:'12px',fontWeight:600,color:'var(--text-secondary)',marginBottom:'2px'}}>
+                          <Clock size={11}/>{m.duree}
+                        </div>
+                        <div style={{display:'flex',alignItems:'center',gap:'4px',fontSize:'11px',color:'var(--text-secondary)'}}>
+                          <Users size={10}/>{m.vues.toLocaleString()} vues
+                        </div>
+                      </div>
+                      <div style={{display:'flex',alignItems:'center',gap:'6px',padding:'10px 18px',borderRadius:'12px',background:secteur.couleur+'18',border:'1px solid '+secteur.couleur+'30',fontSize:'13px',fontWeight:700,color:secteur.couleur,whiteSpace:'nowrap'}}>
+                        Commencer <ChevronRight size={14}/>
                       </div>
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
+              </Link>
+            )
+          })}
+        </div>
 
-        {/* DOCUMENTS */}
-        {tab==='documents' && (
-          <div>
-            <div style={{marginBottom:'28px'}}>
-              <p style={{fontSize:'11px',fontWeight:900,textTransform:'uppercase',letterSpacing:'0.1em',color:'var(--orange)',marginBottom:'6px'}}>Ressources documentaires</p>
-              <h2 style={{fontSize:'1.5rem',fontWeight:900,color:'var(--text-primary)',margin:0}}>Documents — {secteur.nom}</h2>
-            </div>
-            <div style={{display:'flex',flexDirection:'column',gap:'12px',maxWidth:'800px'}}>
-              {MOCK_DOCS.map((d,i) => (
-                <div key={d.id} className="hover-lift" style={{borderRadius:'16px',border:'1px solid var(--border)',background:'var(--bg-card)',padding:'16px 20px',display:'flex',alignItems:'center',gap:'16px',transition:'all 0.3s'}}>
-                  {/* Icon */}
-                  <div style={{width:'48px',height:'48px',borderRadius:'14px',background:'rgba(239,68,68,0.12)',border:'1px solid rgba(239,68,68,0.2)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-                    <FileText size={20} style={{color:'#ef4444'}}/>
-                  </div>
-                  {/* Info */}
-                  <div style={{flex:1,minWidth:0}}>
-                    <p style={{fontSize:'14px',fontWeight:700,color:'var(--text-primary)',margin:'0 0 4px 0'}}>{d.titre}</p>
-                    <p style={{fontSize:'12px',color:'var(--text-secondary)',margin:0}}>{d.type} · {d.pages} pages · {d.taille}</p>
-                  </div>
-                  {/* Numéro */}
-                  <div style={{fontSize:'11px',fontWeight:900,color:'var(--text-secondary)',flexShrink:0,opacity:0.4}}>{String(i+1).padStart(2,'0')}</div>
-                  {/* Download */}
-                  <button style={{display:'flex',alignItems:'center',gap:'6px',padding:'8px 16px',borderRadius:'10px',border:'1px solid var(--border)',background:'var(--bg-secondary)',color:'var(--text-primary)',fontSize:'12px',fontWeight:700,cursor:'pointer',flexShrink:0,transition:'all 0.2s'}}
-                    onMouseEnter={e=>Object.assign((e.currentTarget as HTMLElement).style,{background:'var(--orange)',color:'white',borderColor:'var(--orange)'})}
-                    onMouseLeave={e=>Object.assign((e.currentTarget as HTMLElement).style,{background:'var(--bg-secondary)',color:'var(--text-primary)',borderColor:'var(--border)'})}>
-                    <Download size={13}/>Télécharger
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* FAQ */}
-        {tab==='faq' && (
-          <div>
-            <div style={{marginBottom:'28px'}}>
-              <p style={{fontSize:'11px',fontWeight:900,textTransform:'uppercase',letterSpacing:'0.1em',color:'var(--orange)',marginBottom:'6px'}}>Questions fréquentes</p>
-              <h2 style={{fontSize:'1.5rem',fontWeight:900,color:'var(--text-primary)',margin:0}}>FAQ — {secteur.nom}</h2>
-            </div>
-            <div style={{display:'flex',flexDirection:'column',gap:'8px',maxWidth:'800px'}}>
-              {MOCK_FAQ.map(f => (
-                <div key={f.id} style={{borderRadius:'16px',border:'1px solid',borderColor:openFaq===f.id?secteur.couleur+'40':'var(--border)',background:'var(--bg-card)',overflow:'hidden',transition:'border-color 0.2s'}}>
-                  <button onClick={()=>setOpenFaq(openFaq===f.id?null:f.id)}
-                    style={{width:'100%',padding:'18px 20px',display:'flex',alignItems:'center',justifyContent:'space-between',gap:'16px',textAlign:'left',background:'transparent',border:'none',cursor:'pointer'}}>
-                    <span style={{fontSize:'14px',fontWeight:700,color:'var(--text-primary)',lineHeight:1.4}}>{f.q}</span>
-                    <div style={{width:'28px',height:'28px',borderRadius:'8px',background:openFaq===f.id?secteur.couleur+'20':'var(--bg-secondary)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,transition:'all 0.2s'}}>
-                      {openFaq===f.id
-                        ? <ChevronDown size={14} style={{color:secteur.couleur}}/>
-                        : <ChevronRight size={14} style={{color:'var(--text-secondary)'}}/>}
-                    </div>
-                  </button>
-                  {openFaq===f.id && (
-                    <div style={{padding:'0 20px 18px',borderTop:'1px solid var(--border)'}}>
-                      <p style={{fontSize:'14px',color:'var(--text-secondary)',lineHeight:1.8,margin:'14px 0 0 0'}}>{f.r}</p>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
+        {/* Info gratuit */}
+        <div style={{marginTop:'32px',padding:'20px 24px',borderRadius:'16px',background:'rgba(34,197,94,0.06)',border:'1px solid rgba(34,197,94,0.2)',display:'flex',alignItems:'center',gap:'12px'}}>
+          <CheckCircle size={18} style={{color:'#22c55e',flexShrink:0}}/>
+          <p style={{fontSize:'14px',color:'var(--text-secondary)',margin:0}}>
+            <strong style={{color:'var(--text-primary)'}}>Tous les modules sont gratuits</strong> — Aucune inscription requise. Accès immédiat à tous les contenus (vidéos, documents, images et cours texte).
+          </p>
+        </div>
       </main>
 
-      {/* ═══ CTA BAS DE PAGE ═══ */}
-      <section style={{padding:'64px 0',background:`linear-gradient(135deg,${secteur.couleur}15,${secteur.couleur}05)`,borderTop:'1px solid var(--border)'}}>
+      {/* ═══ CTA ═══ */}
+      <section style={{padding:'56px 0',background:`linear-gradient(135deg,${secteur.couleur}12,${secteur.couleur}04)`,borderTop:'1px solid var(--border)'}}>
         <div style={{maxWidth:'700px',margin:'0 auto',padding:'0 24px',textAlign:'center'}}>
-          <div style={{width:'52px',height:'52px',borderRadius:'16px',background:secteur.couleur+'20',border:'1px solid '+secteur.couleur+'30',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 20px auto'}}>
-            <BookOpen size={24} style={{color:secteur.couleur}}/>
-          </div>
-          <h2 style={{fontSize:'1.6rem',fontWeight:900,color:'var(--text-primary)',margin:'0 0 12px 0'}}>
-            Explorer les autres secteurs
-          </h2>
-          <p style={{fontSize:'14px',color:'var(--text-secondary)',margin:'0 0 28px 0',lineHeight:1.7}}>
-            Think Safety couvre 18 secteurs professionnels avec des ressources gratuites, des alertes en temps réel et des équipements certifiés.
+          <h2 style={{fontSize:'1.5rem',fontWeight:900,color:'var(--text-primary)',margin:'0 0 10px 0'}}>Explorer d&apos;autres secteurs</h2>
+          <p style={{fontSize:'14px',color:'var(--text-secondary)',margin:'0 0 24px 0',lineHeight:1.7}}>
+            Think Safety couvre 18 secteurs professionnels avec des ressources gratuites.
           </p>
           <div style={{display:'flex',gap:'12px',justifyContent:'center',flexWrap:'wrap'}}>
             <Link href="/secteurs" style={{display:'inline-flex',alignItems:'center',gap:'8px',padding:'12px 24px',borderRadius:'14px',fontSize:'14px',fontWeight:700,color:'white',textDecoration:'none',background:'var(--orange)'}}>
-              Tous les secteurs <ArrowLeft size={14} style={{transform:'rotate(180deg)'}}/>
+              Tous les secteurs
             </Link>
             <Link href="/alertes" style={{display:'inline-flex',alignItems:'center',gap:'8px',padding:'12px 24px',borderRadius:'14px',fontSize:'14px',fontWeight:700,color:'var(--text-primary)',textDecoration:'none',background:'var(--bg-secondary)',border:'1px solid var(--border)'}}>
               Alertes sécurité
