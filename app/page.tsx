@@ -22,14 +22,14 @@ const SECTEURS = [
 const STATS = [
   {val:500,suffix:'+',label:'Formations disponibles',icon:BookOpen,color:'#f97316'},
   {val:18, suffix:'', label:'Secteurs couverts',     icon:Globe,   color:'#3b82f6'},
-  {val:12, suffix:'k+',label:'Professionnels formes', icon:Users,   color:'#22c55e'},
+  {val:12, suffix:'k+',label:'Professionnels formés', icon:Users,   color:'#22c55e'},
   {val:100,suffix:'%', label:'Accès gratuit',         icon:Award,   color:'#a855f7'},
 ]
 
 const TEMOIGNAGES = [
   {nom:'Jean-Michel D.',titre:'Chef de chantier BTP',texte:'Grace a Thinks Safety, nos équipes sont mieux préparées. Notre taux d'incidents a baissé de 40% en 6 mois.',stars:5,img:'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80'},
   {nom:'Marie K.',titre:'Responsable HSE Industrie',texte:'Les alertes en temps réel nous ont permis d'éviter un incident majeur. Je recommande à toutes les entreprises.',stars:5,img:'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&q=80'},
-  {nom:'Kofi A.',titre:'Directeur Operations Transport',texte:'Les formations sont précises, adaptées à notre secteur et facilement accessibles depuis n'importe quel appareil.',stars:5,img:'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&q=80'},
+  {nom:'Kofi A.',titre:'Directeur Opérations Transport',texte:'Les formations sont précises, adaptées à notre secteur et facilement accessibles depuis n'importe quel appareil.',stars:5,img:'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&q=80'},
 ]
 
 function useReveal() {
@@ -143,7 +143,7 @@ export default function HomePage() {
                 </span>
               </div>
               <h1 style={{opacity:loaded?1:0,transform:loaded?'translateY(0)':'translateY(24px)',transition:'all 0.7s ease 80ms',color:'white',fontSize:'clamp(2.6rem,5.5vw,4.2rem)',fontWeight:900,lineHeight:1.05,letterSpacing:'-0.03em',marginBottom:'24px'}}>
-                Formez vos equipes.<br/>
+                Formez vos équipes.<br/>
                 <span style={{background:'linear-gradient(90deg,#fb923c,var(--orange))',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text'}}>Protégez chaque</span><br/>
                 professionnel.
               </h1>
@@ -159,7 +159,7 @@ export default function HomePage() {
                 <Link href="/alertes" style={{display:'inline-flex',alignItems:'center',gap:'8px',padding:'14px 28px',borderRadius:'16px',fontWeight:700,fontSize:'14px',color:'rgba(255,255,255,0.88)',textDecoration:'none',background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.15)',transition:'all 0.2s'}}
                   onMouseEnter={e=>(e.currentTarget as HTMLElement).style.background='rgba(255,255,255,0.14)'}
                   onMouseLeave={e=>(e.currentTarget as HTMLElement).style.background='rgba(255,255,255,0.08)'}>
-                  <Bell size={15}/>Alertes securite
+                  <Bell size={15}/>Alertes sécurité
                 </Link>
               </div>
               <div style={{opacity:loaded?1:0,transition:'opacity 0.7s ease 320ms',display:'flex',alignItems:'center',gap:'24px',flexWrap:'wrap'}}>
@@ -211,7 +211,7 @@ export default function HomePage() {
                   <CheckCircle size={20} style={{color:'#4ade80'}}/>
                 </div>
                 <div>
-                  <p style={{color:'white',fontSize:'13px',fontWeight:900,margin:0}}>Formations certifiees</p>
+                  <p style={{color:'white',fontSize:'13px',fontWeight:900,margin:0}}>Formations certifiées</p>
                   <p style={{color:'rgba(255,255,255,0.55)',fontSize:'11px',margin:'2px 0 0 0'}}>Validees par des experts en securite internationale</p>
                 </div>
                 <div style={{marginLeft:'auto',display:'flex',gap:'-6px'}}>
@@ -235,11 +235,11 @@ export default function HomePage() {
       <section style={{padding:'16px 0',background:'var(--bg-card)',borderBottom:'1px solid var(--border)'}}>
         <div style={{maxWidth:'1280px',margin:'0 auto',padding:'0 24px',display:'flex',alignItems:'center',justifyContent:'center',gap:'32px',flexWrap:'wrap'}}>
           {[
-            {icon:CheckCircle,label:'Formations certifiees',color:'#22c55e'},
+            {icon:CheckCircle,label:'Formations certifiées',color:'#22c55e'},
             {icon:Globe,label:'Accessible dans le monde entier',color:'#3b82f6'},
-            {icon:Shield,label:'Securite validee',color:'var(--orange)'},
+            {icon:Shield,label:'Sécurité validée',color:'var(--orange)'},
             {icon:Users,label:'12 000+ professionnels',color:'#a855f7'},
-            {icon:Zap,label:'Alertes en temps reel',color:'#facc15'},
+            {icon:Zap,label:'Alertes en temps réel',color:'#facc15'},
             {icon:Award,label:'100% gratuit',color:'#f97316'},
           ].map((s,i)=>{const Icon=s.icon;return(
             <div key={i} style={{display:'flex',alignItems:'center',gap:'8px'}}>
@@ -255,9 +255,9 @@ export default function HomePage() {
         <div style={{maxWidth:'1280px',margin:'0 auto',padding:'0 24px'}}>
           <Reveal style={{textAlign:'center',marginBottom:'64px'}}>
             <p style={{fontSize:'11px',fontWeight:900,textTransform:'uppercase',letterSpacing:'0.1em',color:'var(--orange)',marginBottom:'12px'}}>Pourquoi Think Safety</p>
-            <h2 style={{fontSize:'clamp(2rem,4vw,3rem)',fontWeight:900,color:'var(--text-primary)',margin:'0 0 16px 0',lineHeight:1.1}}>La securite, c est notre mission</h2>
+            <h2 style={{fontSize:'clamp(2rem,4vw,3rem)',fontWeight:900,color:'var(--text-primary)',margin:'0 0 16px 0',lineHeight:1.1}}>La sécurité, c&apos;est notre mission</h2>
             <p style={{fontSize:'1.05rem',color:'var(--text-secondary)',maxWidth:'560px',margin:'0 auto',lineHeight:1.8}}>
-              Thinks Safety est une plateforme 100% gratuite et ouverte à tous. Trouvez les ressources adaptees a votre metier.
+              Thinks Safety est une plateforme 100% gratuite et ouverte à tous. Trouvez les ressources adaptées à votre métier.
             </p>
           </Reveal>
           <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'28px'}}>
@@ -334,7 +334,7 @@ export default function HomePage() {
             <Reveal delay={150}>
               <p style={{fontSize:'11px',fontWeight:900,textTransform:'uppercase',letterSpacing:'0.1em',color:'var(--orange)',marginBottom:'16px'}}>Notre vision</p>
               <h2 style={{fontSize:'clamp(2rem,4vw,3rem)',fontWeight:900,color:'var(--text-primary)',margin:'0 0 20px 0',lineHeight:1.1}}>
-                Un monde ou chaque travailleur rentre chez lui sain et sauf
+                Un monde où chaque travailleur rentre chez lui sain et sauf
               </h2>
               <p style={{fontSize:'1rem',color:'var(--text-secondary)',lineHeight:1.85,margin:'0 0 24px 0'}}>
                 Chaque année, des millions de travailleurs sont victimes d'accidents professionnels évitables. Chez Thinks Safety, nous croyons que la formation est le moyen le plus efficace de prévenir ces tragedies.
@@ -406,13 +406,13 @@ export default function HomePage() {
             <Reveal>
               <p style={{fontSize:'11px',fontWeight:900,textTransform:'uppercase',letterSpacing:'0.1em',color:'var(--orange)',marginBottom:'16px'}}>Nos avantages</p>
               <h2 style={{fontSize:'clamp(2rem,4vw,3rem)',fontWeight:900,color:'var(--text-primary)',margin:'0 0 40px 0',lineHeight:1.1}}>
-                Tout ce qu il faut pour une securite optimale
+                Tout ce qu&apos;il faut pour une sécurité optimale
               </h2>
               <div style={{display:'flex',flexDirection:'column',gap:'20px'}}>
                 {[
                   {icon:Globe,     titre:'Accessible partout dans le monde',  desc:'Disponible sur tous les appareils, en ligne ou hors ligne. Aucun équipement special requis.',color:'#3b82f6'},
-                  {icon:Target,    titre:'Formations adaptees a votre metier', desc:'Chaque formation est specifiquement concue pour les risques et réalites de votre secteur professionnel.',color:'var(--orange)'},
-                  {icon:TrendingUp,titre:'Mises a jour regulieres',            desc:'Notre équipe d'experts met a jour en permanence les contenus selon les nouvelles reglementations.',color:'#22c55e'},
+                  {icon:Target,    titre:'Formations adaptées à votre métier', desc:'Chaque formation est specifiquement concue pour les risques et réalites de votre secteur professionnel.',color:'var(--orange)'},
+                  {icon:TrendingUp,titre:'Mises à jour régulières',            desc:'Notre équipe d'experts met a jour en permanence les contenus selon les nouvelles reglementations.',color:'#22c55e'},
                   {icon:Heart,     titre:'Support et communauté active',       desc:'Rejoignez une communauté de professionnels de la sécurité et bénéficiez d'un support dédié.',color:'#ef4444'},
                   {icon:Eye,       titre:'Suivi de progression',               desc:'Visualisez vos avancées, obtenez vos certifications et partagez vos accomplissements.',color:'#a855f7'},
                 ].map((item,i)=>{const Icon=item.icon;return(
@@ -500,7 +500,7 @@ export default function HomePage() {
         <div style={{maxWidth:'1200px',margin:'0 auto',padding:'0 24px'}}>
           <Reveal style={{textAlign:'center',marginBottom:'64px'}}>
             <p style={{fontSize:'11px',fontWeight:900,textTransform:'uppercase',letterSpacing:'0.1em',color:'var(--orange)',marginBottom:'12px'}}>Simple et efficace</p>
-            <h2 style={{fontSize:'clamp(2rem,4vw,3rem)',fontWeight:900,color:'var(--text-primary)',margin:'0 0 16px 0',lineHeight:1.1}}>Commencez en 3 etapes</h2>
+            <h2 style={{fontSize:'clamp(2rem,4vw,3rem)',fontWeight:900,color:'var(--text-primary)',margin:'0 0 16px 0',lineHeight:1.1}}>Commencez en 3 étapes</h2>
             <p style={{fontSize:'1rem',color:'var(--text-secondary)',maxWidth:'480px',margin:'0 auto',lineHeight:1.8}}>Notre plateforme est concue pour être simple, rapide et efficace.</p>
           </Reveal>
           <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'32px',position:'relative'}}>
@@ -508,7 +508,7 @@ export default function HomePage() {
             {[
               {n:'01',icon:BookOpen,titre:'Choisissez votre secteur',desc:'Parcourez les 9 domaines professionnels et sélectionnez les formations adaptées à votre métier et a vos besoins.',color:'var(--orange)',href:'/secteurs'},
               {n:'02',icon:Play,     titre:'Suivez les formations',  desc:'Vidéos, fiches pratiques, quiz — avancez à votre propre rythme depuis n'importe quel appareil, partout dans le monde.',color:'#3b82f6',href:'/secteurs'},
-              {n:'03',icon:Shield,   titre:'Protegez vos equipes',   desc:'Mettez en pratique vos connaissances, utilisez nos alertes et partagez les formations avec vos collaborateurs.',color:'#22c55e',href:'/secteurs'},
+              {n:'03',icon:Shield,   titre:'Protégez vos équipes',   desc:'Mettez en pratique vos connaissances, utilisez nos alertes et partagez les formations avec vos collaborateurs.',color:'#22c55e',href:'/secteurs'},
             ].map((s,i)=>{const Icon=s.icon;return(
               <Reveal key={i} delay={i*130} className="hover-lift" style={{borderRadius:'24px',border:'1px solid var(--border)',background:'var(--bg-card)',cursor:'pointer',position:'relative',overflow:'hidden'}}>
                 <div style={{height:'4px',background:s.color}}/>
@@ -536,8 +536,8 @@ export default function HomePage() {
         <div style={{maxWidth:'1280px',margin:'0 auto',padding:'0 24px'}}>
           <Reveal style={{display:'flex',alignItems:'flex-end',justifyContent:'space-between',marginBottom:'48px',flexWrap:'wrap',gap:'16px'}}>
             <div>
-              <p style={{fontSize:'11px',fontWeight:900,textTransform:'uppercase',letterSpacing:'0.1em',color:'var(--orange)',marginBottom:'10px'}}>Ressources video</p>
-              <h2 style={{fontSize:'clamp(2rem,4vw,3rem)',fontWeight:900,color:'var(--text-primary)',margin:0,lineHeight:1.1}}>Apprenez en video</h2>
+              <p style={{fontSize:'11px',fontWeight:900,textTransform:'uppercase',letterSpacing:'0.1em',color:'var(--orange)',marginBottom:'10px'}}>Ressources vidéo</p>
+              <h2 style={{fontSize:'clamp(2rem,4vw,3rem)',fontWeight:900,color:'var(--text-primary)',margin:0,lineHeight:1.1}}>Apprenez en vidéo</h2>
             </div>
             {videos.length>0&&<Link href="/secteurs" style={{display:'inline-flex',alignItems:'center',gap:'8px',padding:'10px 20px',borderRadius:'14px',fontSize:'13px',fontWeight:700,color:'var(--orange)',textDecoration:'none',background:'rgba(212,80,15,0.1)',border:'1px solid rgba(212,80,15,0.25)'}}>Voir tout <ArrowRight size={13}/></Link>}
           </Reveal>
@@ -610,7 +610,7 @@ export default function HomePage() {
               <Zap size={12}/>Rejoignez 12 000+ professionnels dans le monde
             </div>
             <h2 style={{fontSize:'clamp(2.5rem,5vw,4rem)',fontWeight:900,color:'white',margin:'0 0 20px 0',lineHeight:1.08,textShadow:'0 4px 24px rgba(0,0,0,0.2)'}}>
-              La securite au travail commence par la formation
+              La sécurité au travail commence par la formation
             </h2>
             <p style={{fontSize:'1.15rem',color:'rgba(255,255,255,0.85)',margin:'0 0 48px 0',maxWidth:'560px',marginLeft:'auto',marginRight:'auto',lineHeight:1.8}}>
               Aucune inscription. Aucun abonnement. 500+ ressources gratuites dans 9 secteurs. Alertes sécurité en temps réel. Tout est accessible immediatement.
@@ -641,8 +641,8 @@ export default function HomePage() {
           <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'28px'}}>
             {[
               {icon:BookOpen,titre:'Formations gratuites',   desc:'Acces illimité a 500+ modules de formation couvrant tous les risques professionnels, sans abonnement requis.',href:'/secteurs',    cta:'Explorer le catalogue',color:'#2563eb',img:'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=500&q=80'},
-              {icon:Bell,    titre:'Alertes securite',        desc:'Système d'alertes en temps réel pour votre secteur et votre région. Ne soyez jamais pris au dépourvu.',href:'/alertes',      cta:'Voir les alertes',    color:'#dc2626',img:'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=500&q=80'},
-              {icon:Shield,  titre:'Marketplace EPI',         desc:'Equipements de protection individuelle certifiés, disponibles a l'achat avec livraison directe pour vos équipes.',href:'/marketplace',cta:'Acceder au marketplace',color:'#16a34a',img:'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=500&q=80'},
+              {icon:Bell,    titre:'Alertes sécurité',        desc:'Système d'alertes en temps réel pour votre secteur et votre région. Ne soyez jamais pris au dépourvu.',href:'/alertes',      cta:'Voir les alertes',    color:'#dc2626',img:'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=500&q=80'},
+              {icon:Shield,  titre:'Marketplace EPI',         desc:'Equipements de protection individuelle certifiés, disponibles a l'achat avec livraison directe pour vos équipes.',href:'/marketplace',cta:'Accéder au marketplace',color:'#16a34a',img:'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=500&q=80'},
             ].map((item,i)=>{const Icon=item.icon;return(
               <Reveal key={i} delay={i*120} className="hover-lift" style={{borderRadius:'28px',overflow:'hidden',border:'1px solid var(--border)',background:'var(--bg-card)',cursor:'pointer'}}>
                 <div style={{height:'200px',overflow:'hidden',position:'relative'}}>

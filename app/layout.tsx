@@ -34,6 +34,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="fr" data-theme="dark" suppressHydrationWarning>
       <head>
+    <meta charSet="utf-8"/>
         <script
           dangerouslySetInnerHTML={{
             __html: `

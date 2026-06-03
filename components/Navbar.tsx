@@ -64,7 +64,7 @@ export default function Navbar() {
           </div>
           <div className="leading-none">
             <div className="font-black text-sm tracking-tight" style={{color:'var(--text-primary)'}}>THINKS<span style={{color:'var(--orange)'}}> SAFETY</span></div>
-            <div className="text-[9px] font-semibold tracking-widest uppercase" style={{color:'var(--text-secondary)'}}>Securite professionnelle</div>
+            <div className="text-[9px] font-semibold tracking-widest uppercase" style={{color:'var(--text-secondary)'}}>Sécurité professionnelle</div>
           </div>
         </Link>
 
@@ -87,8 +87,8 @@ export default function Navbar() {
                     <p className="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest mb-1" style={{color:'var(--orange)'}}>Types de formations</p>
                     {[
                       {href:'/secteurs',    icon:BookOpen,   label:'Toutes les formations', desc:'500+ cours disponibles gratuitement',badge:null},
-                      {href:'/secteurs',    icon:Star,       label:'Les plus consultees',    desc:'Ressources les plus vues',badge:'Top'},
-                      {href:'/secteurs',    icon:Zap,        label:'Nouvelles formations',   desc:'Ajoutees cette semaine',badge:'New'},
+                      {href:'/secteurs',    icon:Star,       label:'Les plus consultées',    desc:'Ressources les plus vues',badge:'Top'},
+                      {href:'/secteurs',    icon:Zap,        label:'Nouvelles formations',   desc:'Ajoutées cette semaine',badge:'New'},
                       {href:'/abonnements', icon:Users,      label:'Partenaires marketplace', desc:'Publiez sur le marketplace',badge:null},
                     ].map(item=>{const Icon=item.icon;return(
                       <Link key={item.label} href={item.href} onClick={()=>setDropdown(null)}
@@ -145,7 +145,7 @@ export default function Navbar() {
               <div className="absolute top-full left-0 mt-2 w-64 rounded-2xl border py-3 z-50" style={ddStyle}>
                 <p className="px-4 py-1.5 text-[10px] font-black uppercase tracking-widest" style={{color:'var(--orange)'}}>Marketplace</p>
                 {[
-                  {href:'/marketplace', icon:Package,      label:'Equipements EPI',    desc:'Protection certifiee'},
+                  {href:'/marketplace', icon:Package,      label:'Équipements EPI',    desc:'Protection certifiée'},
                   {href:'/abonnements', icon:Star,          label:'Abonnements',         desc:'Devenir partenaire vendeur'},
                 ].map(item=>{const Icon=item.icon;return(
                   <Link key={item.label} href={item.href} onClick={()=>setDropdown(null)}
@@ -163,7 +163,7 @@ export default function Navbar() {
           </div>
 
           {/* Liens directs */}
-          {[{href:'/alertes',label:'Alertes'},{href:'/abonnements',label:'Abonnements'},{href:'/a-propos',label:'A propos'}].map(item=>(
+          {[{href:'/alertes',label:'Alertes'},{href:'/abonnements',label:'Abonnements'},{href:'/a-propos',label:'À propos'}].map(item=>(
             <Link key={item.href} href={item.href} className="px-3.5 py-2 rounded-xl text-sm font-semibold hover:no-underline transition-all"
               style={{color:active(item.href)?'var(--orange)':'var(--text-secondary)'}}
               onMouseEnter={e=>e.currentTarget.style.background='var(--bg-secondary)'}
@@ -207,7 +207,7 @@ export default function Navbar() {
                   {isAdmin&&<Link href="/admin/dashboard" onClick={()=>setUserMenu(false)} className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold hover:no-underline transition-all" style={{color:'var(--orange)'}} onMouseEnter={e=>e.currentTarget.style.background='var(--bg-secondary)'} onMouseLeave={e=>e.currentTarget.style.background='transparent'}><Settings size={13}/>Administration</Link>}
                   <Link href="/profil" onClick={()=>setUserMenu(false)} className="flex items-center gap-2 px-4 py-2.5 text-sm hover:no-underline transition-all" style={{color:'var(--text-primary)'}} onMouseEnter={e=>e.currentTarget.style.background='var(--bg-secondary)'} onMouseLeave={e=>e.currentTarget.style.background='transparent'}><User size={13}/>Mon profil</Link>
                   <div className="border-t my-1" style={{borderColor:'var(--border)'}}/>
-                  <button onClick={signOut} className="flex items-center gap-2 px-4 py-2.5 text-sm w-full text-left text-red-500 transition-all" onMouseEnter={e=>e.currentTarget.style.background='rgba(239,68,68,0.06)'} onMouseLeave={e=>e.currentTarget.style.background='transparent'}><LogOut size={13}/>Deconnexion</button>
+                  <button onClick={signOut} className="flex items-center gap-2 px-4 py-2.5 text-sm w-full text-left text-red-500 transition-all" onMouseEnter={e=>e.currentTarget.style.background='rgba(239,68,68,0.06)'} onMouseLeave={e=>e.currentTarget.style.background='transparent'}><LogOut size={13}/>Déconnexion</button>
                 </div>
               )}
             </div>
@@ -233,7 +233,7 @@ export default function Navbar() {
                 </div>
               </div>
             )}
-            {[{href:'/marketplace',label:'Marketplace'},{href:'/alertes',label:'Alertes'},{href:'/abonnements',label:'Abonnements'},{href:'/a-propos',label:'A propos'}].map(item=>(
+            {[{href:'/marketplace',label:'Marketplace'},{href:'/alertes',label:'Alertes'},{href:'/abonnements',label:'Abonnements'},{href:'/a-propos',label:'À propos'}].map(item=>(
               <Link key={item.href} href={item.href} onClick={()=>setMobile(false)} className="block px-3 py-2.5 rounded-xl text-sm font-semibold hover:no-underline" style={{color:active(item.href)?'var(--orange)':'var(--text-primary)'}} onMouseEnter={e=>e.currentTarget.style.background='var(--bg-secondary)'} onMouseLeave={e=>e.currentTarget.style.background='transparent'}>{item.label}</Link>
             ))}
             <div className="flex items-center gap-2 pt-2 border-t" style={{borderColor:'var(--border)'}}><LanguageSelector/><ThemeToggle/></div>
