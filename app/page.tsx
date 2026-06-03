@@ -29,41 +29,12 @@ const STATS = [
 const TEMOIGNAGES = [
   {nom:"Jean-Michel D.",titre:"Chef de chantier BTP",texte:"Grâce à Think Safety, nos équipes sont mieux préparées. Notre taux d'incidents a baissé de 40% en 6 mois.",stars:5,img:"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80"},
   {nom:"Marie K.",titre:"Responsable HSE Industrie",texte:"Les alertes en temps réel nous ont permis d'éviter un incident majeur. Je recommande à toutes les entreprises.",stars:5,img:"https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&q=80"},
-  {nom:"Kofi A.",titre:"Directeur Opérations Transport",texte:"Les formations sont précises, adaptées à notre secteur et facilement accessibles depuis n'importe quel appareil.",stars:5,img:"https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&q=80"},
+  {nom:"Kofi A.",titre:"Directeur Opérations Transport",texte:"Les formations sont précises, adaptées à notre secteur et facilement accessibles depuis n\'importe quel appareil.",stars:5,img:"https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&q=80"},
 ]
 
-function useReveal() {
-  const ref = useRef<HTMLDivElement>(null)
-  const [vis, setVis] = useState(false)
-  useEffect(()=>{
-    const obs = new IntersectionObserver(([e])=>{ if(e.isIntersecting)setVis(true) },{threshold:0.1})
-    if(ref.current)obs.observe(ref.current)
-    return ()=>obs.disconnect()
-  },[])
-  return {ref,vis}
-}
-
-function Reveal({children,delay=0,className='',style={}}:any) {
-  const {ref,vis} = useReveal()
-  return (
-    <div ref={ref} className={className} style={{...style,opacity:vis?1:0,transform:vis?'translateY(0)':'translateY(32px)',transition:'opacity 0.7s ease '+delay+'ms, transform 0.7s ease '+delay+'ms'}}>
-      {children}
-    </div>
-  )
-}
-
-function CountUp({target,suffix='',duration=2000}:{target:number,suffix:string,duration?:number}) {
-  const [val,setVal] = useState(0)
-  const {ref,vis} = useReveal()
-  useEffect(()=>{
-    if(!vis)return
-    const step = target/60; let cur=0
-    const t = setInterval(()=>{ cur=Math.min(cur+step,target); setVal(Math.floor(cur)); if(cur>=target)clearInterval(t) },duration/60)
-    return ()=>clearInterval(t)
-  },[vis,target])
-  return <span ref={ref}>{val}{suffix}</span>
-}
-
+function Reveal(p:any){return <div className={p.className} style={p.style}>{p.children}</div>}
+function CountUp(p:any){return <span>{p.target}{p.suffix}</span>}
+function ytId(url:string){const m=(url||'').match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);return m?m[1]:null}
 export default function HomePage() {
   const [courses,setCourses] = useState<any[]>([])
   const [videos,setVideos] = useState<any[]>([])
@@ -77,7 +48,7 @@ export default function HomePage() {
     'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=1600&q=80',
   ]
 
-  useEffect(()=>{ const t=setInterval(()=>setHeroImg(i=>(i+1)%heroImages.length),6000); return()=>clearInterval(t) },[])
+  useEffect(()=>{ const t=setInterval(()=>setHeroImg(i=>(i+1)%heroImages.length),6000); return ()=>clearInterval(t) },[])
 
   useEffect(()=>{
     async function load(){
@@ -92,13 +63,7 @@ export default function HomePage() {
     load()
   },[])
 
-  function ytId(url: string) {
-  const m = (url || '').match(
-    /(?:youtube\.com\/(?:.*v=|embed\/)|youtu\.be\/)([^&]+)/i
-  );
 
-  return m ? m[1] : null;
-}
   return (
     <div className="min-h-screen" style={{background:'var(--bg-main)'}}>
       <style>{`
@@ -345,7 +310,7 @@ export default function HomePage() {
                 Chaque année, des millions de travailleurs sont victimes d'accidents professionnels évitables. Chez Thinks Safety, nous croyons que la formation est le moyen le plus efficace de prévenir ces tragedies.
               </p>
               <p style={{fontSize:'1rem',color:'var(--text-secondary)',lineHeight:1.85,margin:'0 0 32px 0'}}>
-                Thinks Safety rassemble des ressources de formation gratuites issues d'experts du monde entier. Nous ne sommes pas une école, mais un espace ouvert ou chaque professionnel peut trouver, apprendre et partager des connaissances en securité.
+                Thinks Safety rassemble des ressources de formation gratuites issues d\'experts du monde entier. Nous ne sommes pas une école, mais un espace ouvert ou chaque professionnel peut trouver, apprendre et partager des connaissances en securité.
               </p>
               <div style={{display:'flex',flexDirection:'column',gap:'14px',marginBottom:'36px'}}>
                 {['Formation gratuite et accessible universellement','Contenu valide par des experts certifiés','Alertes et mises à jour en temps reel','Disponible dans plusieurs langues'].map((item,i)=>(
@@ -417,8 +382,8 @@ export default function HomePage() {
                 {[
                   {icon:Globe,     titre:'Accessible partout dans le monde',  desc:'Disponible sur tous les appareils, en ligne ou hors ligne. Aucun équipement special requis.',color:'#3b82f6'},
                   {icon:Target,    titre:'Formations adaptées à votre métier', desc:'Chaque formation est specifiquement concue pour les risques et réalites de votre secteur professionnel.',color:'var(--orange)'},
-                  {icon:TrendingUp,titre:'Mises à jour régulières',            desc:'Notre équipe d'experts met a jour en permanence les contenus selon les nouvelles reglementations.',color:'#22c55e'},
-                  {icon:Heart,     titre:'Support et communauté active',       desc:'Rejoignez une communauté de professionnels de la sécurité et bénéficiez d'un support dédié.',color:'#ef4444'},
+                  {icon:TrendingUp,titre:'Mises à jour régulières',            desc:'Notre équipe d\'experts met a jour en permanence les contenus selon les nouvelles reglementations.',color:'#22c55e'},
+                  {icon:Heart,     titre:'Support et communauté active',       desc:'Rejoignez une communauté de professionnels de la sécurité et bénéficiez d\'un support dédié.',color:'#ef4444'},
                   {icon:Eye,       titre:'Suivi de progression',               desc:'Visualisez vos avancées, obtenez vos certifications et partagez vos accomplissements.',color:'#a855f7'},
                 ].map((item,i)=>{const Icon=item.icon;return(
                   <div key={i} style={{display:'flex',gap:'16px',alignItems:'flex-start',padding:'16px',borderRadius:'16px',transition:'background 0.2s',cursor:'default'}}
@@ -512,7 +477,7 @@ export default function HomePage() {
             <div style={{position:'absolute',top:'40px',left:'20%',right:'20%',height:'2px',background:'linear-gradient(to right,transparent,rgba(212,80,15,0.4),transparent)',display:'none'}}/>
             {[
               {n:'01',icon:BookOpen,titre:'Choisissez votre secteur',desc:'Parcourez les 9 domaines professionnels et sélectionnez les formations adaptées à votre métier et a vos besoins.',color:'var(--orange)',href:'/secteurs'},
-              {n:'02',icon:Play,     titre:'Suivez les formations',  desc:'Vidéos, fiches pratiques, quiz — avancez à votre propre rythme depuis n'importe quel appareil, partout dans le monde.',color:'#3b82f6',href:'/secteurs'},
+              {n:'02',icon:Play,     titre:'Suivez les formations',  desc:'Vidéos, fiches pratiques, quiz — avancez à votre propre rythme depuis n\'importe quel appareil, partout dans le monde.',color:'#3b82f6',href:'/secteurs'},
               {n:'03',icon:Shield,   titre:'Protégez vos équipes',   desc:'Mettez en pratique vos connaissances, utilisez nos alertes et partagez les formations avec vos collaborateurs.',color:'#22c55e',href:'/secteurs'},
             ].map((s,i)=>{const Icon=s.icon;return(
               <Reveal key={i} delay={i*130} className="hover-lift" style={{borderRadius:'24px',border:'1px solid var(--border)',background:'var(--bg-card)',cursor:'pointer',position:'relative',overflow:'hidden'}}>
@@ -646,8 +611,8 @@ export default function HomePage() {
           <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'28px'}}>
             {[
               {icon:BookOpen,titre:'Formations gratuites',   desc:'Acces illimité a 500+ modules de formation couvrant tous les risques professionnels, sans abonnement requis.',href:'/secteurs',    cta:'Explorer le catalogue',color:'#2563eb',img:'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=500&q=80'},
-              {icon:Bell,    titre:'Alertes sécurité',        desc:'Système d'alertes en temps réel pour votre secteur et votre région. Ne soyez jamais pris au dépourvu.',href:'/alertes',      cta:'Voir les alertes',    color:'#dc2626',img:'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=500&q=80'},
-              {icon:Shield,  titre:'Marketplace EPI',         desc:'Equipements de protection individuelle certifiés, disponibles a l'achat avec livraison directe pour vos équipes.',href:'/marketplace',cta:'Accéder au marketplace',color:'#16a34a',img:'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=500&q=80'},
+              {icon:Bell,    titre:'Alertes sécurité',        desc:'Système d\'alertes en temps réel pour votre secteur et votre région. Ne soyez jamais pris au dépourvu.',href:'/alertes',      cta:'Voir les alertes',    color:'#dc2626',img:'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=500&q=80'},
+              {icon:Shield,  titre:'Marketplace EPI',         desc:'Equipements de protection individuelle certifiés, disponibles a l\'achat avec livraison directe pour vos équipes.',href:'/marketplace',cta:'Accéder au marketplace',color:'#16a34a',img:'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=500&q=80'},
             ].map((item,i)=>{const Icon=item.icon;return(
               <Reveal key={i} delay={i*120} className="hover-lift" style={{borderRadius:'28px',overflow:'hidden',border:'1px solid var(--border)',background:'var(--bg-card)',cursor:'pointer'}}>
                 <div style={{height:'200px',overflow:'hidden',position:'relative'}}>
