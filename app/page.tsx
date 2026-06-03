@@ -92,8 +92,13 @@ export default function HomePage() {
     load()
   },[])
 
-  function ytId(url:string){const m=(url||'').match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);return m?m[1]:null}
+  function ytId(url: string) {
+  const m = (url || '').match(
+    /(?:youtube\.com\/(?:.*v=|embed\/)|youtu\.be\/)([^&]+)/i
+  );
 
+  return m ? m[1] : null;
+}
   return (
     <div className="min-h-screen" style={{background:'var(--bg-main)'}}>
       <style>{`
