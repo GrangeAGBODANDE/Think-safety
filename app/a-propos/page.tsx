@@ -24,7 +24,7 @@ export default function AboutPage() {
             <span style={{background:'linear-gradient(90deg,#fb923c,#f97316)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text'}}>chaque vie compte au travail</span>
           </h1>
           <p style={{fontSize:'1.1rem',color:'rgba(255,255,255,0.65)',lineHeight:1.85,maxWidth:'680px',margin:'0 auto 40px auto'}}>
-            Think Safety est née de la rencontre entre des experts de la sécurité professionnelle et des passionnés de technologie, unis par une même conviction : la formation en sécurité au travail doit être gratuite, accessible et pratique pour tous.
+            Thinks Safety est née de la rencontre entre des experts de la sécurité professionnelle et des passionnés de technologie, unis par une même conviction : la formation en sécurité au travail doit être gratuite, accessible et pratique pour tous.
           </p>
           <div style={{display:'flex',justifyContent:'center',gap:'40px',flexWrap:'wrap'}}>
             {[
@@ -58,7 +58,7 @@ export default function AboutPage() {
                 Il s&apos;est entouré d&apos;experts du terrain et de la technologie, dont <strong style={{color:'var(--text-primary)'}}>Djlo ALOHOU</strong>, développeur full-stack et directeur technique, pour concevoir et développer la plateforme.
               </p>
               <p style={{fontSize:'1rem',color:'var(--text-secondary)',lineHeight:1.85,marginBottom:'36px'}}>
-                Aujourd&apos;hui, Think Safety propose plus de 500 ressources gratuites dans 9 secteurs professionnels, des alertes sécurité en temps réel et un marketplace d&apos;équipements de protection, accessible depuis n&apos;importe quel appareil dans le monde.
+                Aujourd&apos;hui, Thinks Safety propose plus de 500 ressources gratuites dans 9 secteurs professionnels, des alertes sécurité en temps réel et un marketplace d&apos;équipements de protection, accessible depuis n&apos;importe quel appareil dans le monde.
               </p>
               <div style={{display:'flex',gap:'16px',flexWrap:'wrap'}}>
                 <Link href="/secteurs" style={{display:'inline-flex',alignItems:'center',gap:'8px',padding:'12px 24px',borderRadius:'14px',fontSize:'14px',fontWeight:700,color:'white',textDecoration:'none',background:'var(--orange)'}}>
@@ -94,7 +94,7 @@ export default function AboutPage() {
         <div style={{maxWidth:'1100px',margin:'0 auto',padding:'0 24px'}}>
           <div style={{textAlign:'center',marginBottom:'64px'}}>
             <p style={{fontSize:'11px',fontWeight:900,textTransform:'uppercase',letterSpacing:'0.1em',color:'var(--orange)',marginBottom:'12px'}}>Les fondateurs</p>
-            <h2 style={{fontSize:'clamp(1.8rem,3.5vw,2.8rem)',fontWeight:900,color:'var(--text-primary)',margin:0,lineHeight:1.1}}>Les visages derrière Think Safety</h2>
+            <h2 style={{fontSize:'clamp(1.8rem,3.5vw,2.8rem)',fontWeight:900,color:'var(--text-primary)',margin:0,lineHeight:1.1}}>Les visages derrière Thinks Safety</h2>
           </div>
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'32px'}}>
 
@@ -110,7 +110,7 @@ export default function AboutPage() {
                 <h3 style={{fontSize:'1.3rem',fontWeight:900,color:'var(--text-primary)',margin:'0 0 4px 0'}}>Grange AGBODANDE</h3>
                 <p style={{fontSize:'13px',fontWeight:700,color:'#f97316',margin:'0 0 16px 0'}}>Fondateur & Manager</p>
                 <p style={{fontSize:'13px',color:'var(--text-secondary)',lineHeight:1.8,margin:'0 0 20px 0'}}>
-                  Ingénieur expert en réseaux et administration de serveurs, Grange cumule plus de 10 ans d&apos;expérience dans le domaine de la sécurité EPI et des systèmes d&apos;information. Passionné par la prévention des risques professionnels, il est le moteur de la création de Think Safety avec une vision claire : rendre la formation en sécurité au travail accessible gratuitement à tous, partout dans le monde.
+                  Ingénieur expert en réseaux et administration de serveurs, Grange cumule plus de 10 ans d&apos;expérience dans le domaine de la sécurité EPI et des systèmes d&apos;information. Passionné par la prévention des risques professionnels, il est le moteur de la création de Thinks Safety avec une vision claire : rendre la formation en sécurité au travail accessible gratuitement à tous, partout dans le monde.
                 </p>
                 <div style={{display:'flex',flexWrap:'wrap',gap:'6px',marginBottom:'20px'}}>
                   {["Sécurité EPI","Administration Serveur","Réseaux & Systèmes","Gestion de Projet","Formation Pro","Audit Sécurité"].map((c,j)=>(
@@ -137,7 +137,7 @@ export default function AboutPage() {
                 <h3 style={{fontSize:'1.3rem',fontWeight:900,color:'var(--text-primary)',margin:'0 0 4px 0'}}>Djlo ALOHOU</h3>
                 <p style={{fontSize:'13px',fontWeight:700,color:'#3b82f6',margin:'0 0 16px 0'}}>Directeur Technique & Développeur Full Stack</p>
                 <p style={{fontSize:'13px',color:'var(--text-secondary)',lineHeight:1.8,margin:'0 0 20px 0'}}>
-                  Développeur full-stack et expert IoT/FMS, Djlo est le bras technique de Think Safety. Fondateur de DJLOTECH Society et Directeur Technique chez REEXOM SARL, il a conçu et développé la totalité de la plateforme. Son expertise couvre le développement web, l&apos;intégration IoT, les Fleet Management Systems (FMS) et l&apos;architecture logicielle cloud.
+                  Développeur full-stack et expert IoT/FMS, Djlo est le bras technique de Thinks Safety. Fondateur de DJLOTECH Society et Directeur Technique chez REEXOM SARL, il a conçu et développé la totalité de la plateforme. Son expertise couvre le développement web, l&apos;intégration IoT, les Fleet Management Systems (FMS) et l&apos;architecture logicielle cloud.
                 </p>
                 <div style={{display:'flex',flexWrap:'wrap',gap:'6px',marginBottom:'20px'}}>
                   {["Next.js / React","IoT & FMS","Supabase & Cloud","GPS & Teltonika","Architecture API","Sécurité Web"].map((c,j)=>(
@@ -189,9 +189,9 @@ export default function AboutPage() {
             <div style={{width:'64px',height:'64px',borderRadius:'20px',background:'rgba(239,68,68,0.12)',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 20px auto'}}>
               <Heart size={28} style={{color:'#ef4444'}} fill="#ef4444"/>
             </div>
-            <h2 style={{fontSize:'1.6rem',fontWeight:900,color:'var(--text-primary)',margin:'0 0 12px 0'}}>Think Safety a besoin de vous ❤️</h2>
+            <h2 style={{fontSize:'1.6rem',fontWeight:900,color:'var(--text-primary)',margin:'0 0 12px 0'}}>Thinks Safety a besoin de vous ❤️</h2>
             <p style={{fontSize:'1rem',color:'var(--text-secondary)',margin:'0 0 8px 0',lineHeight:1.8}}>
-              Think Safety est et restera toujours 100% gratuit. Mais maintenir et améliorer la plateforme a un coût : hébergement, développement, création de contenus.
+              Thinks Safety est et restera toujours 100% gratuit. Mais maintenir et améliorer la plateforme a un coût : hébergement, développement, création de contenus.
             </p>
             <p style={{fontSize:'1rem',color:'var(--text-secondary)',margin:'0 0 32px 0',lineHeight:1.8}}>
               Si la plateforme vous a été utile, un don volontaire, même modeste, fait une vraie différence. Merci du fond du cœur ! 🙏
@@ -217,7 +217,7 @@ export default function AboutPage() {
             Notre objectif : zéro accident évitable
           </h2>
           <p style={{fontSize:'1.05rem',color:'rgba(255,255,255,0.85)',margin:'0 0 36px 0',lineHeight:1.8}}>
-            Chaque formation suivie, c&apos;est un risque de moins. Chaque travailleur formé, c&apos;est une vie préservée. C&apos;est pour cela que Think Safety est et restera toujours gratuit.
+            Chaque formation suivie, c&apos;est un risque de moins. Chaque travailleur formé, c&apos;est une vie préservée. C&apos;est pour cela que Thinks Safety est et restera toujours gratuit.
           </p>
           <div style={{display:'flex',gap:'12px',justifyContent:'center',flexWrap:'wrap'}}>
             <Link href="/secteurs" style={{display:'inline-flex',alignItems:'center',gap:'8px',padding:'14px 32px',borderRadius:'16px',fontSize:'14px',fontWeight:900,color:'var(--orange)',textDecoration:'none',background:'white',boxShadow:'0 8px 28px rgba(0,0,0,0.2)'}}>
@@ -238,7 +238,7 @@ export default function AboutPage() {
             Une question ou une suggestion ?
           </h2>
           <p style={{fontSize:'1rem',color:'var(--text-secondary)',margin:'0 0 32px 0',lineHeight:1.8}}>
-            Think Safety est un projet communautaire. Vos retours nous aident à améliorer la plateforme. N&apos;hésitez pas à nous contacter pour partager vos idées, signaler un problème ou proposer du contenu.
+            Thinks Safety est un projet communautaire. Vos retours nous aident à améliorer la plateforme. N&apos;hésitez pas à nous contacter pour partager vos idées, signaler un problème ou proposer du contenu.
           </p>
           <div style={{display:'flex',gap:'12px',justifyContent:'center',flexWrap:'wrap'}}>
             <a href="mailto:contact@thinkssafety.com" style={{display:'inline-flex',alignItems:'center',gap:'8px',padding:'12px 24px',borderRadius:'14px',fontSize:'14px',fontWeight:700,color:'white',textDecoration:'none',background:'var(--orange)'}}>
