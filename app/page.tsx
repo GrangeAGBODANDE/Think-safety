@@ -324,7 +324,7 @@ export default function HomePage() {
                   <div style={{display:'flex',alignItems:'center',gap:'10px'}}>
                     <div style={{width:'36px',height:'36px',borderRadius:'12px',background:'rgba(74,222,128,0.15)',display:'flex',alignItems:'center',justifyContent:'center'}}><CheckCircle size={18} style={{color:'#4ade80'}}/></div>
                     <div>
-                      <p style={{fontSize:'12px',fontWeight:900,color:'var(--text-primary)',margin:0}}>Certifie</p>
+                      <p style={{fontSize:'12px',fontWeight:900,color:'var(--text-primary)',margin:0}}>Certifié</p>
                       <p style={{fontSize:'10px',color:'var(--text-secondary)',margin:'2px 0 0 0'}}>Experts internationaux</p>
                     </div>
                   </div>
