@@ -187,7 +187,7 @@ export default function SecteurPage() {
                   {/* Info */}
                   <div style={{padding:'16px'}}>
                     <h3 style={{fontSize:'14px',fontWeight:700,color:'var(--text-primary)',margin:'0 0 10px 0',lineHeight:1.4}}>{v.titre}</h3>
-                    <div style={{display:'flex',alignItems:'center',justify:'space-between',gap:'12px'}}>
+                    <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:'12px'}}>
                       <div style={{display:'flex',alignItems:'center',gap:'4px',fontSize:'12px',color:'var(--text-secondary)'}}>
                         <Eye size={12}/>{v.vues.toLocaleString()} vues
                       </div>
