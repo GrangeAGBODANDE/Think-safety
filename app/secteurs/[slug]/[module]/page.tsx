@@ -186,10 +186,10 @@ export default function ModulePage() {
                     Créez un compte <strong style={{color:'var(--text-primary)'}}>gratuit</strong> pour accéder à tous les modules de formation, sans limitation.
                   </p>
                   <div style={{display:'flex',flexDirection:'column',gap:'10px'}}>
-                    <Link href="/inscription" style={{display:'flex',alignItems:'center',justifyContent:'center',gap:'8px',padding:'13px 24px',borderRadius:'14px',fontSize:'14px',fontWeight:700,color:'white',textDecoration:'none',background:c,boxShadow:'0 6px 20px '+c+'40'}}>
+                    <Link href={`/inscription?redirect=/secteurs/${slug}/${modSlug}`} style={{display:'flex',alignItems:'center',justifyContent:'center',gap:'8px',padding:'13px 24px',borderRadius:'14px',fontSize:'14px',fontWeight:700,color:'white',textDecoration:'none',background:c,boxShadow:'0 6px 20px '+c+'40'}}>
                       Créer un compte gratuit
                     </Link>
-                    <Link href="/connexion" style={{display:'flex',alignItems:'center',justifyContent:'center',gap:'8px',padding:'13px 24px',borderRadius:'14px',fontSize:'14px',fontWeight:700,color:'var(--text-primary)',textDecoration:'none',background:'var(--bg-secondary)',border:'1px solid var(--border)'}}>
+                    <Link href={`/connexion?redirect=/secteurs/${slug}/${modSlug}`} style={{display:'flex',alignItems:'center',justifyContent:'center',gap:'8px',padding:'13px 24px',borderRadius:'14px',fontSize:'14px',fontWeight:700,color:'var(--text-primary)',textDecoration:'none',background:'var(--bg-secondary)',border:'1px solid var(--border)'}}>
                       J&apos;ai déjà un compte — Se connecter
                     </Link>
                   </div>
