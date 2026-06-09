@@ -8,7 +8,7 @@ import {
   Shield, LayoutDashboard, Users, BookOpen, Layers,
   AlertTriangle, ShoppingBag, Settings, Globe,
   LogOut, ChevronLeft, ChevronRight,
-  Building2, CreditCard, Star, Plus
+  Building2, CreditCard, Star, Plus, FileText
 } from 'lucide-react'
 
 const NAV = [
@@ -27,6 +27,7 @@ const NAV = [
   { href: '/admin/paiements',    label: 'Transactions',    icon: CreditCard      },
   { section: 'Système' },
   { href: '/admin/parametres',   label: 'Paramètres',      icon: Settings        },
+  { href: '/admin/documentation', label: 'Documentation',    icon: FileText        },
 ]
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
