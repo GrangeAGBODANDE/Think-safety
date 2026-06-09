@@ -4,35 +4,38 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import ThemeToggle from '@/components/ThemeToggle'
-import LanguageSelector from '@/components/LanguageSelector'
 import {
-  Shield, LayoutDashboard, Users, GraduationCap,
+  Shield, LayoutDashboard, Users, BookOpen, Layers,
   AlertTriangle, ShoppingBag, Settings, Globe,
   LogOut, ChevronLeft, ChevronRight,
-  Building2, CreditCard, ShoppingCart, Star, Plus, FileText
+  Building2, CreditCard, Star, Plus
 } from 'lucide-react'
 
 const NAV = [
-  { href: '/admin/dashboard',     label: 'Dashboard',          icon: LayoutDashboard },
-  { href: '/admin/cours',         label: 'Cours & Formations', icon: GraduationCap   },
-  { href: '/admin/utilisateurs',  label: 'Utilisateurs',       icon: Users           },
-  { href: '/admin/entreprises',   label: 'Entreprises',        icon: Building2       },
-  { href: '/admin/alertes',       label: 'Alertes',            icon: AlertTriangle   },
-  { href: '/admin/marketplace',   label: 'Marketplace',        icon: ShoppingBag     },
-  { href: '/admin/commandes',     label: 'Commandes',          icon: ShoppingCart    },
-  { href: '/admin/abonnements',   label: 'Abonnements',        icon: Star            },
-  { href: '/admin/paiements',     label: 'Config Paiements',   icon: CreditCard      },
-  { href: '/admin/parametres',    label: 'Parametres',         icon: Settings        },
-  { href: '/admin/documentation', label: 'Documentation Dev',  icon: FileText        },
+  { section: 'Principal' },
+  { href: '/admin/dashboard',    label: 'Dashboard',       icon: LayoutDashboard },
+  { section: 'Formations' },
+  { href: '/admin/secteurs',     label: 'Secteurs',        icon: Layers          },
+  { href: '/admin/modules',      label: 'Modules & Cours', icon: BookOpen        },
+  { section: 'Communauté' },
+  { href: '/admin/utilisateurs', label: 'Utilisateurs',    icon: Users           },
+  { href: '/admin/entreprises',  label: 'Entreprises',     icon: Building2       },
+  { href: '/admin/alertes',      label: 'Alertes',         icon: AlertTriangle   },
+  { section: 'Marketplace' },
+  { href: '/admin/marketplace',  label: 'Annonces EPI',    icon: ShoppingBag     },
+  { href: '/admin/abonnements',  label: 'Abonnements',     icon: Star            },
+  { href: '/admin/paiements',    label: 'Transactions',    icon: CreditCard      },
+  { section: 'Système' },
+  { href: '/admin/parametres',   label: 'Paramètres',      icon: Settings        },
 ]
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const router = useRouter()
+  const router   = useRouter()
   const pathname = usePathname()
-  const [profile, setProfile] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
+  const [profile,   setProfile]   = useState<any>(null)
+  const [loading,   setLoading]   = useState(true)
   const [collapsed, setCollapsed] = useState(false)
-  const [error, setError] = useState('')
+  const [error,     setError]     = useState('')
 
   useEffect(() => {
     async function checkAccess() {
@@ -40,132 +43,148 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) { router.push('/auth'); return }
         const { data: p } = await supabase.from('profiles').select('*').eq('id', user.id).single()
-        if (!p || !['admin', 'superadmin', 'moderateur'].includes(p.role)) { router.push('/'); return }
+        if (!p || !['admin','superadmin','moderateur'].includes(p.role)) { router.push('/'); return }
         setProfile(p)
         setLoading(false)
-      } catch (e: any) {
-        setError('Erreur: ' + e.message)
-        setLoading(false)
-      }
+      } catch (e: any) { setError('Erreur: ' + e.message); setLoading(false) }
     }
     checkAccess()
   }, [router])
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg-main)' }}>
-        <div className="text-center">
-          <div className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: 'var(--orange)' }}>
-            <Shield size={24} className="text-white" />
-          </div>
-          <p style={{ color: 'var(--text-secondary)' }} className="text-sm">Verification des droits...</p>
+  if (loading) return (
+    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'var(--bg-main)'}}>
+      <div style={{textAlign:'center'}}>
+        <div style={{width:'48px',height:'48px',borderRadius:'14px',background:'var(--orange)',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 12px auto'}}>
+          <Shield size={22} style={{color:'white'}}/>
         </div>
+        <p style={{fontSize:'13px',color:'var(--text-secondary)'}}>Vérification des droits...</p>
       </div>
-    )
-  }
+    </div>
+  )
 
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg-main)' }}>
-        <div className="text-center px-4">
-          <p className="text-red-400 text-sm mb-4">{error}</p>
-          <Link href="/" className="btn-secondary py-2 px-4 text-sm">Retour</Link>
-        </div>
+  if (error) return (
+    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'var(--bg-main)'}}>
+      <div style={{textAlign:'center'}}>
+        <p style={{color:'#ef4444',fontSize:'13px',marginBottom:'16px'}}>{error}</p>
+        <Link href="/" style={{padding:'8px 20px',borderRadius:'10px',border:'1px solid var(--border)',color:'var(--text-primary)',textDecoration:'none',fontSize:'13px'}}>Retour</Link>
       </div>
-    )
-  }
+    </div>
+  )
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/')
 
   return (
-    <div className="min-h-screen flex" style={{ background: 'var(--bg-main)' }}>
+    <div style={{minHeight:'100vh',display:'flex',background:'var(--bg-main)'}}>
 
-      <aside
-        className={`${collapsed ? 'w-16' : 'w-60'} fixed h-full z-20 transition-all duration-300 flex flex-col border-r`}
-        style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}
-      >
-        <div className="p-4 flex items-center justify-between border-b" style={{ borderColor: 'var(--border)' }}>
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'var(--orange)' }}>
-              <Shield size={16} className="text-white" />
+      {/* SIDEBAR */}
+      <aside style={{
+        width: collapsed ? '64px' : '224px',
+        position:'fixed',height:'100%',zIndex:20,
+        display:'flex',flexDirection:'column',
+        background:'var(--bg-card)',
+        borderRight:'1px solid var(--border)',
+        transition:'width 0.25s ease'
+      }}>
+
+        {/* Logo */}
+        <div style={{padding:'16px',display:'flex',alignItems:'center',justifyContent:'space-between',borderBottom:'1px solid var(--border)'}}>
+          <div style={{display:'flex',alignItems:'center',gap:'10px',overflow:'hidden'}}>
+            <div style={{width:'32px',height:'32px',borderRadius:'10px',background:'var(--orange)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+              <Shield size={16} style={{color:'white'}}/>
             </div>
             {!collapsed && (
-              <div>
-                <p className="text-sm font-bold font-display leading-none" style={{ color: 'var(--text-primary)' }}>Thinks Safety</p>
-                <p className="text-[10px] font-mono mt-0.5" style={{ color: 'var(--orange)' }}>{profile?.role?.toUpperCase()}</p>
+              <div style={{overflow:'hidden'}}>
+                <p style={{fontSize:'13px',fontWeight:900,color:'var(--text-primary)',margin:0,lineHeight:1,fontFamily:'var(--font-display, sans-serif)'}}>Think Safety</p>
+                <p style={{fontSize:'10px',color:'var(--orange)',margin:'2px 0 0 0',fontWeight:700}}>{profile?.role?.toUpperCase()}</p>
               </div>
             )}
           </div>
-          <button onClick={() => setCollapsed(!collapsed)} className="p-1 rounded-lg" style={{ color: 'var(--text-secondary)' }}>
-            {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+          <button onClick={()=>setCollapsed(!collapsed)} style={{background:'none',border:'none',cursor:'pointer',color:'var(--text-secondary)',flexShrink:0,padding:'2px'}}>
+            {collapsed ? <ChevronRight size={14}/> : <ChevronLeft size={14}/>}
           </button>
         </div>
 
-        <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto">
-          {NAV.map((item) => {
+        {/* Nav */}
+        <nav style={{flex:1,padding:'8px',overflowY:'auto'}}>
+          {NAV.map((item: any, i) => {
+            if (item.section) {
+              if (collapsed) return null
+              return (
+                <p key={i} style={{fontSize:'10px',fontWeight:900,textTransform:'uppercase',letterSpacing:'0.1em',color:'var(--text-secondary)',padding:'12px 12px 4px',margin:0,opacity:0.5}}>
+                  {item.section}
+                </p>
+              )
+            }
             const Icon = item.icon
             const active = isActive(item.href)
             return (
               <Link key={item.href} href={item.href}
                 title={collapsed ? item.label : undefined}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all border"
-                style={active
-                  ? { color: 'var(--orange)', background: 'rgba(212,80,15,0.1)', borderColor: 'rgba(212,80,15,0.2)' }
-                  : item.href === '/admin/documentation'
-                  ? { color: '#1976D2', borderColor: 'transparent' }
-                  : { color: 'var(--text-secondary)', borderColor: 'transparent' }
-                }
-                onMouseEnter={e => { if (!active) e.currentTarget.style.background = 'var(--navy-700)' }}
-                onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent' }}
-              >
-                <Icon size={16} className="flex-shrink-0" />
-                {!collapsed && <span className="truncate">{item.label}</span>}
+                style={{
+                  display:'flex',alignItems:'center',gap:'10px',
+                  padding:'9px 12px',borderRadius:'10px',
+                  fontSize:'13px',fontWeight:active?700:500,
+                  textDecoration:'none',marginBottom:'1px',
+                  color: active ? 'var(--orange)' : 'var(--text-secondary)',
+                  background: active ? 'rgba(212,80,15,0.1)' : 'transparent',
+                  border: `1px solid ${active ? 'rgba(212,80,15,0.2)' : 'transparent'}`,
+                  transition:'all 0.15s',
+                }}
+                onMouseEnter={e=>{ if(!active)(e.currentTarget as HTMLElement).style.background='var(--bg-secondary)' }}
+                onMouseLeave={e=>{ if(!active)(e.currentTarget as HTMLElement).style.background='transparent' }}>
+                <Icon size={15} style={{flexShrink:0}}/>
+                {!collapsed && <span style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{item.label}</span>}
               </Link>
             )
           })}
         </nav>
 
-        <div className="p-3 border-t space-y-1" style={{ borderColor: 'var(--border)' }}>
-          <Link href="/"
-            className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-all"
-            style={{ color: 'var(--text-secondary)' }}
-            onMouseEnter={e => e.currentTarget.style.background = 'var(--navy-700)'}
-            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-            <Globe size={15} />{!collapsed && 'Voir le site'}
+        {/* Footer */}
+        <div style={{padding:'8px',borderTop:'1px solid var(--border)'}}>
+          <Link href="/" style={{display:'flex',alignItems:'center',gap:'10px',padding:'8px 12px',borderRadius:'10px',fontSize:'13px',color:'var(--text-secondary)',textDecoration:'none'}}
+            onMouseEnter={e=>(e.currentTarget as HTMLElement).style.background='var(--bg-secondary)'}
+            onMouseLeave={e=>(e.currentTarget as HTMLElement).style.background='transparent'}>
+            <Globe size={14}/>{!collapsed && 'Voir le site'}
           </Link>
           {!collapsed && profile && (
-            <div className="px-3 py-2 rounded-xl" style={{ background: 'var(--bg-secondary)' }}>
-              <p className="text-xs font-medium truncate" style={{ color: 'var(--text-primary)' }}>{profile.prenom} {profile.nom}</p>
-              <p className="text-[10px] mt-0.5" style={{ color: 'var(--orange)' }}>{profile.role}</p>
+            <div style={{padding:'8px 12px',borderRadius:'10px',background:'var(--bg-secondary)',margin:'4px 0'}}>
+              <p style={{fontSize:'12px',fontWeight:600,color:'var(--text-primary)',margin:0,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                {profile.prenom} {profile.nom}
+              </p>
+              <p style={{fontSize:'10px',color:'var(--orange)',margin:'2px 0 0 0'}}>{profile.role}</p>
             </div>
           )}
-          <button
-            onClick={async () => { await supabase.auth.signOut(); router.push('/') }}
-            className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-red-400 hover:bg-red-500/10 transition-all w-full"
-          >
-            <LogOut size={15} />{!collapsed && 'Deconnexion'}
+          <button onClick={async()=>{ await supabase.auth.signOut(); router.push('/') }}
+            style={{display:'flex',alignItems:'center',gap:'10px',padding:'8px 12px',borderRadius:'10px',fontSize:'13px',color:'#ef4444',background:'none',border:'none',cursor:'pointer',width:'100%'}}
+            onMouseEnter={e=>(e.currentTarget as HTMLElement).style.background='rgba(239,68,68,0.1)'}
+            onMouseLeave={e=>(e.currentTarget as HTMLElement).style.background='transparent'}>
+            <LogOut size={14}/>{!collapsed && 'Déconnexion'}
           </button>
         </div>
       </aside>
 
-      <main className={`flex-1 ${collapsed ? 'ml-16' : 'ml-60'} transition-all duration-300 min-h-screen`}>
-        <header className="px-6 py-3 flex items-center justify-between sticky top-0 z-10 border-b"
-          style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
-          <div className="flex items-center gap-3">
-            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-              Connecte en tant que{' '}
-              <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{profile?.prenom}</span>
-            </p>
-            <span className={`badge text-[10px] ${
-              profile?.role === 'superadmin' ? 'badge-danger' :
-              profile?.role === 'admin' ? 'badge-orange' : 'badge-info'
-            }`}>{profile?.role}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <LanguageSelector />
+      {/* MAIN */}
+      <main style={{flex:1,marginLeft:collapsed?'64px':'224px',transition:'margin-left 0.25s ease',minHeight:'100vh'}}>
+        {/* Topbar */}
+        <header style={{
+          padding:'12px 24px',display:'flex',alignItems:'center',justifyContent:'space-between',
+          position:'sticky',top:0,zIndex:10,
+          background:'var(--bg-card)',borderBottom:'1px solid var(--border)'
+        }}>
+          <p style={{fontSize:'13px',color:'var(--text-secondary)',margin:0}}>
+            Connecté en tant que{' '}
+            <strong style={{color:'var(--text-primary)'}}>{profile?.prenom} {profile?.nom}</strong>
+            <span style={{marginLeft:'8px',padding:'2px 8px',borderRadius:'6px',fontSize:'10px',fontWeight:700,
+              background: profile?.role==='superadmin'?'rgba(239,68,68,0.15)':'rgba(212,80,15,0.15)',
+              color: profile?.role==='superadmin'?'#ef4444':'var(--orange)'}}>
+              {profile?.role}
+            </span>
+          </p>
+          <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
             <ThemeToggle />
-            <Link href="/admin/cours/nouveau" className="btn-primary py-1.5 px-4 text-xs">
-              <Plus size={13} />Nouveau cours
+            <Link href="/admin/modules/nouveau"
+              style={{display:'inline-flex',alignItems:'center',gap:'6px',padding:'7px 16px',borderRadius:'10px',background:'var(--orange)',color:'white',textDecoration:'none',fontSize:'13px',fontWeight:700,boxShadow:'0 2px 8px rgba(212,80,15,0.3)'}}>
+              <Plus size={13}/> Nouveau module
             </Link>
           </div>
         </header>
