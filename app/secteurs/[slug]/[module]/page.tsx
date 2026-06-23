@@ -6,24 +6,7 @@ import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import { SECTEURS } from '@/lib/secteurs-data'
 import { supabase } from '@/lib/supabase'
-import { ChevronLeft, ChevronRight, FileText, BookOpen, Play, CheckSquare, Square, Volume2, Share2, Lock, Download, Image as ImgIcon, Clock, Users } from 'lucide-react'
-
-interface Mod {
-  id: number; numero: string; titre: string; slug: string
-  libre: boolean; types: string[]; youtubeId: string | null
-  docs: string[]; duree: string; vues: number
-}
-
-const MODS: Mod[] = [
-  { id:1, numero:'01', titre:'Introduction et fondamentaux',                       slug:'module-introduction',   libre:true,  types:['text'],                    youtubeId:null,           docs:[],                                    duree:'20 min', vues:2341 },
-  { id:2, numero:'02', titre:'Équipements de protection individuelle (EPI)',       slug:'module-epi',            libre:false, types:['video','document','image'], youtubeId:'jNQXAC9IVRw',  docs:['Guide EPI complet.pdf'],              duree:'35 min', vues:1892 },
-  { id:3, numero:'03', titre:'Identification et évaluation des risques',          slug:'module-risques',        libre:false, types:['text','document'],          youtubeId:null,           docs:['Modèle DUER.pdf','Fiche risques.pdf'], duree:'25 min', vues:1654 },
-  { id:4, numero:'04', titre:'Gestion des situations d urgence',                  slug:'module-urgence',        libre:false, types:['video','text','image'],     youtubeId:'jNQXAC9IVRw',  docs:[],                                    duree:'40 min', vues:987  },
-  { id:5, numero:'05', titre:'Prévention des accidents du travail',               slug:'module-prevention',     libre:false, types:['video','text'],             youtubeId:'jNQXAC9IVRw',  docs:[],                                    duree:'30 min', vues:1543 },
-  { id:6, numero:'06', titre:'Réglementation et obligations légales',             slug:'module-reglementation', libre:false, types:['document','text'],          youtubeId:null,           docs:['Code travail HSE.pdf'],               duree:'45 min', vues:876  },
-  { id:7, numero:'07', titre:'Ergonomie et prévention des TMS',                   slug:'module-ergonomie',      libre:false, types:['video','image','text'],     youtubeId:'jNQXAC9IVRw',  docs:[],                                    duree:'28 min', vues:1120 },
-  { id:8, numero:'08', titre:'Méthodes avancées d analyse des accidents',         slug:'module-analyse',        libre:false, types:['video','document','text'],  youtubeId:'jNQXAC9IVRw',  docs:['Méthode RCAT.pdf'],                  duree:'55 min', vues:654  },
-]
+import { ChevronLeft, ChevronRight, FileText, BookOpen, Lock, Download, Clock, Users, Volume2, Share2, CheckSquare, Square } from 'lucide-react'
 
 const IMGS: Record<string,string> = {
   'construction-btp':         'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=1200&q=80',
@@ -46,29 +29,28 @@ const IMGS: Record<string,string> = {
   'securite-defense':         'https://images.unsplash.com/photo-1553877522-43269d4ea984?w=1200&q=80',
 }
 
-const TYPE_META: Record<string,{icon:any,label:string,color:string}> = {
-  video:    { icon:Play,     label:'Vidéo',    color:'#ef4444' },
-  document: { icon:FileText, label:'Document', color:'#3b82f6' },
-  image:    { icon:ImgIcon,  label:'Images',   color:'#8b5cf6' },
-  text:     { icon:BookOpen, label:'Cours',    color:'#22c55e' },
+function ytId(url: string): string | null {
+  if (!url) return null
+  if (url.length === 11 && !url.includes('/') && !url.includes('.')) return url
+  const m = url.match(/(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/)
+  return m ? m[1] : null
 }
 
 export default function ModulePage() {
   const params  = useParams()
   const slug    = params.slug   as string
   const modSlug = params.module as string
-
   const secteur = SECTEURS.find(s => s.slug === slug)
-  const modIdx  = MODS.findIndex(m => m.slug === modSlug)
-  const mod     = MODS[modIdx]
-  const prev    = MODS[modIdx - 1]
-  const next    = MODS[modIdx + 1]
 
-  const [user,           setUser]           = useState<any>(null)
-  const [authLoading,    setAuthLoading]    = useState(true)
-  const [objChecked,     setObjChecked]     = useState(false)
-  const [objTexte,       setObjTexte]       = useState('')
-  const [dateTerminee,   setDateTerminee]   = useState('')
+  const [allMods,    setAllMods]    = useState<any[]>([])
+  const [mod,        setMod]        = useState<any>(null)
+  const [docs,       setDocs]       = useState<any[]>([])
+  const [loading,    setLoading]    = useState(true)
+  const [user,       setUser]       = useState<any>(null)
+  const [authLoading,setAuthLoading]= useState(true)
+  const [objChecked, setObjChecked] = useState(false)
+  const [objTexte,   setObjTexte]   = useState('')
+  const [dateFin,    setDateFin]    = useState('')
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => { setUser(data.user); setAuthLoading(false) })
@@ -76,25 +58,56 @@ export default function ModulePage() {
     return () => subscription.unsubscribe()
   }, [])
 
+  useEffect(() => {
+    if (!slug) return
+    async function load() {
+      const { data: mods } = await supabase.from('modules')
+        .select('*').eq('secteur_slug', slug).eq('statut', 'published')
+        .order('ordre', { ascending: true })
+      setAllMods(mods || [])
+      const current = (mods || []).find(m => m.slug === modSlug)
+      setMod(current || null)
+      if (current) {
+        const { data: d } = await supabase.from('module_documents').select('*').eq('module_id', current.id)
+        setDocs(d || [])
+        // Incrémenter les vues
+        await supabase.from('modules').update({ vues: (current.vues || 0) + 1 }).eq('id', current.id)
+      }
+      setLoading(false)
+    }
+    load()
+  }, [slug, modSlug])
+
+  if (loading) return (
+    <div style={{minHeight:'100vh',background:'var(--bg-main)'}}>
+      <Navbar/>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'center',minHeight:'60vh',color:'var(--text-secondary)'}}>Chargement du cours...</div>
+    </div>
+  )
+
   if (!secteur || !mod) return (
     <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'var(--bg-main)'}}>
       <div style={{textAlign:'center'}}>
         <p style={{color:'var(--text-secondary)',marginBottom:'16px'}}>Module introuvable</p>
-        <Link href={`/secteurs/${slug}`} style={{padding:'10px 24px',borderRadius:'12px',background:'var(--orange)',color:'white',textDecoration:'none',fontWeight:700}}>Retour</Link>
+        <Link href={`/secteurs/${slug}`} style={{padding:'10px 24px',borderRadius:'12px',background:'var(--orange)',color:'white',textDecoration:'none',fontWeight:700}}>Retour au secteur</Link>
       </div>
     </div>
   )
 
-  const img      = IMGS[slug]
-  const c        = secteur.couleur
+  const modIdx = allMods.findIndex(m => m.slug === modSlug)
+  const prev   = allMods[modIdx - 1]
+  const next   = allMods[modIdx + 1]
+  const img    = IMGS[slug]
+  const c      = secteur.couleur
   const hasAccess = mod.libre || !!user
-  const decouvrir = MODS.filter(m => m.slug !== modSlug).slice(0, 3)
+  const decouvrir = allMods.filter(m => m.slug !== modSlug).slice(0, 3)
+  const videoId = ytId(mod.youtube_id || '')
 
   return (
     <div style={{minHeight:'100vh',background:'var(--bg-main)'}}>
       <Navbar />
 
-      {/* ══ HERO ══ */}
+      {/* HERO */}
       <div style={{paddingTop:'64px'}}>
         <div style={{display:'grid',gridTemplateColumns:'2fr 1fr',height:'220px',overflow:'hidden'}}>
           <div style={{position:'relative',overflow:'hidden'}}>
@@ -114,13 +127,11 @@ export default function ModulePage() {
         </div>
       </div>
 
-      {/* ══ CORPS ══ */}
+      {/* CORPS */}
       <div style={{maxWidth:'1200px',margin:'0 auto',padding:'0 24px',display:'grid',gridTemplateColumns:'1fr 300px',gap:'48px',alignItems:'start'}}>
 
-        {/* CONTENU GAUCHE */}
         <article style={{paddingTop:'36px',paddingBottom:'96px'}}>
-
-          {/* Fil d ariane */}
+          {/* Fil d'ariane */}
           <div style={{display:'flex',alignItems:'center',gap:'6px',fontSize:'12px',color:'var(--text-secondary)',marginBottom:'20px',flexWrap:'wrap'}}>
             <Link href="/secteurs" style={{color:'var(--text-secondary)',textDecoration:'none'}}>Secteurs</Link>
             <ChevronRight size={12}/>
@@ -129,181 +140,104 @@ export default function ModulePage() {
             <span style={{color:'var(--text-primary)',fontWeight:600}}>Leçon {mod.numero}</span>
           </div>
 
-          {/* Label + titre */}
           <p style={{fontSize:'11px',fontWeight:900,textTransform:'uppercase',letterSpacing:'0.15em',color:c,margin:'0 0 8px 0'}}>Leçon {mod.numero}</p>
           <h1 style={{fontSize:'clamp(1.5rem,3vw,2.3rem)',fontWeight:900,color:'var(--text-primary)',margin:'0 0 16px 0',lineHeight:1.15}}>{mod.titre}</h1>
 
-          {/* Badges type de contenu */}
-          <div style={{display:'flex',gap:'6px',marginBottom:'20px',flexWrap:'wrap'}}>
-            {mod.types.map(t => {
-              const meta = TYPE_META[t]
-              const Icon = meta.icon
-              return (
-                <span key={t} style={{display:'inline-flex',alignItems:'center',gap:'5px',padding:'4px 10px',borderRadius:'8px',fontSize:'11px',fontWeight:700,color:meta.color,background:meta.color+'15',border:'1px solid '+meta.color+'25'}}>
-                  <Icon size={11}/>{meta.label}
-                </span>
-              )
-            })}
-            <span style={{marginLeft:'auto',display:'inline-flex',alignItems:'center',gap:'4px',fontSize:'11px',color:'var(--text-secondary)'}}>
-              <Clock size={11}/>{mod.duree} · <Users size={11}/>{mod.vues.toLocaleString()} vues
-            </span>
+          <div style={{display:'flex',alignItems:'center',gap:'16px',marginBottom:'32px',fontSize:'12px',color:'var(--text-secondary)'}}>
+            {mod.duree && <span style={{display:'inline-flex',alignItems:'center',gap:'4px'}}><Clock size={12}/>{mod.duree}</span>}
+            <span style={{display:'inline-flex',alignItems:'center',gap:'4px'}}><Users size={12}/>{(mod.vues||0).toLocaleString()} vues</span>
           </div>
 
-          {/* Boutons édition */}
-          <div style={{display:'flex',gap:'8px',marginBottom:'36px',flexWrap:'wrap'}}>
-            <button style={{display:'inline-flex',alignItems:'center',gap:'6px',padding:'7px 14px',borderRadius:'8px',border:'1px solid var(--border)',background:'var(--bg-card)',color:'var(--text-secondary)',fontSize:'12px',fontWeight:600,cursor:'pointer'}}>
-              <FileText size={13}/> Édition numérique
-            </button>
-            <button style={{display:'inline-flex',alignItems:'center',gap:'6px',padding:'7px 14px',borderRadius:'8px',border:'1px solid var(--border)',background:'var(--bg-secondary)',color:'var(--text-secondary)',fontSize:'12px',fontWeight:600,cursor:'pointer'}}>
-              <FileText size={13}/> Édition imprimée
-            </button>
-          </div>
+          {/* Description / intro toujours visible */}
+          {mod.description && (
+            <p style={{fontSize:'1rem',lineHeight:1.9,color:'var(--text-secondary)',marginBottom:'24px'}}>{mod.description}</p>
+          )}
 
-          {/* ── INTRO (toujours visible) ── */}
-          <p style={{fontSize:'1rem',lineHeight:1.9,color:'var(--text-secondary)',marginBottom:'24px'}}>
-            Chaque jour, des millions de travailleurs prennent des risques sans en être pleinement conscients. La sécurité au travail ne s&apos;improvise pas — elle s&apos;apprend, se pratique et devient une culture au quotidien. Ce module vous donne les bases essentielles pour protéger votre vie et celle de vos collègues.
-          </p>
-
-          {/* ══ AUTH GATE pour modules protégés ══ */}
-          {!hasAccess && !authLoading && (
+          {/* AUTH GATE */}
+          {!hasAccess && !authLoading ? (
             <div style={{position:'relative',marginTop:'8px'}}>
-              {/* Aperçu flouté */}
-              <div style={{filter:'blur(5px)',pointerEvents:'none',userSelect:'none',maxHeight:'180px',overflow:'hidden',opacity:0.5}}>
-                <h2 style={{fontSize:'1.1rem',fontWeight:900,color:c,margin:'0 0 12px 0'}}>1. Pourquoi la sécurité au travail est-elle essentielle ?</h2>
-                <p style={{fontSize:'1rem',lineHeight:1.9,color:'var(--text-secondary)'}}>La sécurité au travail protège la santé et la vie des travailleurs. Elle a aussi un impact économique majeur : un accident grave coûte en moyenne 40 000€ à une entreprise...</p>
-                <p style={{fontSize:'1rem',lineHeight:1.9,color:'var(--text-secondary)'}}>Travailler dans un environnement sûr améliore la productivité, la motivation et la fidélisation des employés. Les entreprises qui investissent...</p>
-              </div>
-              {/* Gradient */}
+              <div style={{filter:'blur(5px)',pointerEvents:'none',userSelect:'none',maxHeight:'160px',overflow:'hidden',opacity:0.5}}
+                dangerouslySetInnerHTML={{ __html: mod.contenu_texte || '<p>Contenu du module...</p>' }}/>
               <div style={{position:'absolute',inset:0,background:`linear-gradient(to bottom, transparent 0%, var(--bg-main) 70%)`}}/>
-              {/* Gate card */}
               <div style={{position:'relative',zIndex:2,display:'flex',justifyContent:'center',paddingTop:'16px'}}>
                 <div style={{background:'var(--bg-card)',border:'1px solid var(--border)',borderRadius:'24px',padding:'36px 32px',textAlign:'center',maxWidth:'420px',width:'100%',boxShadow:'0 24px 64px rgba(0,0,0,0.15)'}}>
-                  <div style={{width:'56px',height:'56px',borderRadius:'18px',background:c+'20',border:'1px solid '+c+'30',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 20px auto'}}>
+                  <div style={{width:'56px',height:'56px',borderRadius:'18px',background:c+'20',border:'1px solid '+c+'30',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 20px'}}>
                     <Lock size={24} style={{color:c}}/>
                   </div>
                   <h3 style={{fontSize:'1.2rem',fontWeight:900,color:'var(--text-primary)',margin:'0 0 10px 0'}}>Module réservé aux membres</h3>
                   <p style={{fontSize:'14px',color:'var(--text-secondary)',margin:'0 0 24px 0',lineHeight:1.7}}>
-                    Créez un compte <strong style={{color:'var(--text-primary)'}}>gratuit</strong> pour accéder à tous les modules de formation, sans limitation.
+                    Créez un compte <strong style={{color:'var(--text-primary)'}}>gratuit</strong> pour accéder à tous les modules.
                   </p>
                   <div style={{display:'flex',flexDirection:'column',gap:'10px'}}>
-                    <Link href={`/inscription?redirect=/secteurs/${slug}/${modSlug}`} style={{display:'flex',alignItems:'center',justifyContent:'center',gap:'8px',padding:'13px 24px',borderRadius:'14px',fontSize:'14px',fontWeight:700,color:'white',textDecoration:'none',background:c,boxShadow:'0 6px 20px '+c+'40'}}>
+                    <Link href={`/inscription?redirect=/secteurs/${slug}/${modSlug}`} style={{display:'flex',alignItems:'center',justifyContent:'center',padding:'13px 24px',borderRadius:'14px',fontSize:'14px',fontWeight:700,color:'white',textDecoration:'none',background:c,boxShadow:'0 6px 20px '+c+'40'}}>
                       Créer un compte gratuit
                     </Link>
-                    <Link href={`/connexion?redirect=/secteurs/${slug}/${modSlug}`} style={{display:'flex',alignItems:'center',justifyContent:'center',gap:'8px',padding:'13px 24px',borderRadius:'14px',fontSize:'14px',fontWeight:700,color:'var(--text-primary)',textDecoration:'none',background:'var(--bg-secondary)',border:'1px solid var(--border)'}}>
-                      J&apos;ai déjà un compte — Se connecter
+                    <Link href={`/connexion?redirect=/secteurs/${slug}/${modSlug}`} style={{display:'flex',alignItems:'center',justifyContent:'center',padding:'13px 24px',borderRadius:'14px',fontSize:'14px',fontWeight:700,color:'var(--text-primary)',textDecoration:'none',background:'var(--bg-secondary)',border:'1px solid var(--border)'}}>
+                      J&apos;ai déjà un compte
                     </Link>
                   </div>
-                  <p style={{fontSize:'11px',color:'var(--text-secondary)',margin:'16px 0 0 0'}}>
-                    Le module d&apos;introduction est accessible gratuitement sans compte.
-                  </p>
                 </div>
               </div>
             </div>
-          )}
-
-          {/* ══ CONTENU COMPLET (si accès) ══ */}
-          {hasAccess && (
+          ) : (
             <>
-              {/* Section 1 */}
-              <h2 style={{fontSize:'1.1rem',fontWeight:900,color:c,margin:'0 0 14px 0',paddingTop:'8px',borderTop:'1px solid var(--border)'}}>
-                1. Pourquoi la sécurité au travail est-elle essentielle ?
-              </h2>
-              <p style={{fontSize:'1rem',lineHeight:1.9,color:'var(--text-secondary)',marginBottom:'20px'}}>
-                La sécurité au travail protège la santé et la vie des travailleurs. Elle a aussi un impact économique majeur : un accident grave coûte en moyenne 40 000€ à une entreprise, sans compter les pertes humaines et les traumatismes durables sur les équipes.
-              </p>
-
-              {/* Vidéo embarquée (si disponible) */}
-              {mod.youtubeId && mod.types.includes('video') && (
+              {/* VIDÉO en haut si disponible */}
+              {videoId && (
                 <div style={{marginBottom:'32px',borderRadius:'16px',overflow:'hidden',border:'1px solid var(--border)'}}>
-                  <div style={{padding:'10px 14px',background:'var(--bg-card)',borderBottom:'1px solid var(--border)',display:'flex',alignItems:'center',gap:'6px'}}>
-                    <Play size={13} style={{color:'#ef4444'}}/>
-                    <span style={{fontSize:'12px',fontWeight:700,color:'var(--text-secondary)'}}>Vidéo de formation — regardez avant de continuer</span>
-                  </div>
                   <div style={{position:'relative',paddingBottom:'56.25%',height:0,background:'#000'}}>
-                    <iframe
-                      src={`https://www.youtube.com/embed/${mod.youtubeId}?rel=0&modestbranding=1`}
-                      title={mod.titre}
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                      style={{position:'absolute',top:0,left:0,width:'100%',height:'100%',border:'none'}}
-                    />
+                    <iframe src={`https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1`} title={mod.titre}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen
+                      style={{position:'absolute',top:0,left:0,width:'100%',height:'100%',border:'none'}}/>
                   </div>
                 </div>
               )}
 
-              {/* Image embarquée (si disponible) */}
-              {mod.types.includes('image') && (
-                <div style={{marginBottom:'32px',borderRadius:'16px',overflow:'hidden',border:'1px solid var(--border)'}}>
-                  <img src={img || `https://images.unsplash.com/photo-1552664730-d307ca884978?w=800&q=80`} alt={mod.titre} style={{width:'100%',height:'220px',objectFit:'cover'}}/>
-                  <div style={{padding:'10px 16px',background:'var(--bg-card)',borderTop:'1px solid var(--border)'}}>
-                    <p style={{fontSize:'12px',color:'var(--text-secondary)',margin:0,fontStyle:'italic'}}>Illustration pratique — {secteur.nom}</p>
-                  </div>
-                </div>
-              )}
+              {/* CONTENU HTML RICHE */}
+              <div className="course-body" style={{marginBottom:'40px'}}
+                dangerouslySetInnerHTML={{ __html: mod.contenu_texte || '<p>Contenu à venir...</p>' }}/>
 
-              {/* Section 2 */}
-              <h2 style={{fontSize:'1.1rem',fontWeight:900,color:c,margin:'0 0 14px 0',paddingTop:'8px',borderTop:'1px solid var(--border)'}}>
-                2. Les principales causes d&apos;accidents du travail
-              </h2>
-              <p style={{fontSize:'1rem',lineHeight:1.9,color:'var(--text-secondary)',marginBottom:'20px'}}>
-                Les accidents ne surviennent jamais par hasard. Ils résultent d&apos;une combinaison de facteurs : humains (négligence, fatigue, manque de formation), organisationnels (procédures absentes ou mal appliquées) et techniques (matériels défectueux ou inadaptés).
-              </p>
+              <style>{`
+                .course-body h2{font-size:1.15rem;font-weight:900;color:${c};margin:28px 0 14px;padding-top:12px;border-top:1px solid var(--border)}
+                .course-body h3{font-size:1.05rem;font-weight:700;color:var(--text-primary);margin:20px 0 10px}
+                .course-body p{font-size:1rem;line-height:1.9;color:var(--text-secondary);margin:0 0 16px}
+                .course-body blockquote{padding:18px 22px;border-left:4px solid ${c};background:${c}12;border-radius:0 12px 12px 0;margin:20px 0;font-style:italic}
+                .course-body blockquote p{color:var(--text-primary);margin:0}
+                .course-body ul,.course-body ol{padding-left:24px;margin:0 0 16px}
+                .course-body li{font-size:1rem;color:var(--text-secondary);line-height:1.8;margin-bottom:8px}
+                .course-body img{max-width:100%;border-radius:14px;border:1px solid var(--border);margin:20px 0;display:block}
+                .course-body iframe{width:100%;aspect-ratio:16/9;border-radius:14px;margin:20px 0;border:none}
+                .course-body mark{background:${c}35;color:var(--text-primary);border-radius:3px;padding:1px 4px}
+                .course-body strong{color:var(--text-primary);font-weight:700}
+                .course-body hr{border:none;border-top:2px solid var(--border);margin:28px 0}
+                .course-body a{color:${c};text-decoration:underline}
+              `}</style>
 
-              {/* Bloc citation */}
-              <div style={{marginBottom:'32px',padding:'18px 22px',borderRadius:'12px',background:c+'10',borderLeft:'4px solid '+c}}>
-                <p style={{fontSize:'1rem',lineHeight:1.8,color:'var(--text-primary)',margin:0,fontStyle:'italic',fontWeight:500}}>
-                  &laquo; La sécurité n&apos;est pas une priorité parmi d&apos;autres — c&apos;est une condition préalable à toute activité professionnelle. &raquo;
-                </p>
-                <p style={{fontSize:'12px',color:c,fontWeight:700,margin:'8px 0 0 0'}}>— Directive-cadre européenne 89/391/CEE</p>
-              </div>
-
-              {/* Section 3 */}
-              <h2 style={{fontSize:'1.1rem',fontWeight:900,color:c,margin:'0 0 14px 0',paddingTop:'8px',borderTop:'1px solid var(--border)'}}>
-                3. Comment agir au quotidien ?
-              </h2>
-              <ul style={{margin:'0 0 32px 0',paddingLeft:'22px',display:'flex',flexDirection:'column',gap:'10px'}}>
-                {['Inspecter votre poste de travail en début de journée',
-                  'Porter systématiquement les EPI adaptés à vos tâches',
-                  'Participer activement aux exercices d urgence',
-                  'Signaler toute dégradation de matériel ou condition dangereuse',
-                  'Ne jamais contourner une procédure de sécurité, même sous pression'
-                ].map((item, i) => (
-                  <li key={i} style={{fontSize:'14px',color:'var(--text-secondary)',lineHeight:1.7}}>{item}</li>
-                ))}
-              </ul>
-
-              {/* Approfondissons */}
-              <div style={{marginBottom:'40px',padding:'24px',borderRadius:'16px',background:'var(--bg-card)',border:'1px solid var(--border)',borderLeft:'4px solid '+c}}>
-                <p style={{fontSize:'11px',fontWeight:900,textTransform:'uppercase',letterSpacing:'0.15em',color:'var(--text-secondary)',margin:'0 0 12px 0'}}>Approfondissons</p>
-                <p style={{fontSize:'14px',lineHeight:1.8,color:'var(--text-secondary)',margin:0}}>
-                  Réfléchissons ensemble à votre contexte professionnel. Quels risques identifiez-vous dans votre secteur ? Comment pouvez-vous contribuer à une meilleure culture de sécurité dans votre équipe ? Les prochains modules vous donneront des outils concrets pour y répondre.
-                </p>
-              </div>
-
-              {/* Documents (si disponibles) */}
-              {mod.docs.length > 0 && (
+              {/* DOCUMENTS */}
+              {docs.length > 0 && (
                 <div style={{marginBottom:'36px'}}>
                   <p style={{fontSize:'12px',fontWeight:900,textTransform:'uppercase',letterSpacing:'0.1em',color:'var(--text-secondary)',margin:'0 0 12px 0'}}>Documents du module</p>
                   <div style={{display:'flex',flexDirection:'column',gap:'8px'}}>
-                    {mod.docs.map((doc, i) => (
-                      <div key={i} style={{display:'flex',alignItems:'center',gap:'12px',padding:'12px 16px',borderRadius:'12px',border:'1px solid var(--border)',background:'var(--bg-card)'}}>
+                    {docs.map((doc) => (
+                      <a key={doc.id} href={doc.url || '#'} target="_blank" rel="noopener noreferrer"
+                        style={{display:'flex',alignItems:'center',gap:'12px',padding:'12px 16px',borderRadius:'12px',border:'1px solid var(--border)',background:'var(--bg-card)',textDecoration:'none'}}>
                         <div style={{width:'36px',height:'36px',borderRadius:'10px',background:'rgba(239,68,68,0.12)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
                           <FileText size={16} style={{color:'#ef4444'}}/>
                         </div>
-                        <span style={{flex:1,fontSize:'13px',fontWeight:600,color:'var(--text-primary)'}}>{doc}</span>
-                        <button style={{display:'flex',alignItems:'center',gap:'5px',padding:'6px 12px',borderRadius:'8px',border:'1px solid var(--border)',background:'var(--bg-secondary)',color:'var(--text-secondary)',fontSize:'12px',fontWeight:600,cursor:'pointer'}}>
-                          <Download size={12}/>PDF
-                        </button>
-                      </div>
+                        <div style={{flex:1}}>
+                          <p style={{fontSize:'13px',fontWeight:600,color:'var(--text-primary)',margin:0}}>{doc.titre}</p>
+                          {(doc.pages || doc.taille) && <p style={{fontSize:'11px',color:'var(--text-secondary)',margin:'2px 0 0 0'}}>{doc.pages ? `${doc.pages} pages` : ''}{doc.pages && doc.taille ? ' · ' : ''}{doc.taille || ''}</p>}
+                        </div>
+                        <Download size={14} style={{color:'var(--orange)',flexShrink:0}}/>
+                      </a>
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* Fin de leçon */}
+              {/* FIN DE LEÇON */}
               <div style={{marginTop:'48px',padding:'24px',borderRadius:'16px',background:'var(--bg-card)',border:'1px solid var(--border)'}}>
                 <p style={{fontSize:'12px',fontWeight:900,textTransform:'uppercase',letterSpacing:'0.1em',color:'var(--text-secondary)',margin:'0 0 12px 0'}}>Leçon terminée le</p>
-                <input type="date" value={dateTerminee} onChange={e=>setDateTerminee(e.target.value)}
+                <input type="date" value={dateFin} onChange={e=>setDateFin(e.target.value)}
                   style={{width:'100%',padding:'10px 14px',borderRadius:'10px',border:'1px solid var(--border)',background:'var(--bg-secondary)',color:'var(--text-primary)',fontSize:'14px',marginBottom:'20px',boxSizing:'border-box'}}/>
                 <div style={{padding:'18px',borderRadius:'12px',background:'var(--bg-secondary)',border:'1px solid var(--border)'}}>
                   <p style={{fontSize:'14px',fontWeight:900,color:'var(--text-primary)',margin:'0 0 12px 0'}}>Mon objectif</p>
@@ -320,77 +254,64 @@ export default function ModulePage() {
             </>
           )}
 
-          {/* Navigation Précédent / Suivant */}
+          {/* NAVIGATION */}
           <div style={{display:'flex',justifyContent:'space-between',marginTop:'40px',gap:'16px',flexWrap:'wrap'}}>
             {prev ? (
-              <Link href={`/secteurs/${slug}/${prev.slug}`}
-                style={{display:'inline-flex',alignItems:'center',gap:'8px',padding:'12px 20px',borderRadius:'12px',border:'1px solid var(--border)',background:'var(--bg-card)',color:'var(--text-primary)',textDecoration:'none',fontSize:'13px',fontWeight:700}}>
+              <Link href={`/secteurs/${slug}/${prev.slug}`} style={{display:'inline-flex',alignItems:'center',gap:'8px',padding:'12px 20px',borderRadius:'12px',border:'1px solid var(--border)',background:'var(--bg-card)',color:'var(--text-primary)',textDecoration:'none',fontSize:'13px',fontWeight:700}}>
                 <ChevronLeft size={16}/> Précédent
               </Link>
             ) : <div/>}
             {next && (
-              <Link href={`/secteurs/${slug}/${next.slug}`}
-                style={{display:'inline-flex',alignItems:'center',gap:'8px',padding:'12px 20px',borderRadius:'12px',background:c,color:'white',textDecoration:'none',fontSize:'13px',fontWeight:700,boxShadow:'0 4px 16px '+c+'40'}}>
-                {next.libre ? '' : <Lock size={12}/>}
-                Suivant — {next.titre.substring(0,30)}... <ChevronRight size={16}/>
+              <Link href={`/secteurs/${slug}/${next.slug}`} style={{display:'inline-flex',alignItems:'center',gap:'8px',padding:'12px 20px',borderRadius:'12px',background:c,color:'white',textDecoration:'none',fontSize:'13px',fontWeight:700,boxShadow:'0 4px 16px '+c+'40'}}>
+                {!next.libre && <Lock size={12}/>} Suivant <ChevronRight size={16}/>
               </Link>
             )}
           </div>
 
-          {/* ══ À DÉCOUVRIR AUSSI ══ */}
-          <div style={{marginTop:'56px',paddingTop:'32px',borderTop:'1px solid var(--border)'}}>
-            <p style={{fontSize:'11px',fontWeight:900,textTransform:'uppercase',letterSpacing:'0.15em',color:'var(--text-secondary)',margin:'0 0 16px 0'}}>À découvrir aussi</p>
-            <div style={{display:'flex',flexDirection:'column',gap:'1px',border:'1px solid var(--border)',borderRadius:'14px',overflow:'hidden'}}>
-              {decouvrir.map(m => (
-                <Link key={m.id} href={`/secteurs/${slug}/${m.slug}`} style={{display:'flex',alignItems:'center',gap:'16px',padding:'14px 16px',background:'var(--bg-card)',textDecoration:'none',transition:'background 0.2s',borderBottom:'1px solid var(--border)'}}
-                  onMouseEnter={e=>(e.currentTarget as HTMLElement).style.background='var(--bg-secondary)'}
-                  onMouseLeave={e=>(e.currentTarget as HTMLElement).style.background='var(--bg-card)'}>
-                  <div style={{width:'48px',height:'36px',borderRadius:'8px',background:c+'20',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-                    <span style={{fontSize:'13px',fontWeight:900,color:c}}>{m.numero}</span>
-                  </div>
-                  <div style={{flex:1,minWidth:0}}>
-                    <p style={{fontSize:'13px',fontWeight:700,color:'var(--text-primary)',margin:'0 0 2px 0',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{m.titre}</p>
-                    <div style={{display:'flex',gap:'6px'}}>
-                      {m.types.slice(0,2).map(t => {
-                        const meta = TYPE_META[t]; const Icon = meta.icon
-                        return <span key={t} style={{display:'inline-flex',alignItems:'center',gap:'3px',fontSize:'10px',color:meta.color}}><Icon size={9}/>{meta.label}</span>
-                      })}
+          {/* À DÉCOUVRIR AUSSI */}
+          {decouvrir.length > 0 && (
+            <div style={{marginTop:'56px',paddingTop:'32px',borderTop:'1px solid var(--border)'}}>
+              <p style={{fontSize:'11px',fontWeight:900,textTransform:'uppercase',letterSpacing:'0.15em',color:'var(--text-secondary)',margin:'0 0 16px 0'}}>À découvrir aussi</p>
+              <div style={{display:'flex',flexDirection:'column',gap:'1px',border:'1px solid var(--border)',borderRadius:'14px',overflow:'hidden'}}>
+                {decouvrir.map(m => (
+                  <Link key={m.id} href={`/secteurs/${slug}/${m.slug}`} style={{display:'flex',alignItems:'center',gap:'16px',padding:'14px 16px',background:'var(--bg-card)',textDecoration:'none',borderBottom:'1px solid var(--border)'}}
+                    onMouseEnter={e=>(e.currentTarget as HTMLElement).style.background='var(--bg-secondary)'}
+                    onMouseLeave={e=>(e.currentTarget as HTMLElement).style.background='var(--bg-card)'}>
+                    <div style={{width:'48px',height:'36px',borderRadius:'8px',background:c+'20',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                      <span style={{fontSize:'13px',fontWeight:900,color:c}}>{m.numero}</span>
                     </div>
-                  </div>
-                  <div style={{display:'flex',alignItems:'center',gap:'4px',fontSize:'11px',fontWeight:700,flexShrink:0,color:m.libre?'#22c55e':'var(--text-secondary)'}}>
-                    {m.libre ? 'Gratuit' : <><Lock size={10}/>Membre</>}
-                    <ChevronRight size={12} style={{color:c}}/>
-                  </div>
-                </Link>
-              ))}
+                    <div style={{flex:1,minWidth:0}}>
+                      <p style={{fontSize:'13px',fontWeight:700,color:'var(--text-primary)',margin:0,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{m.titre}</p>
+                    </div>
+                    <div style={{display:'flex',alignItems:'center',gap:'4px',fontSize:'11px',fontWeight:700,flexShrink:0,color:m.libre?'#22c55e':'var(--text-secondary)'}}>
+                      {m.libre ? 'Gratuit' : <><Lock size={10}/>Membre</>}
+                      <ChevronRight size={12} style={{color:c}}/>
+                    </div>
+                  </Link>
+                ))}
+              </div>
             </div>
-          </div>
-
+          )}
         </article>
 
-        {/* ══ SIDEBAR ══ */}
+        {/* SIDEBAR */}
         <aside style={{paddingTop:'36px',position:'sticky',top:'80px'}}>
-
-          {/* Miniature secteur */}
           <div style={{borderRadius:'14px',overflow:'hidden',border:'1px solid var(--border)',marginBottom:'20px'}}>
             <div style={{height:'110px',position:'relative',background:c+'20'}}>
               {img && <img src={img} alt={secteur.nom} style={{width:'100%',height:'100%',objectFit:'cover',opacity:0.45}}/>}
               <div style={{position:'absolute',inset:0,background:'linear-gradient(to top,rgba(0,0,0,0.65) 0%,transparent 100%)'}}/>
               <div style={{position:'absolute',bottom:'10px',left:'12px',right:'12px'}}>
                 <p style={{color:'white',fontSize:'12px',fontWeight:900,margin:0}}>{secteur.nom}</p>
-                <p style={{color:'rgba(255,255,255,0.55)',fontSize:'10px',margin:'2px 0 0 0'}}>Leçon {mod.numero} / {MODS.length}</p>
+                <p style={{color:'rgba(255,255,255,0.55)',fontSize:'10px',margin:'2px 0 0 0'}}>Leçon {mod.numero} / {allMods.length}</p>
               </div>
             </div>
           </div>
 
-          {/* Téléchargement */}
           <div style={{padding:'14px',borderRadius:'14px',border:'1px solid var(--border)',background:'var(--bg-card)',marginBottom:'16px'}}>
             <p style={{fontSize:'11px',fontWeight:900,textTransform:'uppercase',letterSpacing:'0.1em',color:'var(--text-secondary)',margin:'0 0 10px 0'}}>Téléchargement</p>
             <div style={{display:'flex',gap:'6px'}}>
               {[{icon:FileText,label:'PDF'},{icon:Volume2,label:'Audio'},{icon:Share2,label:'Partager'}].map(({icon:Icon,label}) => (
-                <button key={label} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:'5px',padding:'10px 6px',borderRadius:'10px',border:'1px solid var(--border)',background:'var(--bg-secondary)',cursor:'pointer',transition:'all 0.2s'}}
-                  onMouseEnter={e=>Object.assign((e.currentTarget as HTMLElement).style,{borderColor:c,background:c+'10'})}
-                  onMouseLeave={e=>Object.assign((e.currentTarget as HTMLElement).style,{borderColor:'var(--border)',background:'var(--bg-secondary)'})}>
+                <button key={label} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:'5px',padding:'10px 6px',borderRadius:'10px',border:'1px solid var(--border)',background:'var(--bg-secondary)',cursor:'pointer'}}>
                   <Icon size={16} style={{color:'var(--text-secondary)'}}/>
                   <span style={{fontSize:'10px',fontWeight:600,color:'var(--text-secondary)'}}>{label}</span>
                 </button>
@@ -398,27 +319,22 @@ export default function ModulePage() {
             </div>
           </div>
 
-          {/* Table des matières */}
           <div style={{borderRadius:'14px',border:'1px solid var(--border)',background:'var(--bg-card)',overflow:'hidden'}}>
             <div style={{padding:'10px 14px',borderBottom:'1px solid var(--border)',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
               <p style={{fontSize:'11px',fontWeight:900,textTransform:'uppercase',letterSpacing:'0.1em',color:'var(--text-secondary)',margin:0}}>Table des matières</p>
               <BookOpen size={13} style={{color:'var(--text-secondary)'}}/>
             </div>
             <div style={{maxHeight:'380px',overflowY:'auto'}}>
-              {MODS.map(m => {
+              {allMods.map(m => {
                 const isActive = m.slug === modSlug
                 return (
                   <Link key={m.id} href={`/secteurs/${slug}/${m.slug}`}
-                    style={{display:'flex',alignItems:'center',gap:'10px',padding:'10px 14px',borderBottom:'1px solid var(--border)',textDecoration:'none',background:isActive?c+'15':'transparent',transition:'background 0.2s'}}
+                    style={{display:'flex',alignItems:'center',gap:'10px',padding:'10px 14px',borderBottom:'1px solid var(--border)',textDecoration:'none',background:isActive?c+'15':'transparent'}}
                     onMouseEnter={e=>{ if(!isActive)(e.currentTarget as HTMLElement).style.background='var(--bg-secondary)' }}
                     onMouseLeave={e=>{ if(!isActive)(e.currentTarget as HTMLElement).style.background='transparent' }}>
-                    <span style={{width:'26px',height:'26px',borderRadius:'8px',background:isActive?c+'30':'var(--bg-secondary)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'10px',fontWeight:900,color:isActive?c:'var(--text-secondary)',flexShrink:0}}>
-                      {m.numero}
-                    </span>
+                    <span style={{width:'26px',height:'26px',borderRadius:'8px',background:isActive?c+'30':'var(--bg-secondary)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'10px',fontWeight:900,color:isActive?c:'var(--text-secondary)',flexShrink:0}}>{m.numero}</span>
                     <div style={{flex:1,minWidth:0}}>
-                      <p style={{fontSize:'12px',fontWeight:isActive?700:500,color:isActive?'var(--text-primary)':'var(--text-secondary)',margin:0,lineHeight:1.35,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
-                        {m.titre}
-                      </p>
+                      <p style={{fontSize:'12px',fontWeight:isActive?700:500,color:isActive?'var(--text-primary)':'var(--text-secondary)',margin:0,lineHeight:1.35,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{m.titre}</p>
                     </div>
                     {!m.libre && <Lock size={10} style={{color:'var(--text-secondary)',flexShrink:0,opacity:0.5}}/>}
                   </Link>
@@ -426,7 +342,6 @@ export default function ModulePage() {
               })}
             </div>
           </div>
-
         </aside>
       </div>
 
