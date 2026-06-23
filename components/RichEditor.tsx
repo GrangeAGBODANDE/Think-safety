@@ -6,7 +6,6 @@ import Youtube from '@tiptap/extension-youtube'
 import { TextStyle } from '@tiptap/extension-text-style'
 import { Color } from '@tiptap/extension-color'
 import Highlight from '@tiptap/extension-highlight'
-import Underline from '@tiptap/extension-underline'
 import TextAlign from '@tiptap/extension-text-align'
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
@@ -36,7 +35,6 @@ export default function RichEditor({ value, onChange, color = '#FF6B35' }: Props
       TextStyle,
       Color,
       Highlight.configure({ multicolor: true }),
-      Underline,
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
     ],
     content: value,
