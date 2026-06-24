@@ -5,294 +5,187 @@ import { useRouter } from 'next/navigation'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import { supabase } from '@/lib/supabase'
-import { BookOpen, Award, Clock, CheckCircle, Play, ChevronRight, Zap } from 'lucide-react'
+import { SECTEURS } from '@/lib/secteurs-data'
+import { BookOpen, Clock, Shield, ChevronRight, User, MapPin, Briefcase, LogOut, Award } from 'lucide-react'
 
 export default function DashboardPage() {
   const router = useRouter()
-  const [tab,          setTab]          = useState(0)
-  const [profile,      setProfile]      = useState<any>(null)
-  const [enrollments,  setEnrollments]  = useState<any[]>([])
-  const [certificates, setCertificates] = useState<any[]>([])
-  const [loading,      setLoading]      = useState(true)
-  const [stats,        setStats]        = useState({ en_cours:0, termines:0, certificats:0, minutes:0 })
+  const [profile,  setProfile]  = useState<any>(null)
+  const [progress, setProgress] = useState<any[]>([])
+  const [loading,  setLoading]  = useState(true)
 
   useEffect(() => {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { router.push('/auth'); return }
-
+      if (!user) { router.push('/connexion?redirect=/dashboard'); return }
       const { data: p } = await supabase.from('profiles').select('*').eq('id', user.id).single()
       setProfile(p)
-
-      // ✅ Lire les inscriptions avec la progression stockée
-      const { data: enr } = await supabase
-        .from('course_enrollments')
-        .select(`
-          id, course_id, progression, statut, date_inscription,
-          courses(id, slug, titre, description_courte, image_couverture, niveau, secteur_slug, nb_lecons, nb_modules, duree_totale_minutes, est_certifiant)
-        `)
+      const { data: prog } = await supabase
+        .from('user_module_progress')
+        .select('*, module:module_id(id, titre, numero, secteur_slug, duree, slug)')
         .eq('user_id', user.id)
-        .order('date_inscription', { ascending: false })
-
-      const list = enr || []
-
-      // ✅ Recalculer depuis lesson_progress pour avoir la vraie valeur
-      if (list.length > 0) {
-        const courseIds = list.map((e: any) => e.course_id)
-
-        const [{ data: allL }, { data: doneL }] = await Promise.all([
-          supabase.from('course_lessons').select('course_id').in('course_id', courseIds),
-          supabase.from('lesson_progress').select('course_id').eq('user_id', user.id).eq('est_complete', true).in('course_id', courseIds),
-        ])
-
-        const totalMap: Record<string,number> = {}
-        const doneMap:  Record<string,number> = {}
-        ;(allL  || []).forEach((l:any) => { totalMap[l.course_id] = (totalMap[l.course_id]||0)+1 })
-        ;(doneL || []).forEach((l:any) => { doneMap[l.course_id]  = (doneMap[l.course_id] ||0)+1 })
-
-        const enriched = list.map((e: any) => {
-          const total = totalMap[e.course_id] || 0
-          const done  = doneMap[e.course_id]  || 0
-          // Si on a des données dans lesson_progress, utiliser ça
-          // Sinon utiliser course_enrollments.progression
-          const pct = total > 0
-            ? Math.round((done / total) * 100)
-            : (e.progression || 0)
-          return { ...e, pct, total, done }
-        })
-
-        setEnrollments(enriched)
-        setStats({
-          en_cours:  enriched.filter((e:any) => e.pct < 100).length,
-          termines:  enriched.filter((e:any) => e.pct >= 100).length,
-          certificats: 0,
-          minutes: enriched.reduce((a:number,e:any) => a + (e.courses?.duree_totale_minutes||0), 0),
-        })
-      }
-
-      // Certificats
-      const { data: certs } = await supabase
-        .from('course_certificates')
-        .select('*, courses(titre, slug)')
-        .eq('user_id', user.id)
-      setCertificates(certs || [])
-      setStats(s => ({ ...s, certificats: (certs||[]).length }))
-
+        .order('created_at', { ascending: false })
+        .limit(10)
+      setProgress(prog || [])
       setLoading(false)
     }
     load()
   }, [router])
 
-  const enCours  = enrollments.filter(e => e.pct < 100)
-  const termines = enrollments.filter(e => e.pct >= 100)
-  const TABS = ['En cours', 'Terminés', 'Certificats']
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    router.push('/')
+  }
 
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center" style={{ background:'var(--bg-main)' }}>
-      <div className="text-center">
-        <div className="w-12 h-12 rounded-2xl animate-pulse mx-auto mb-3" style={{ background:'var(--orange)' }}/>
-        <p style={{ color:'var(--text-secondary)' }}>Chargement...</p>
-      </div>
+    <div style={{minHeight:'100vh',background:'var(--bg-main)'}}>
+      <Navbar/>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'center',minHeight:'60vh',color:'var(--text-secondary)'}}>Chargement...</div>
     </div>
   )
 
-  return (
-    <div className="min-h-screen" style={{ background:'var(--bg-main)' }}>
-      <Navbar />
-      <main className="max-w-5xl mx-auto px-4 py-8 pt-24">
+  if (!profile) return null
 
-        {/* Header */}
-        <div className="flex items-start justify-between mb-8 flex-wrap gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-bold text-white"
-              style={{ background:'linear-gradient(135deg, var(--orange), var(--warn))' }}>
-              {profile?.prenom?.[0]?.toUpperCase()||'U'}
+  const secteurNom = (slug: string) => SECTEURS.find(s=>s.slug===slug)?.nom || slug
+  const secteurColor = (slug: string) => SECTEURS.find(s=>s.slug===slug)?.couleur || 'var(--orange)'
+  const completedCount = progress.filter(p => p.completed_at).length
+  const initial = (profile.prenom?.[0] || profile.email?.[0] || '?').toUpperCase()
+
+  return (
+    <div style={{minHeight:'100vh',background:'var(--bg-main)'}}>
+      <Navbar/>
+      <div style={{maxWidth:'1100px',margin:'0 auto',padding:'40px 24px 96px'}}>
+
+        {/* Header profil */}
+        <div style={{display:'grid',gridTemplateColumns:'1fr auto',gap:'20px',alignItems:'start',marginBottom:'32px',flexWrap:'wrap'}}>
+          <div style={{display:'flex',alignItems:'center',gap:'20px',flexWrap:'wrap'}}>
+            <div style={{width:'72px',height:'72px',borderRadius:'50%',background:'var(--orange)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'1.8rem',fontWeight:900,color:'white',flexShrink:0}}>
+              {initial}
             </div>
             <div>
-              <h1 className="text-2xl font-bold font-display" style={{ color:'var(--text-primary)' }}>
-                Bonsoir, {profile?.prenom} 👋
+              <h1 style={{fontSize:'1.5rem',fontWeight:900,color:'var(--text-primary)',margin:'0 0 4px 0'}}>
+                Bonjour, {profile.prenom || 'Membre'} !
               </h1>
-              <p className="text-sm" style={{ color:'var(--text-secondary)' }}>Votre espace formation personnel</p>
+              <div style={{display:'flex',flexWrap:'wrap',gap:'12px',fontSize:'13px',color:'var(--text-secondary)'}}>
+                {profile.pays && <span style={{display:'inline-flex',alignItems:'center',gap:'4px'}}><MapPin size={12}/>{profile.ville ? `${profile.ville}, ` : ''}{profile.pays}</span>}
+                {profile.profession && <span style={{display:'inline-flex',alignItems:'center',gap:'4px'}}><Briefcase size={12}/>{profile.profession}</span>}
+                {profile.organisation && <span style={{display:'inline-flex',alignItems:'center',gap:'4px'}}><Shield size={12}/>{profile.organisation}</span>}
+              </div>
             </div>
           </div>
-          <Link href="/secteurs" className="btn-primary py-2.5 px-5 text-sm">
-            <BookOpen size={16}/>Découvrir des formations
-          </Link>
+          <button onClick={handleLogout}
+            style={{display:'inline-flex',alignItems:'center',gap:'6px',padding:'8px 14px',borderRadius:'10px',border:'1px solid var(--border)',background:'var(--bg-card)',color:'var(--text-secondary)',fontSize:'13px',fontWeight:600,cursor:'pointer'}}>
+            <LogOut size={13}/> Déconnexion
+          </button>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:'14px',marginBottom:'32px'}}>
           {[
-            { icon:Play,        label:'En cours',    value:stats.en_cours,    color:'#2196F3' },
-            { icon:CheckCircle, label:'Terminés',    value:stats.termines,    color:'var(--safe)' },
-            { icon:Award,       label:'Certificats', value:stats.certificats, color:'var(--warn)' },
-            { icon:Clock,       label:'Minutes',     value:stats.minutes,     color:'var(--orange)' },
-          ].map((s,i)=>{ const Icon=s.icon; return (
-            <div key={i} className="card p-4">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background:`${s.color}20` }}>
-                  <Icon size={18} style={{ color:s.color }}/>
+            { label:'Modules commencés', val:progress.length, icon:BookOpen, color:'var(--orange)' },
+            { label:'Modules complétés', val:completedCount,  icon:Award,    color:'#22c55e' },
+            { label:'Niveau',            val:profile.niveau_experience || 'Débutant', icon:Shield, color:'#3b82f6', text:true },
+            { label:'Secteur principal', val:profile.secteur_activite ? profile.secteur_activite.split(' ')[0] : '—', icon:Briefcase, color:'#8b5cf6', text:true },
+          ].map((s,i) => {
+            const Icon = s.icon
+            return (
+              <div key={i} style={{padding:'18px',borderRadius:'14px',border:'1px solid var(--border)',background:'var(--bg-card)'}}>
+                <Icon size={18} style={{color:s.color,marginBottom:'10px'}}/>
+                <div style={{fontSize: s.text ? '1rem' : '1.6rem', fontWeight:900, color:'var(--text-primary)',lineHeight:1,marginBottom:'4px'}}>{s.val}</div>
+                <div style={{fontSize:'12px',color:'var(--text-secondary)'}}>{s.label}</div>
+              </div>
+            )
+          })}
+        </div>
+
+        <div style={{display:'grid',gridTemplateColumns:'2fr 1fr',gap:'24px',alignItems:'start'}}>
+
+          {/* Progression modules */}
+          <div style={{borderRadius:'16px',border:'1px solid var(--border)',background:'var(--bg-card)',overflow:'hidden'}}>
+            <div style={{padding:'16px 20px',borderBottom:'1px solid var(--border)',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+              <h2 style={{fontSize:'14px',fontWeight:900,color:'var(--text-primary)',margin:0}}>Mes modules récents</h2>
+              <Link href="/secteurs" style={{fontSize:'12px',color:'var(--orange)',textDecoration:'none',fontWeight:600,display:'inline-flex',alignItems:'center',gap:'3px'}}>
+                Explorer <ChevronRight size={12}/>
+              </Link>
+            </div>
+            {progress.length === 0 ? (
+              <div style={{padding:'48px 24px',textAlign:'center'}}>
+                <BookOpen size={40} style={{color:'var(--text-secondary)',margin:'0 auto 16px',display:'block',opacity:0.4}}/>
+                <p style={{fontSize:'14px',color:'var(--text-secondary)',marginBottom:'16px'}}>Vous n&apos;avez pas encore commencé de module.</p>
+                <Link href="/secteurs" style={{display:'inline-flex',alignItems:'center',gap:'6px',padding:'10px 20px',borderRadius:'12px',background:'var(--orange)',color:'white',textDecoration:'none',fontSize:'13px',fontWeight:700}}>
+                  Commencer une formation
+                </Link>
+              </div>
+            ) : progress.map((p, i) => {
+              const mod = p.module
+              if (!mod) return null
+              const c = secteurColor(mod.secteur_slug)
+              return (
+                <Link key={p.id} href={`/secteurs/${mod.secteur_slug}/${mod.slug}`}
+                  style={{display:'flex',alignItems:'center',gap:'14px',padding:'14px 20px',borderBottom:i<progress.length-1?'1px solid var(--border)':'none',textDecoration:'none',transition:'background 0.15s'}}
+                  onMouseEnter={e=>(e.currentTarget as HTMLElement).style.background='var(--bg-secondary)'}
+                  onMouseLeave={e=>(e.currentTarget as HTMLElement).style.background='transparent'}>
+                  <div style={{width:'40px',height:'40px',borderRadius:'12px',background:c+'18',border:'1px solid '+c+'25',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                    <span style={{fontSize:'12px',fontWeight:900,color:c}}>{mod.numero}</span>
+                  </div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <p style={{fontSize:'13px',fontWeight:700,color:'var(--text-primary)',margin:'0 0 3px 0',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{mod.titre}</p>
+                    <p style={{fontSize:'11px',color:'var(--text-secondary)',margin:0}}>{secteurNom(mod.secteur_slug)}{mod.duree ? ` · ${mod.duree}` : ''}</p>
+                  </div>
+                  {p.completed_at
+                    ? <span style={{fontSize:'10px',fontWeight:700,padding:'3px 8px',borderRadius:'6px',background:'rgba(34,197,94,0.12)',color:'#22c55e',flexShrink:0}}>✓ Complété</span>
+                    : <span style={{fontSize:'10px',fontWeight:700,padding:'3px 8px',borderRadius:'6px',background:'rgba(212,80,15,0.12)',color:'var(--orange)',flexShrink:0}}>En cours</span>}
+                </Link>
+              )
+            })}
+          </div>
+
+          {/* Profil info */}
+          <div style={{display:'flex',flexDirection:'column',gap:'14px'}}>
+
+            <div style={{borderRadius:'14px',border:'1px solid var(--border)',background:'var(--bg-card)',padding:'18px'}}>
+              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'14px'}}>
+                <h3 style={{fontSize:'13px',fontWeight:900,color:'var(--text-primary)',margin:0}}>Mon profil</h3>
+                <Link href="/dashboard/profil" style={{fontSize:'11px',color:'var(--orange)',textDecoration:'none',fontWeight:600}}>Modifier</Link>
+              </div>
+              {[
+                { label:'Email',        val:profile.email },
+                { label:'Pays',         val:profile.pays },
+                { label:'Ville',        val:profile.ville },
+                { label:'Téléphone',    val:profile.telephone },
+                { label:'Organisation', val:profile.organisation },
+                { label:'Secteur',      val:profile.secteur_activite },
+              ].filter(f => f.val).map((f,i) => (
+                <div key={i} style={{display:'flex',gap:'8px',marginBottom:'8px',fontSize:'12px'}}>
+                  <span style={{color:'var(--text-secondary)',flexShrink:0,minWidth:'80px'}}>{f.label}</span>
+                  <span style={{color:'var(--text-primary)',fontWeight:600,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{f.val}</span>
                 </div>
-                <span className="text-xs" style={{ color:'var(--text-secondary)' }}>{s.label}</span>
-              </div>
-              <div className="text-2xl font-bold font-display" style={{ color:'var(--text-primary)' }}>{s.value}</div>
+              ))}
             </div>
-          )})}
-        </div>
 
-        {/* Onglets */}
-        <div className="flex gap-1 mb-6 border-b" style={{ borderColor:'var(--border)' }}>
-          {TABS.map((t,i)=>(
-            <button key={t} onClick={()=>setTab(i)} className="px-5 py-3 text-sm font-medium transition-all relative">
-              <span style={tab===i?{color:'var(--orange)'}:{color:'var(--text-secondary)'}}>{t}</span>
-              {i===0 && stats.en_cours>0 && (
-                <span className="ml-1.5 inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold text-white" style={{ background:'var(--orange)' }}>{stats.en_cours}</span>
-              )}
-              {tab===i && <div className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full" style={{ background:'var(--orange)' }}/>}
-            </button>
-          ))}
-        </div>
+            <div style={{borderRadius:'14px',border:'1px solid var(--border)',background:'var(--bg-card)',padding:'18px'}}>
+              <h3 style={{fontSize:'13px',fontWeight:900,color:'var(--text-primary)',margin:'0 0 12px 0'}}>Accès rapide</h3>
+              {[
+                { label:'Tous les secteurs', href:'/secteurs', icon:BookOpen },
+                { label:'Alertes sécurité',  href:'/alertes',  icon:Shield },
+                { label:'Marketplace EPI',   href:'/marketplace', icon:Briefcase },
+              ].map((l,i) => {
+                const Icon = l.icon
+                return (
+                  <Link key={i} href={l.href}
+                    style={{display:'flex',alignItems:'center',gap:'10px',padding:'9px 10px',borderRadius:'9px',textDecoration:'none',marginBottom:'4px',fontSize:'13px',color:'var(--text-secondary)',transition:'all 0.15s'}}
+                    onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.background='var(--bg-secondary)';(e.currentTarget as HTMLElement).style.color='var(--text-primary)'}}
+                    onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.background='transparent';(e.currentTarget as HTMLElement).style.color='var(--text-secondary)'}}>
+                    <Icon size={14} style={{color:'var(--orange)',flexShrink:0}}/>{l.label}
+                  </Link>
+                )
+              })}
+            </div>
 
-        {/* EN COURS */}
-        {tab===0 && (
-          <div>
-            {enCours.length===0
-              ? <Empty icon={<Play size={40}/>} title="Aucune formation en cours" desc="Commencez votre première formation gratuitement." cta="Explorer" href="/secteurs"/>
-              : <div className="space-y-4">{enCours.map(e=><CourseCard key={e.id} e={e}/>)}</div>
-            }
-            <Suggestions enrolled={enrollments.map(e=>e.course_id)}/>
           </div>
-        )}
-
-        {/* TERMINÉS */}
-        {tab===1 && (
-          termines.length===0
-            ? <Empty icon={<CheckCircle size={40}/>} title="Aucune formation terminée" desc="Continuez vos formations pour les voir ici." cta="Mes formations" href="#" onClick={()=>setTab(0)}/>
-            : <div className="space-y-4">{termines.map(e=><CourseCard key={e.id} e={e}/>)}</div>
-        )}
-
-        {/* CERTIFICATS */}
-        {tab===2 && (
-          certificates.length===0
-            ? <Empty icon={<Award size={40}/>} title="Aucun certificat" desc="Terminez un cours à 100% pour obtenir votre certificat." cta="Mes formations" href="#" onClick={()=>setTab(0)}/>
-            : <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                {certificates.map(cert=><CertCard key={cert.id} cert={cert}/>)}
-              </div>
-        )}
-      </main>
+        </div>
+      </div>
       <Footer/>
-    </div>
-  )
-}
-
-function CourseCard({ e }: { e:any }) {
-  const c = e.courses
-  if (!c) return null
-  const pct     = e.pct || 0
-  const done    = pct >= 100
-  const btn     = done ? 'Revoir' : pct===0 ? 'Commencer' : 'Continuer'
-  const BtnIcon = done ? CheckCircle : Play
-  return (
-    <div className="card p-5 group">
-      <div className="flex gap-4 flex-wrap">
-        <div className="w-20 h-20 rounded-xl flex-shrink-0 overflow-hidden flex items-center justify-center" style={{ background:'var(--bg-secondary)' }}>
-          {c.image_couverture
-            ? <img src={c.image_couverture} alt={c.titre} className="w-full h-full object-cover" onError={ev=>{(ev.target as any).style.display='none'}}/>
-            : <span className="text-3xl">📚</span>}
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-2 mb-1 flex-wrap">
-            <div>
-              <span className="text-xs font-mono" style={{ color:'var(--orange)' }}>{c.secteur_slug?.replace(/-/g,' ').toUpperCase()}</span>
-              <h3 className="font-bold text-base group-hover:text-orange-500 transition-colors" style={{ color:'var(--text-primary)' }}>{c.titre}</h3>
-            </div>
-            <span className={`badge text-[10px] flex-shrink-0 ${done?'badge-safe':'badge-info'}`}>{done?'✓ Terminé':'En cours'}</span>
-          </div>
-          <p className="text-sm mb-3 line-clamp-1" style={{ color:'var(--text-secondary)' }}>{c.description_courte}</p>
-          <div className="flex items-center gap-4 flex-wrap">
-            <div className="flex-1 min-w-32">
-              <div className="flex justify-between mb-1">
-                <span className="text-xs" style={{ color:'var(--text-secondary)' }}>
-                  {pct}% terminé{e.total>0 && <> · {e.done}/{e.total} leçons</>}
-                </span>
-              </div>
-              <div className="h-2 rounded-full overflow-hidden" style={{ background:'var(--navy-600)' }}>
-                <div className="h-full rounded-full transition-all duration-700"
-                  style={{ width:`${pct}%`, background:done?'var(--safe)':'linear-gradient(90deg,var(--orange),var(--warn))' }}/>
-              </div>
-            </div>
-            <Link href={`/cours/${c.slug}`} className="btn-primary py-2 px-4 text-xs flex-shrink-0">
-              <BtnIcon size={14}/>{btn}<ChevronRight size={12}/>
-            </Link>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function CertCard({ cert }:any) {
-  return (
-    <div className="card overflow-hidden">
-      <div className="h-44 flex items-center justify-center" style={{ background:'linear-gradient(135deg,#1a1a2e,#0f3460)' }}>
-        <div className="text-center">
-          <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-2" style={{ background:'rgba(255,215,0,0.15)', border:'2px solid rgba(255,215,0,0.4)' }}>
-            <Award size={32} style={{ color:'#FFD700' }}/>
-          </div>
-          <div className="text-white/50 text-xs font-mono">{cert.numero_certificat}</div>
-        </div>
-      </div>
-      <div className="p-4">
-        <h3 className="font-bold text-sm mb-1" style={{ color:'var(--text-primary)' }}>{cert.courses?.titre}</h3>
-        <p className="text-xs mb-3" style={{ color:'var(--text-secondary)' }}>
-          Obtenu le {new Date(cert.date_emission).toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'})}
-        </p>
-        <div className="flex gap-2">
-          <button className="flex-1 btn-secondary py-1.5 text-xs justify-center">Télécharger</button>
-          <button className="flex-1 btn-primary py-1.5 text-xs justify-center">Partager</button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function Empty({ icon, title, desc, cta, href, onClick }:any) {
-  return (
-    <div className="card p-12 text-center">
-      <div className="flex items-center justify-center w-20 h-20 rounded-2xl mx-auto mb-4" style={{ background:'var(--bg-secondary)', color:'var(--text-secondary)' }}>{icon}</div>
-      <h3 className="font-bold text-lg mb-2" style={{ color:'var(--text-primary)' }}>{title}</h3>
-      <p className="text-sm mb-6 max-w-xs mx-auto" style={{ color:'var(--text-secondary)' }}>{desc}</p>
-      {onClick ? <button onClick={onClick} className="btn-primary py-2.5 px-6">{cta}</button>
-               : <Link href={href} className="btn-primary py-2.5 px-6">{cta}</Link>}
-    </div>
-  )
-}
-
-function Suggestions({ enrolled }:{ enrolled:string[] }) {
-  const [courses, setCourses] = useState<any[]>([])
-  useEffect(()=>{
-    supabase.from('courses').select('*').eq('statut','published').limit(6)
-      .then(({data})=>setCourses((data||[]).filter(c=>!enrolled.includes(c.id)).slice(0,3)))
-  },[])
-  if (!courses.length) return null
-  return (
-    <div className="mt-10">
-      <div className="flex items-center gap-2 mb-4">
-        <Zap size={18} style={{ color:'var(--orange)' }}/>
-        <h2 className="font-bold" style={{ color:'var(--text-primary)' }}>Formations recommandées</h2>
-      </div>
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {courses.map(c=>(
-          <Link key={c.id} href={`/cours/${c.slug}`} className="card p-4 group hover:no-underline">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-3 overflow-hidden" style={{ background:'var(--bg-secondary)' }}>
-              {c.image_couverture ? <img src={c.image_couverture} alt="" className="w-full h-full object-cover"/> : <span className="text-2xl">📚</span>}
-            </div>
-            <h3 className="font-semibold text-sm mb-1 group-hover:text-orange-500 transition-colors" style={{ color:'var(--text-primary)' }}>{c.titre}</h3>
-            <p className="text-xs mb-3 line-clamp-2" style={{ color:'var(--text-secondary)' }}>{c.description_courte}</p>
-            <span className="badge badge-safe text-[10px]">{c.est_gratuit?'Gratuit':`${c.prix_acces} FCFA`}</span>
-          </Link>
-        ))}
-      </div>
     </div>
   )
 }
