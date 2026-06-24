@@ -73,8 +73,8 @@ const DB_TABLES = [
     ]
   },
   {
-    name: 'contenus',
-    description: 'Tous les contenus pédagogiques (vidéos, documents, FAQ)',
+    name: 'modules',
+    description: 'Modules de cours par secteur (texte, vidéo, documents, images)',
     columns: [
       { name: 'id', type: 'UUID PK', note: '' },
       { name: 'type', type: 'TEXT', note: 'video | document | faq' },
@@ -224,7 +224,7 @@ const DB_TABLES = [
     description: 'Progression des utilisateurs dans les formations',
     columns: [
       { name: 'user_id', type: 'UUID', note: 'FK → profiles(id)' },
-      { name: 'contenu_id', type: 'UUID', note: 'FK → contenus(id)' },
+      { name: 'module_id', type: 'UUID', note: 'FK → modules(id)' },
       { name: 'progression', type: 'INTEGER', note: '0-100' },
       { name: 'termine', type: 'BOOLEAN', note: '' },
     ]
@@ -234,7 +234,7 @@ const DB_TABLES = [
     description: 'Certificats obtenus après formation complète',
     columns: [
       { name: 'user_id', type: 'UUID', note: 'FK → profiles(id)' },
-      { name: 'contenu_id', type: 'UUID', note: 'FK → contenus(id)' },
+      { name: 'module_id', type: 'UUID', note: 'FK → modules(id)' },
       { name: 'score', type: 'INTEGER', note: '/100' },
       { name: 'delivre_le', type: 'TIMESTAMPTZ', note: '' },
     ]
@@ -247,8 +247,8 @@ const DB_TABLES = [
 const API_TESTS: ApiTest[] = [
   { method: 'GET', table: 'profiles', description: 'Lister tous les utilisateurs', filter: 'select=id,email,prenom,nom,role&order=created_at.desc&limit=10' },
   { method: 'GET', table: 'profiles', description: 'Compter les superadmins', filter: 'select=id&role=eq.superadmin' },
-  { method: 'GET', table: 'contenus', description: 'Contenus publiés', filter: 'select=id,titre,type,secteur_slug&status=eq.published&order=created_at.desc&limit=10' },
-  { method: 'GET', table: 'contenus', description: 'Compter par type', filter: 'select=type,id&order=type' },
+  { method: 'GET', table: 'modules', description: 'Modules publiés', filter: 'select=id,titre,types,secteur_slug&statut=eq.published&order=ordre.asc&limit=10' },
+  { method: 'GET', table: 'modules', description: 'Modules par secteur', filter: 'select=secteur_slug,id&order=secteur_slug' },
   { method: 'GET', table: 'alertes', description: 'Alertes actives', filter: 'select=*&status=eq.active&order=created_at.desc' },
   { method: 'GET', table: 'marketplace_annonces', description: 'Annonces approuvées', filter: 'select=id,titre,categorie,prix&status=eq.approved&limit=10' },
   { method: 'GET', table: 'marketplace_annonces', description: 'Annonces en attente', filter: 'select=id,titre,vendeur_nom,created_at&status=eq.pending' },
@@ -617,8 +617,8 @@ export default function DocumentationPage() {
                   { path: 'app/admin/dashboard/page.tsx', note: 'Stats temps réel + actions rapides', level: 2, type: 'file' },
                   { path: 'app/admin/utilisateurs/page.tsx', note: 'CRUD utilisateurs + création de compte', level: 2, type: 'file' },
                   { path: 'app/admin/entreprises/page.tsx', note: 'Gestion entreprises + abonnements', level: 2, type: 'file' },
-                  { path: 'app/admin/contenus/page.tsx', note: 'Liste contenus avec filtres', level: 2, type: 'file' },
-                  { path: 'app/admin/contenus/nouveau/page.tsx', note: 'Création/édition contenu (vidéo/doc/FAQ + is_paid)', level: 2, type: 'file' },
+                  { path: 'app/admin/modules/page.tsx', note: 'Liste modules avec filtres par secteur', level: 2, type: 'file' },
+                  { path: 'app/admin/modules/nouveau/page.tsx', note: 'Création module avec éditeur riche TipTap + upload PDF/images', level: 2, type: 'file' },
                   { path: 'app/admin/alertes/page.tsx', note: 'CRUD alertes avec modal', level: 2, type: 'file' },
                   { path: 'app/admin/marketplace/page.tsx', note: 'Modération + création annonces', level: 2, type: 'file' },
                   { path: 'app/admin/commandes/page.tsx', note: 'Toutes les commandes avec détails', level: 2, type: 'file' },
@@ -846,7 +846,7 @@ export default function DocumentationPage() {
                   {
                     title: 'Lecture simple',
                     code: `const { data, error } = await supabase
-  .from('contenus')
+  .from('modules')
   .select('id, titre, type')
   .eq('status', 'published')
   .order('created_at', { ascending: false })
@@ -918,7 +918,7 @@ const { data: { user } } = await supabase.auth.getUser()`
                       { feat: 'Voir le marketplace', user: '✅', mod: '✅', admin: '✅', super: '✅' },
                       { feat: 'Publier une annonce', user: '❌', mod: '✅', admin: '✅', super: '✅' },
                       { feat: 'Accès /admin', user: '❌', mod: '✅', admin: '✅', super: '✅' },
-                      { feat: 'Gérer les contenus', user: '❌', mod: '✅', admin: '✅', super: '✅' },
+                      { feat: 'Gérer les modules', user: '❌', mod: '✅', admin: '✅', super: '✅' },
                       { feat: 'Gérer les utilisateurs', user: '❌', mod: '❌', admin: '✅', super: '✅' },
                       { feat: 'Gérer les abonnements', user: '❌', mod: '❌', admin: '✅', super: '✅' },
                       { feat: 'Config paiements', user: '❌', mod: '❌', admin: '✅', super: '✅' },
