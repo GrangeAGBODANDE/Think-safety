@@ -596,7 +596,7 @@ export default function DocumentationPage() {
                   { path: 'app/layout.tsx', note: 'Layout racine (polices, metadata)', level: 1, type: 'file' },
                   { path: 'app/globals.css', note: 'CSS global + variables + classes custom', level: 1, type: 'file' },
                   { path: 'app/auth/', note: 'Authentification', level: 1, type: 'folder' },
-                  { path: 'app/auth/page.tsx', note: 'Connexion + inscription (2 étapes: apprenant/entreprise)', level: 2, type: 'file' },
+                  { path: 'app/connexion/page.tsx', note: 'Connexion + inscription (2 étapes: apprenant/entreprise)', level: 2, type: 'file' },
                   { path: 'app/auth/reset/page.tsx', note: 'Reset mot de passe', level: 2, type: 'file' },
                   { path: 'app/dashboard/page.tsx', note: 'Espace personnel utilisateur', level: 1, type: 'file' },
                   { path: 'app/secteurs/', note: 'Formations par secteur', level: 1, type: 'folder' },
