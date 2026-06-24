@@ -1,5 +1,5 @@
 'use client'
-import { useState, Suspense, useCallback } from 'react'
+import { useState, Suspense, useCallback, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
@@ -37,9 +37,15 @@ const DEFAULT_MODS = [
   { numero:'08', titre:'Méthodes avancées d analyse des accidents',     libre:false, types:['video','document','text'],  duree:'55 min', ordre:8 },
 ]
 
-function autoSlug(s: string) {
-  return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')
-    .replace(/[^a-z0-9\s-]/g,'').replace(/\s+/g,'-').replace(/-+/g,'-').trim()
+function autoSlug(s: string, secteur?: string) {
+  const base = s.toLowerCase().normalize('NFD')
+    .replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^a-z0-9\s-]/g,'')
+    .replace(/\s+/g,'-')
+    .replace(/-+/g,'-').trim()
+  const prefix = secteur ? secteur.split('-')[0]+'-' : ''
+  const ts = Date.now().toString().slice(-4)
+  return prefix + base.split('-').slice(0,4).join('-') + '-' + ts
 }
 
 const TYPE_OPTS = [
@@ -67,7 +73,7 @@ function NouveauModuleContent() {
   const [slug,        setSlug]        = useState('')
   const [description, setDescription] = useState('')
   const [contenu,     setContenu]     = useState('<p>Saisir le contenu du module ici...</p>')
-  const [libre,       setLibre]       = useState(true)
+  const [libre,       setLibre]       = useState(false)
   const [statut,      setStatut]      = useState('published')
   const [types,       setTypes]       = useState<string[]>(['text'])
   const [youtubeId,   setYoutubeId]   = useState('')
@@ -77,39 +83,59 @@ function NouveauModuleContent() {
 
   const selectedSect = SECTEURS.find(s => s.slug === secteurSlug)
 
+  // Auto-numéroter quand on change de secteur
+  useEffect(() => {
+    if (!secteurSlug) return
+    supabase.from('modules').select('numero, ordre')
+      .eq('secteur_slug', secteurSlug)
+      .then(({ data }) => {
+        const nums = (data || []).map(m => parseInt(m.numero) || 0).filter(n => !isNaN(n))
+        const next = nums.length > 0 ? Math.max(...nums) + 1 : 1
+        setNumero(String(next).padStart(2,'0'))
+        setOrdre(next)
+      })
+  }, [secteurSlug])
+
   const toggleType = useCallback((t: string) => {
     setTypes(p => p.includes(t) ? p.filter(x=>x!==t) : [...p,t])
   }, [])
 
   const applyTemplate = useCallback((tpl: typeof DEFAULT_MODS[0]) => {
-    setNumero(tpl.numero)
     setTitre(tpl.titre)
-    setSlug(`module-${autoSlug(tpl.titre).split('-').slice(0,3).join('-')}`)
+    setSlug(autoSlug(tpl.titre, secteurSlug))
     setTypes(tpl.types)
     setLibre(tpl.libre)
     setDuree(tpl.duree)
-    setOrdre(tpl.ordre)
-    setContenu(`<h2>1. Introduction</h2><p>Contenu du module ${tpl.numero} — ${tpl.titre}</p><blockquote><p>Point clé à retenir pour ce module.</p></blockquote><h2>2. Développement</h2><p>Développez ici le contenu principal...</p><h2>3. Approfondissons</h2><p>Réfléchissons ensemble à l'application pratique de ce module.</p>`)
-  }, [])
+    setContenu(`<h2>1. Introduction</h2><p>Contenu du module — ${tpl.titre}</p><blockquote><p>Point clé à retenir pour ce module.</p></blockquote><h2>2. Développement</h2><p>Développez ici le contenu principal...</p><h2>3. Approfondissons</h2><p>Réfléchissons ensemble à l'application pratique de ce module.</p>`)
+  }, [secteurSlug])
 
   const seedDefaults = async () => {
     if (!secteurSlug) { setError('Choisissez d\'abord un secteur.'); return }
-    if (!confirm(`Créer les 8 modules par défaut pour ${selectedSect?.nom} ?`)) return
+    // Vérifier les modules existants
+    const { data: existing } = await supabase.from('modules').select('numero').eq('secteur_slug', secteurSlug)
+    const existingNums = (existing||[]).map(m => parseInt(m.numero)||0)
+    const toCreate = DEFAULT_MODS.filter(m => !existingNums.includes(parseInt(m.numero)))
+    if (toCreate.length === 0) { setError('Tous les modules par défaut existent déjà pour ce secteur.'); return }
+    if (!confirm(`Créer ${toCreate.length} module(s) pour ${selectedSect?.nom} ?`)) return
     setSeeding(true)
-    const inserts = DEFAULT_MODS.map(m => ({
+    const inserts = toCreate.map(m => ({
       secteur_slug: secteurSlug,
-      numero: m.numero, titre: m.titre,
-      slug: `${secteurSlug}-${autoSlug(m.titre).split('-').slice(0,3).join('-')}`,
+      numero: m.numero,
+      titre: m.titre,
+      slug: `${secteurSlug}-module-${m.numero}-${Date.now().toString().slice(-4)}`,
       description: `Module ${m.numero} — ${selectedSect?.nom}`,
-      libre: m.libre, types: m.types, duree: m.duree,
-      ordre: m.ordre, statut: 'published',
+      libre: m.libre,
+      types: m.types,
+      duree: m.duree,
+      ordre: m.ordre,
+      statut: 'published',
       contenu_texte: `<h2>1. Introduction</h2><p>Contenu du module ${m.numero} — ${m.titre}</p>`,
       vues: 0,
     }))
     const { error: err } = await supabase.from('modules').insert(inserts)
     setSeeding(false)
     if (err) { setError(err.message); return }
-    setMsg('8 modules créés !')
+    setMsg(`${toCreate.length} modules créés !`)
     setTimeout(() => router.push('/admin/modules'), 1500)
   }
 
@@ -127,14 +153,36 @@ function NouveauModuleContent() {
   }
 
   const handleSave = async () => {
-    if (!secteurSlug || !titre || !slug) { setError('Secteur, titre et slug sont obligatoires.'); return }
+    if (!secteurSlug || !titre || !slug) { setError('Secteur, titre et slug obligatoires.'); return }
     setSaving(true); setError('')
     const { data: mod, error: err } = await supabase.from('modules').insert({
       secteur_slug: secteurSlug, numero, titre, slug, description,
       libre, statut, types, youtube_id: youtubeId, duree,
       contenu_texte: contenu, ordre, vues: 0,
     }).select().single()
-    if (err) { setError(err.message); setSaving(false); return }
+    if (err) {
+      if (err.message.includes('duplicate') || err.message.includes('unique')) {
+        // Slug en double → ajouter timestamp et réessayer
+        const newSlug = slug + '-' + Date.now().toString().slice(-4)
+        setSlug(newSlug)
+        const { data: mod2, error: err2 } = await supabase.from('modules').insert({
+          secteur_slug: secteurSlug, numero, titre, slug: newSlug, description,
+          libre, statut, types, youtube_id: youtubeId, duree,
+          contenu_texte: contenu, ordre, vues: 0,
+        }).select().single()
+        if (err2) { setError(err2.message); setSaving(false); return }
+        if (docs.length > 0 && mod2) {
+          await supabase.from('module_documents').insert(
+            docs.filter(d => d.titre && d.url).map(d => ({
+              module_id: mod2.id, titre: d.titre, url: d.url,
+              pages: d.pages ? Number(d.pages) : null, taille: d.taille || null
+            }))
+          )
+        }
+        setSaving(false); setMsg('Module créé !'); setTimeout(() => router.push('/admin/modules'), 1500); return
+      }
+      setError(err.message); setSaving(false); return
+    }
     if (docs.length > 0 && mod) {
       await supabase.from('module_documents').insert(
         docs.filter(d => d.titre && d.url).map(d => ({
@@ -143,9 +191,7 @@ function NouveauModuleContent() {
         }))
       )
     }
-    setSaving(false)
-    setMsg('Module créé avec succès !')
-    setTimeout(() => router.push('/admin/modules'), 1500)
+    setSaving(false); setMsg('Module créé !'); setTimeout(() => router.push('/admin/modules'), 1500)
   }
 
   return (
@@ -171,11 +217,11 @@ function NouveauModuleContent() {
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'12px',flexWrap:'wrap',gap:'8px'}}>
           <div>
             <p style={{fontSize:'12px',fontWeight:700,color:'var(--text-secondary)',margin:'0 0 2px 0',textTransform:'uppercase',letterSpacing:'0.06em'}}>⚡ Démarrage rapide</p>
-            <p style={{fontSize:'12px',color:'var(--text-secondary)',margin:0}}>Cliquez un modèle pour pré-remplir, ou importez les 8 en une fois.</p>
+            <p style={{fontSize:'12px',color:'var(--text-secondary)',margin:0}}>Cliquez un modèle pour pré-remplir. Numérotation automatique selon les modules existants.</p>
           </div>
           <button onClick={seedDefaults} disabled={seeding||!secteurSlug}
             style={{display:'inline-flex',alignItems:'center',gap:'5px',padding:'7px 14px',borderRadius:'9px',background:'var(--orange)',color:'white',border:'none',fontSize:'12px',fontWeight:700,cursor:seeding||!secteurSlug?'not-allowed':'pointer',opacity:seeding||!secteurSlug?0.5:1}}>
-            <Zap size={12}/>{seeding ? 'Import...' : 'Importer 8 modules d\'un coup'}
+            <Zap size={12}/>{seeding ? 'Import...' : 'Importer les modules manquants'}
           </button>
         </div>
         <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(210px,1fr))',gap:'7px'}}>
@@ -197,10 +243,9 @@ function NouveauModuleContent() {
 
       <div style={{display:'grid',gridTemplateColumns:'1fr 280px',gap:'20px',alignItems:'start'}}>
 
-        {/* ── COLONNE PRINCIPALE ── */}
+        {/* COLONNE PRINCIPALE */}
         <div style={{display:'flex',flexDirection:'column',gap:'16px'}}>
 
-          {/* Infos de base */}
           <div style={{background:'var(--bg-card)',border:'1px solid var(--border)',borderRadius:'14px',padding:'20px'}}>
             <p style={{fontSize:'11px',fontWeight:700,color:'var(--text-secondary)',margin:'0 0 14px 0',textTransform:'uppercase',letterSpacing:'0.06em'}}>Informations du module</p>
 
@@ -215,26 +260,27 @@ function NouveauModuleContent() {
             </Field>
 
             <div style={{display:'grid',gridTemplateColumns:'90px 1fr',gap:'12px'}}>
-              <Field label="N° ordre">
+              <Field label="N° (auto)">
                 <input value={numero} onChange={e=>setNumero(e.target.value)} placeholder="01" style={iStyle}
                   onFocus={e=>(e.currentTarget.style.borderColor='var(--orange)')}
                   onBlur={e=>(e.currentTarget.style.borderColor='var(--border)')}/>
               </Field>
               <Field label="Titre du module *">
-                <input value={titre} onChange={e=>{ setTitre(e.target.value); setSlug(autoSlug(e.target.value)) }} placeholder="Introduction et fondamentaux..." style={iStyle}
+                <input value={titre} onChange={e=>{ setTitre(e.target.value); setSlug(autoSlug(e.target.value, secteurSlug)) }} placeholder="Introduction et fondamentaux..." style={iStyle}
                   onFocus={e=>(e.currentTarget.style.borderColor='var(--orange)')}
                   onBlur={e=>(e.currentTarget.style.borderColor='var(--border)')}/>
               </Field>
             </div>
 
-            <Field label="Slug URL *">
-              <input value={slug} onChange={e=>setSlug(e.target.value)} placeholder="module-introduction" style={iStyle}
+            <Field label="Slug URL * (unique, auto-généré)">
+              <input value={slug} onChange={e=>setSlug(e.target.value)} placeholder="construction-introduction-..." style={iStyle}
                 onFocus={e=>(e.currentTarget.style.borderColor='var(--orange)')}
                 onBlur={e=>(e.currentTarget.style.borderColor='var(--border)')}/>
+              <p style={{fontSize:'11px',color:'var(--text-secondary)',margin:'4px 0 0 0'}}>⚡ Généré automatiquement. Modifiable si besoin.</p>
             </Field>
 
             <Field label="Description courte">
-              <textarea value={description} onChange={e=>setDescription(e.target.value)} placeholder="Description visible dans la liste des modules..." rows={3}
+              <textarea value={description} onChange={e=>setDescription(e.target.value)} placeholder="Description visible dans la liste..." rows={3}
                 style={{...iStyle, resize:'vertical', lineHeight:1.6}}
                 onFocus={e=>(e.currentTarget.style.borderColor='var(--orange)')}
                 onBlur={e=>(e.currentTarget.style.borderColor='var(--border)')}/>
@@ -242,15 +288,15 @@ function NouveauModuleContent() {
 
             {types.includes('video') && (
               <Field label="Lien YouTube">
-                <input value={youtubeId} onChange={e=>setYoutubeId(e.target.value)} placeholder="https://youtube.com/watch?v=... ou ID seul" style={iStyle}
+                <input value={youtubeId} onChange={e=>setYoutubeId(e.target.value)} placeholder="https://youtube.com/watch?v=..." style={iStyle}
                   onFocus={e=>(e.currentTarget.style.borderColor='var(--orange)')}
                   onBlur={e=>(e.currentTarget.style.borderColor='var(--border)')}/>
-                <p style={{fontSize:'11px',color:'var(--text-secondary)',margin:'4px 0 0 0'}}>💡 Uploadez votre vidéo sur YouTube, puis collez le lien ici. C&apos;est gratuit et illimité.</p>
+                <p style={{fontSize:'11px',color:'var(--text-secondary)',margin:'4px 0 0 0'}}>💡 Uploadez votre vidéo sur YouTube (gratuit, illimité) puis collez le lien.</p>
               </Field>
             )}
           </div>
 
-          {/* Éditeur de contenu */}
+          {/* Éditeur */}
           <div style={{background:'var(--bg-card)',border:'1px solid var(--border)',borderRadius:'14px',padding:'20px'}}>
             <p style={{fontSize:'11px',fontWeight:700,color:'var(--text-secondary)',margin:'0 0 14px 0',textTransform:'uppercase',letterSpacing:'0.06em'}}>Contenu du cours</p>
             <RichEditor value={contenu} onChange={setContenu} color={selectedSect?.couleur || 'var(--orange)'}/>
@@ -262,59 +308,46 @@ function NouveauModuleContent() {
               <p style={{fontSize:'11px',fontWeight:700,color:'var(--text-secondary)',margin:0,textTransform:'uppercase',letterSpacing:'0.06em'}}>Documents PDF</p>
               <button onClick={()=>setDocs(d=>[...d,{titre:'',url:'',pages:'',taille:''}])}
                 style={{display:'inline-flex',alignItems:'center',gap:'4px',padding:'5px 10px',borderRadius:'8px',border:'1px solid var(--border)',background:'var(--bg-secondary)',color:'var(--text-secondary)',fontSize:'11px',fontWeight:600,cursor:'pointer'}}>
-                <Plus size={11}/> Ajouter un document
+                <Plus size={11}/> Ajouter
               </button>
             </div>
-
             {docs.length === 0 ? (
-              <p style={{fontSize:'12px',color:'var(--text-secondary)',textAlign:'center',padding:'16px',opacity:0.6}}>Aucun document — cliquez &quot;Ajouter un document&quot;</p>
+              <p style={{fontSize:'12px',color:'var(--text-secondary)',textAlign:'center',padding:'16px',opacity:0.6}}>Aucun document</p>
             ) : docs.map((doc, i) => (
               <div key={i} style={{padding:'12px',borderRadius:'10px',border:'1px solid var(--border)',background:'var(--bg-secondary)',marginBottom:'8px'}}>
                 <div style={{display:'flex',gap:'8px',alignItems:'center',marginBottom:'8px'}}>
-                  {/* Nom du fichier */}
-                  <input value={doc.titre} onChange={e=>setDocs(d=>d.map((x,j)=>j===i?{...x,titre:e.target.value}:x))}
-                    placeholder="Titre du document (ex: Guide EPI complet)"
+                  <input value={doc.titre} onChange={e=>setDocs(d=>d.map((x,j)=>j===i?{...x,titre:e.target.value}:x))} placeholder="Titre du document"
                     style={{...iStyle, fontSize:'12px', padding:'7px 10px'}}
-                    onFocus={e=>(e.currentTarget.style.borderColor='var(--orange)')}
-                    onBlur={e=>(e.currentTarget.style.borderColor='var(--border)')}/>
+                    onFocus={e=>(e.currentTarget.style.borderColor='var(--orange)')} onBlur={e=>(e.currentTarget.style.borderColor='var(--border)')}/>
                   <button onClick={()=>setDocs(d=>d.filter((_,j)=>j!==i))}
                     style={{padding:'7px',borderRadius:'8px',border:'1px solid rgba(239,68,68,0.3)',background:'rgba(239,68,68,0.08)',cursor:'pointer',display:'flex',alignItems:'center',flexShrink:0}}>
                     <Trash2 size={12} style={{color:'#ef4444'}}/>
                   </button>
                 </div>
                 <div style={{display:'flex',gap:'8px',alignItems:'center'}}>
-                  {/* Upload PDF */}
-                  <label style={{display:'inline-flex',alignItems:'center',gap:'5px',padding:'7px 12px',borderRadius:'8px',border:'1px solid',cursor:'pointer',fontSize:'12px',fontWeight:600,whiteSpace:'nowrap',flexShrink:0,transition:'all 0.15s',
+                  <label style={{display:'inline-flex',alignItems:'center',gap:'5px',padding:'7px 12px',borderRadius:'8px',border:'1px solid',cursor:'pointer',fontSize:'12px',fontWeight:600,whiteSpace:'nowrap',flexShrink:0,
                     borderColor: doc.url ? '#22c55e40' : '#3b82f640',
                     background:  doc.url ? 'rgba(34,197,94,0.08)' : 'rgba(59,130,246,0.08)',
                     color:       doc.url ? '#22c55e' : '#3b82f6'}}>
-                    <Upload size={11}/>
-                    {doc.uploading ? 'Upload...' : doc.url ? '✓ PDF chargé' : 'Choisir le PDF'}
-                    <input type="file" accept=".pdf,application/pdf" style={{display:'none'}} disabled={doc.uploading}
+                    <Upload size={11}/>{doc.uploading ? 'Upload...' : doc.url ? '✓ PDF chargé' : 'Choisir PDF'}
+                    <input type="file" accept=".pdf" style={{display:'none'}} disabled={doc.uploading}
                       onChange={async e=>{ const f=e.target.files?.[0]; if(f) await uploadPdf(f,i) }}/>
                   </label>
-                  {/* Nombre de pages */}
-                  <input value={doc.pages} onChange={e=>setDocs(d=>d.map((x,j)=>j===i?{...x,pages:e.target.value}:x))}
-                    placeholder="Nb pages" type="number"
+                  <input value={doc.pages} onChange={e=>setDocs(d=>d.map((x,j)=>j===i?{...x,pages:e.target.value}:x))} placeholder="Pages" type="number"
                     style={{...iStyle, width:'90px', fontSize:'12px', padding:'7px 10px'}}
-                    onFocus={e=>(e.currentTarget.style.borderColor='var(--orange)')}
-                    onBlur={e=>(e.currentTarget.style.borderColor='var(--border)')}/>
-                  {/* Taille (auto ou manuelle) */}
-                  <input value={doc.taille} onChange={e=>setDocs(d=>d.map((x,j)=>j===i?{...x,taille:e.target.value}:x))}
-                    placeholder="Taille (auto)"
-                    style={{...iStyle, width:'110px', fontSize:'12px', padding:'7px 10px', color: doc.taille ? '#22c55e' : 'var(--text-secondary)'}}
-                    onFocus={e=>(e.currentTarget.style.borderColor='var(--orange)')}
-                    onBlur={e=>(e.currentTarget.style.borderColor='var(--border)')}/>
+                    onFocus={e=>(e.currentTarget.style.borderColor='var(--orange)')} onBlur={e=>(e.currentTarget.style.borderColor='var(--border)')}/>
+                  <input value={doc.taille} onChange={e=>setDocs(d=>d.map((x,j)=>j===i?{...x,taille:e.target.value}:x))} placeholder="Taille"
+                    style={{...iStyle, width:'100px', fontSize:'12px', padding:'7px 10px'}}
+                    onFocus={e=>(e.currentTarget.style.borderColor='var(--orange)')} onBlur={e=>(e.currentTarget.style.borderColor='var(--border)')}/>
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* ── COLONNE DROITE ── */}
+        {/* COLONNE DROITE */}
         <div style={{display:'flex',flexDirection:'column',gap:'14px',position:'sticky',top:'80px'}}>
 
-          {/* Publication */}
           <div style={{background:'var(--bg-card)',border:'1px solid var(--border)',borderRadius:'14px',padding:'18px'}}>
             <p style={{fontSize:'11px',fontWeight:700,color:'var(--text-secondary)',margin:'0 0 12px 0',textTransform:'uppercase',letterSpacing:'0.06em'}}>Publication</p>
             <div style={{display:'flex',flexDirection:'column',gap:'10px'}}>
@@ -338,20 +371,17 @@ function NouveauModuleContent() {
                 <span style={{fontSize:'13px',color:'var(--text-primary)'}}>Durée</span>
                 <input value={duree} onChange={e=>setDuree(e.target.value)} placeholder="25 min"
                   style={{width:'80px',padding:'5px 8px',borderRadius:'8px',border:'1px solid var(--border)',background:'var(--bg-secondary)',color:'var(--text-primary)',fontSize:'12px',outline:'none'}}
-                  onFocus={e=>(e.currentTarget.style.borderColor='var(--orange)')}
-                  onBlur={e=>(e.currentTarget.style.borderColor='var(--border)')}/>
+                  onFocus={e=>(e.currentTarget.style.borderColor='var(--orange)')} onBlur={e=>(e.currentTarget.style.borderColor='var(--border)')}/>
               </div>
               <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
                 <span style={{fontSize:'13px',color:'var(--text-primary)'}}>Ordre</span>
                 <input value={ordre} onChange={e=>setOrdre(Number(e.target.value))} type="number" min={1}
                   style={{width:'60px',padding:'5px 8px',borderRadius:'8px',border:'1px solid var(--border)',background:'var(--bg-secondary)',color:'var(--text-primary)',fontSize:'12px',outline:'none'}}
-                  onFocus={e=>(e.currentTarget.style.borderColor='var(--orange)')}
-                  onBlur={e=>(e.currentTarget.style.borderColor='var(--border)')}/>
+                  onFocus={e=>(e.currentTarget.style.borderColor='var(--orange)')} onBlur={e=>(e.currentTarget.style.borderColor='var(--border)')}/>
               </div>
             </div>
           </div>
 
-          {/* Types de contenu */}
           <div style={{background:'var(--bg-card)',border:'1px solid var(--border)',borderRadius:'14px',padding:'18px'}}>
             <p style={{fontSize:'11px',fontWeight:700,color:'var(--text-secondary)',margin:'0 0 10px 0',textTransform:'uppercase',letterSpacing:'0.06em'}}>Types de contenu</p>
             {TYPE_OPTS.map(t => {
@@ -370,12 +400,11 @@ function NouveauModuleContent() {
             })}
           </div>
 
-          {/* Info vidéo */}
           {types.includes('video') && (
             <div style={{padding:'12px 14px',borderRadius:'12px',background:'rgba(239,68,68,0.06)',border:'1px solid rgba(239,68,68,0.2)'}}>
-              <p style={{fontSize:'11px',fontWeight:700,color:'#ef4444',margin:'0 0 5px 0'}}>📹 À propos des vidéos</p>
+              <p style={{fontSize:'11px',fontWeight:700,color:'#ef4444',margin:'0 0 5px 0'}}>📹 Vidéos</p>
               <p style={{fontSize:'11px',color:'var(--text-secondary)',margin:0,lineHeight:1.6}}>
-                Uploadez votre vidéo sur <strong style={{color:'#ef4444'}}>YouTube</strong> (gratuit, illimité), puis collez le lien dans le champ ci-dessus. Pas de limite de taille.
+                Uploadez sur <strong style={{color:'#ef4444'}}>YouTube</strong> (gratuit, illimité) puis collez le lien. Pas de limite de taille.
               </p>
             </div>
           )}
