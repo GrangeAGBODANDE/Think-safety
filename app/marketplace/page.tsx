@@ -31,7 +31,7 @@ export default function MarketplacePage() {
   useEffect(() => {
     supabase
       .from('marketplace_annonces')
-      .select('id, titre, description, categorie, secteur_slug, prix, prix_type, localisation, vendeur_certifie, note, images')
+      .select('id, titre, description, categorie, secteur_slug, prix, prix_type, localisation, vendeur_certifie, note, images, slug, marque, stock, garantie, description_courte')
       .eq('status', 'approved')
       .order('created_at', { ascending: false })
       .then(({ data }) => {
