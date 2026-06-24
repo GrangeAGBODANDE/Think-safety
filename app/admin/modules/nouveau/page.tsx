@@ -86,6 +86,18 @@ function NouveauModuleContent() {
   // Auto-numéroter quand on change de secteur
   useEffect(() => {
     if (!secteurSlug) return
+    supabase.from('modules').select('numero').eq('secteur_slug', secteurSlug)
+      .then(({ data }) => {
+        const nums = (data || []).map(m => parseInt(m.numero) || 0)
+        const next = nums.length > 0 ? Math.max(...nums) + 1 : 1
+        setNumero(String(next).padStart(2,'0'))
+        setOrdre(next)
+      })
+  }, [secteurSlug])
+
+  // Auto-numéroter quand on change de secteur
+  useEffect(() => {
+    if (!secteurSlug) return
     supabase.from('modules').select('numero, ordre')
       .eq('secteur_slug', secteurSlug)
       .then(({ data }) => {

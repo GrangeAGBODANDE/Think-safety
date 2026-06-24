@@ -30,7 +30,7 @@ export default function AboutPage() {
             {[
               {v:"2024",l:"Année de création"},
               {v:"500+",l:"Ressources gratuites"},
-              {v:"9",l:"Secteurs couverts"},
+              {v:"18",l:"Secteurs couverts"},
               {v:"12k+",l:"Utilisateurs actifs"},
             ].map((s,i)=>(
               <div key={i} style={{textAlign:'center'}}>
@@ -58,7 +58,7 @@ export default function AboutPage() {
                 Il s&apos;est entouré d&apos;experts du terrain et de la technologie, dont <strong style={{color:'var(--text-primary)'}}>Djlo ALOHOU</strong>, développeur full-stack et directeur technique, pour concevoir et développer la plateforme.
               </p>
               <p style={{fontSize:'1rem',color:'var(--text-secondary)',lineHeight:1.85,marginBottom:'36px'}}>
-                Aujourd&apos;hui, Thinks Safety propose plus de 500 ressources gratuites dans 9 secteurs professionnels, des alertes sécurité en temps réel et un marketplace d&apos;équipements de protection, accessible depuis n&apos;importe quel appareil dans le monde.
+                Aujourd&apos;hui, Thinks Safety propose plus de 500 ressources gratuites dans 18 secteurs professionnels, des alertes sécurité en temps réel et un marketplace d&apos;équipements de protection, accessible depuis n&apos;importe quel appareil dans le monde.
               </p>
               <div style={{display:'flex',gap:'16px',flexWrap:'wrap'}}>
                 <Link href="/secteurs" style={{display:'inline-flex',alignItems:'center',gap:'8px',padding:'12px 24px',borderRadius:'14px',fontSize:'14px',fontWeight:700,color:'white',textDecoration:'none',background:'var(--orange)'}}>

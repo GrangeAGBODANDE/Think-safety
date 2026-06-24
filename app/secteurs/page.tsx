@@ -1,9 +1,10 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import { SECTEURS } from '@/lib/secteurs-data'
+import { supabase } from '@/lib/supabase'
 import { Search, ArrowRight, BookOpen, Shield } from 'lucide-react'
 
 const IMGS: Record<string, string> = {
@@ -33,6 +34,17 @@ export default function SecteursPage() {
     s.nom.toLowerCase().includes(search.toLowerCase()) ||
     s.description.toLowerCase().includes(search.toLowerCase())
   )
+  const [moduleCounts, setModuleCounts] = useState<Record<string,number>>({})
+  
+  useEffect(() => {
+    supabase.from('modules').select('secteur_slug').eq('statut','published')
+      .then(({ data }) => {
+        const counts: Record<string,number> = {}
+        data?.forEach(m => { counts[m.secteur_slug] = (counts[m.secteur_slug]||0)+1 })
+        setModuleCounts(counts)
+      })
+  }, [])
+  
   const total = SECTEURS.reduce((a, s) => a + s.nb_contenus, 0)
 
   return (
@@ -102,7 +114,7 @@ export default function SecteursPage() {
                       <div style={{position:'absolute',inset:0,background:img?'linear-gradient(to top,rgba(0,0,0,0.82) 0%,rgba(0,0,0,0.15) 60%,transparent 100%)':'none'}}/>
                       {!img && <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',fontSize:'3rem'}}>{s.icon}</div>}
                       <div style={{position:'absolute',top:'12px',right:'12px',padding:'4px 10px',borderRadius:'99px',fontSize:'10px',fontWeight:900,color:'white',background:'rgba(0,0,0,0.55)',backdropFilter:'blur(8px)'}}>
-                        {s.nb_contenus} ressources
+                        {moduleCounts[s.slug] || 0} module{(moduleCounts[s.slug]||0)!==1?'s':''}
                       </div>
                       <div style={{position:'absolute',bottom:0,left:0,right:0,height:'3px',background:`linear-gradient(to right,${s.couleur},transparent)`}}/>
                     </div>
