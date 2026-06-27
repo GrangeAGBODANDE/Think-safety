@@ -6,7 +6,7 @@ import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import { SECTEURS } from '@/lib/secteurs-data'
 import { supabase } from '@/lib/supabase'
-import { ChevronLeft, ChevronRight, FileText, BookOpen, Lock, Download, Clock, Users, Volume2, Share2, CheckSquare, Square } from 'lucide-react'
+import { ChevronLeft, ChevronRight, FileText, BookOpen, Lock, Download, Clock, Users, Volume2, Share2, CheckSquare, Square, CheckCircle } from 'lucide-react'
 
 const IMGS: Record<string,string> = {
   'construction-btp':         'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=1200&q=80',
@@ -78,6 +78,35 @@ export default function ModulePage() {
     load()
   }, [slug, modSlug])
 
+  // Charger progression existante
+  useEffect(() => {
+    if (!user || !mod) return
+    supabase.from('user_module_progress')
+      .select('*').eq('user_id', user.id).eq('module_id', mod.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) {
+          setProgressSaved(true)
+          if (data.completed_at) setDateFin(data.completed_at.split('T')[0])
+          if (data.objectif) setObjTexte(data.objectif)
+        }
+      })
+  }, [user, mod])
+
+  const saveProgress = async (completed: boolean) => {
+    if (!user || !mod) return
+    setSaving(true)
+    await supabase.from('user_module_progress').upsert({
+      user_id: user.id,
+      module_id: mod.id,
+      secteur_slug: slug,
+      completed_at: completed ? new Date().toISOString() : null,
+      objectif: objTexte,
+    }, { onConflict: 'user_id,module_id' })
+    setSaving(false)
+    setProgressSaved(true)
+  }
+
   if (loading) return (
     <div style={{minHeight:'100vh',background:'var(--bg-main)'}}>
       <Navbar/>
@@ -146,6 +175,7 @@ export default function ModulePage() {
           <div style={{display:'flex',alignItems:'center',gap:'16px',marginBottom:'32px',fontSize:'12px',color:'var(--text-secondary)'}}>
             {mod.duree && <span style={{display:'inline-flex',alignItems:'center',gap:'4px'}}><Clock size={12}/>{mod.duree}</span>}
             <span style={{display:'inline-flex',alignItems:'center',gap:'4px'}}><Users size={12}/>{(mod.vues||0).toLocaleString()} vues</span>
+            {progressSaved && <span style={{display:'inline-flex',alignItems:'center',gap:'4px',color:'#22c55e',fontWeight:600}}><CheckCircle size={12}/>Progression sauvegardée</span>}
           </div>
 
           {/* Description / intro toujours visible */}
@@ -235,11 +265,17 @@ export default function ModulePage() {
               )}
 
               {/* FIN DE LEÇON */}
-              <div style={{marginTop:'48px',padding:'24px',borderRadius:'16px',background:'var(--bg-card)',border:'1px solid var(--border)'}}>
+              <div style={{marginTop:'48px',padding:'24px',borderRadius:'16px',background:'var(--bg-card)',border:`1px solid ${progressSaved?'rgba(34,197,94,0.3)':'var(--border)'}`}}>
+                {progressSaved && (
+                  <div style={{display:'flex',alignItems:'center',gap:'8px',marginBottom:'16px',padding:'8px 14px',borderRadius:'10px',background:'rgba(34,197,94,0.08)',border:'1px solid rgba(34,197,94,0.2)'}}>
+                    <CheckCircle size={15} style={{color:'#22c55e'}}/>
+                    <span style={{fontSize:'13px',fontWeight:600,color:'#22c55e'}}>Progression sauvegardée dans votre profil</span>
+                  </div>
+                )}
                 <p style={{fontSize:'12px',fontWeight:900,textTransform:'uppercase',letterSpacing:'0.1em',color:'var(--text-secondary)',margin:'0 0 12px 0'}}>Leçon terminée le</p>
                 <input type="date" value={dateFin} onChange={e=>setDateFin(e.target.value)}
                   style={{width:'100%',padding:'10px 14px',borderRadius:'10px',border:'1px solid var(--border)',background:'var(--bg-secondary)',color:'var(--text-primary)',fontSize:'14px',marginBottom:'20px',boxSizing:'border-box'}}/>
-                <div style={{padding:'18px',borderRadius:'12px',background:'var(--bg-secondary)',border:'1px solid var(--border)'}}>
+                <div style={{padding:'18px',borderRadius:'12px',background:'var(--bg-secondary)',border:'1px solid var(--border)',marginBottom:'16px'}}>
                   <p style={{fontSize:'14px',fontWeight:900,color:'var(--text-primary)',margin:'0 0 12px 0'}}>Mon objectif</p>
                   <label style={{display:'flex',alignItems:'flex-start',gap:'10px',cursor:'pointer',marginBottom:'10px'}}>
                     <button onClick={()=>setObjChecked(!objChecked)} style={{background:'none',border:'none',padding:0,cursor:'pointer',marginTop:'1px',flexShrink:0}}>
@@ -249,6 +285,16 @@ export default function ModulePage() {
                   </label>
                   <textarea value={objTexte} onChange={e=>setObjTexte(e.target.value)} placeholder="Autre objectif..."
                     style={{width:'100%',padding:'10px 14px',borderRadius:'10px',border:'1px solid var(--border)',background:'var(--bg-main)',color:'var(--text-primary)',fontSize:'13px',resize:'vertical',minHeight:'72px',boxSizing:'border-box',fontFamily:'inherit'}}/>
+                </div>
+                <div style={{display:'flex',gap:'10px'}}>
+                  <button onClick={()=>saveProgress(false)} disabled={saving}
+                    style={{flex:1,padding:'11px',borderRadius:'12px',border:'1px solid var(--border)',background:'var(--bg-secondary)',color:'var(--text-secondary)',fontSize:'13px',fontWeight:600,cursor:'pointer'}}>
+                    {saving?'Sauvegarde...':'💾 Sauvegarder'}
+                  </button>
+                  <button onClick={()=>saveProgress(true)} disabled={saving}
+                    style={{flex:1,padding:'11px',borderRadius:'12px',border:'none',background:c,color:'white',fontSize:'13px',fontWeight:700,cursor:'pointer',boxShadow:`0 4px 14px ${c}40`}}>
+                    {saving?'...':'✅ Marquer comme terminé'}
+                  </button>
                 </div>
               </div>
             </>
