@@ -51,6 +51,8 @@ export default function ModulePage() {
   const [objChecked, setObjChecked] = useState(false)
   const [objTexte,   setObjTexte]   = useState('')
   const [dateFin,    setDateFin]    = useState('')
+  const [progressSaved, setProgressSaved] = useState(false)
+  const [saving,        setSaving]        = useState(false)
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => { setUser(data.user); setAuthLoading(false) })
