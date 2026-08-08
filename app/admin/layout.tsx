@@ -95,7 +95,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </div>
             {!collapsed && (
               <div style={{overflow:'hidden'}}>
-                <p style={{fontSize:'13px',fontWeight:900,color:'var(--text-primary)',margin:0,lineHeight:1,fontFamily:'var(--font-display, sans-serif)'}}>Think Safety</p>
+                <p style={{fontSize:'13px',fontWeight:900,color:'var(--text-primary)',margin:0,lineHeight:1,fontFamily:'var(--font-display, sans-serif)'}}>Thinks Safety</p>
                 <p style={{fontSize:'10px',color:'var(--orange)',margin:'2px 0 0 0',fontWeight:700}}>{profile?.role?.toUpperCase()}</p>
               </div>
             )}

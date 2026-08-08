@@ -61,7 +61,7 @@ export default function AdminDashboard() {
       <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:'28px',flexWrap:'wrap',gap:'12px'}}>
         <div>
           <h1 style={{fontSize:'1.6rem',fontWeight:900,color:'var(--text-primary)',margin:'0 0 4px 0'}}>Tableau de bord</h1>
-          <p style={{fontSize:'13px',color:'var(--text-secondary)',margin:0}}>Vue d&apos;ensemble de la plateforme Think Safety</p>
+          <p style={{fontSize:'13px',color:'var(--text-secondary)',margin:0}}>Vue d&apos;ensemble de la plateforme Thinks Safety</p>
         </div>
         <Link href="/admin/modules/nouveau"
           style={{display:'inline-flex',alignItems:'center',gap:'6px',padding:'10px 18px',borderRadius:'12px',background:'var(--orange)',color:'white',textDecoration:'none',fontSize:'13px',fontWeight:700}}>

@@ -73,7 +73,7 @@ export default function ParametresPage() {
         <div className="card p-5 space-y-4">
           <h2 className="font-display font-bold text-white">Informations du site</h2>
           {[
-            { key: 'site_nom', label: 'Nom du site', placeholder: 'Think Safety' },
+            { key: 'site_nom', label: 'Nom du site', placeholder: 'Thinks Safety' },
             { key: 'email_contact', label: 'Email de contact', placeholder: 'contact@...' },
           ].map(f => (
             <div key={f.key}>

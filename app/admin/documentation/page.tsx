@@ -380,13 +380,13 @@ export default function DocumentationPage() {
         {activeSection === 'overview' && (
           <div className="max-w-4xl space-y-6">
             <div>
-              <h1 className="text-3xl font-bold font-display text-white mb-2">Think Safety — Documentation Développeur</h1>
+              <h1 className="text-3xl font-bold font-display text-white mb-2">Thinks Safety — Documentation Développeur</h1>
               <p className="text-white/50">Guide complet pour comprendre, maintenir et faire évoluer la plateforme.</p>
             </div>
 
             <div className="grid md:grid-cols-2 gap-4">
               {[
-                { label: 'Nom du projet', value: 'Think Safety' },
+                { label: 'Nom du projet', value: 'Thinks Safety' },
                 { label: 'Version', value: 'Next.js 14.2.5' },
                 { label: 'Repository GitHub', value: 'github.com/GrangeAGBODANDE/Think-safety', link: 'https://github.com/GrangeAGBODANDE/Think-safety' },
                 { label: 'Déploiement', value: 'Vercel (Production automatique depuis main)' },
@@ -409,7 +409,7 @@ export default function DocumentationPage() {
             <div className="card p-5">
               <h2 className="font-display font-bold text-white mb-3">🎯 Description du projet</h2>
               <p className="text-white/60 text-sm leading-relaxed mb-3">
-                Think Safety est une plateforme de formation à la sécurité au travail destinée aux professionnels 
+                Thinks Safety est une plateforme de formation à la sécurité au travail destinée aux professionnels
                 d&apos;Afrique de l&apos;Ouest (principalement Bénin). Elle comprend :
               </p>
               <ul className="space-y-2 text-sm text-white/60">

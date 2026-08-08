@@ -70,7 +70,7 @@ export default function AboutPage() {
               </div>
             </div>
             <div style={{position:'relative'}}>
-              <img src="https://images.unsplash.com/photo-1552664730-d307ca884978?w=700&q=80" alt="Équipe Think Safety" style={{width:'100%',height:'440px',objectFit:'cover',borderRadius:'28px'}}/>
+              <img src="https://images.unsplash.com/photo-1552664730-d307ca884978?w=700&q=80" alt="Équipe Thinks Safety" style={{width:'100%',height:'440px',objectFit:'cover',borderRadius:'28px'}}/>
               <div style={{position:'absolute',bottom:'-16px',left:'-16px',padding:'18px 22px',borderRadius:'18px',background:'var(--bg-card)',border:'1px solid var(--border)',boxShadow:'0 12px 32px rgba(0,0,0,0.12)'}}>
                 <div style={{display:'flex',alignItems:'center',gap:'10px'}}>
                   <div style={{width:'40px',height:'40px',borderRadius:'12px',background:'rgba(212,80,15,0.12)',display:'flex',alignItems:'center',justifyContent:'center'}}><Shield size={18} style={{color:'var(--orange)'}}/></div>

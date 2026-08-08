@@ -25,7 +25,7 @@ export default function DonationBanner() {
               <Heart size={18} style={{color:'#ef4444'}} fill="#ef4444"/>
             </div>
             <div>
-              <p style={{fontSize:'13px',fontWeight:900,color:'var(--text-primary)',margin:0}}>Soutenir Think Safety</p>
+              <p style={{fontSize:'13px',fontWeight:900,color:'var(--text-primary)',margin:0}}>Soutenir Thinks Safety</p>
               <p style={{fontSize:'11px',color:'var(--text-secondary)',margin:'2px 0 0 0'}}>La plateforme est 100% gratuite</p>
             </div>
           </div>
@@ -35,7 +35,7 @@ export default function DonationBanner() {
         </div>
         <div style={{padding:'12px 16px 16px 16px'}}>
           <p style={{fontSize:'12px',color:'var(--text-secondary)',margin:'0 0 12px 0',lineHeight:1.6}}>
-            Think Safety est entièrement gratuit. Si la plateforme vous a été utile, un petit geste volontaire aide à la maintenir et à l&apos;améliorer.
+            Thinks Safety est entièrement gratuit. Si la plateforme vous a été utile, un petit geste volontaire aide à la maintenir et à l&apos;améliorer.
           </p>
           <div style={{display:'flex',gap:'8px'}}>
             <button onClick={()=>setModal(true)} style={{flex:1,padding:'8px 12px',borderRadius:'10px',border:'none',cursor:'pointer',fontSize:'12px',fontWeight:700,color:'white',background:'linear-gradient(135deg,#ef4444,#dc2626)'}}>
@@ -58,7 +58,7 @@ export default function DonationBanner() {
               </div>
               <h2 style={{fontSize:'1.4rem',fontWeight:900,color:'var(--text-primary)',margin:'0 0 8px 0'}}>Merci pour votre soutien !</h2>
               <p style={{fontSize:'14px',color:'var(--text-secondary)',margin:'0 0 24px 0',lineHeight:1.7}}>
-                Think Safety est un projet bénévole. Votre don volontaire, même modeste, aide à couvrir les coûts d&apos;hébergement et à développer de nouveaux contenus.
+                Thinks Safety est un projet bénévole. Votre don volontaire, même modeste, aide à couvrir les coûts d&apos;hébergement et à développer de nouveaux contenus.
               </p>
               <div style={{display:'flex',flexDirection:'column',gap:'10px',marginBottom:'16px'}}>
                 {[

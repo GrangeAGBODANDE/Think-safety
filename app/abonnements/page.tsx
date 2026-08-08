@@ -139,7 +139,7 @@ export default function AbonnementsPage() {
           <>
             {/* Info */}
             <div style={{textAlign:'center',marginBottom:'48px'}}>
-              <h2 style={{fontSize:'1.5rem',fontWeight:900,color:'var(--text-primary)',margin:'0 0 12px 0'}}>Publiez vos produits EPI sur Think Safety</h2>
+              <h2 style={{fontSize:'1.5rem',fontWeight:900,color:'var(--text-primary)',margin:'0 0 12px 0'}}>Publiez vos produits EPI sur Thinks Safety</h2>
               <p style={{fontSize:'15px',color:'var(--text-secondary)',maxWidth:'600px',margin:'0 auto 24px',lineHeight:1.7}}>
                 Rejoignez la marketplace de référence pour les équipements de sécurité en Afrique de l&apos;Ouest. Touchez des milliers de professionnels HSE.
               </p>
@@ -219,7 +219,7 @@ export default function AbonnementsPage() {
               <h3 style={{fontSize:'1.1rem',fontWeight:900,color:'var(--text-primary)',margin:'0 0 24px 0',textAlign:'center'}}>Comment rejoindre la marketplace ?</h3>
               <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(220px,1fr))',gap:'20px'}}>
                 {[
-                  {n:'01', title:'Créez votre compte', desc:'Inscrivez-vous gratuitement sur Think Safety en tant que particulier.', icon:'👤'},
+                  {n:'01', title:'Créez votre compte', desc:'Inscrivez-vous gratuitement sur Thinks Safety en tant que particulier.', icon:'👤'},
                   {n:'02', title:'Choisissez un plan', desc:'Sélectionnez le plan marketplace adapté à votre volume de ventes.', icon:'📋'},
                   {n:'03', title:'Complétez votre profil entreprise', desc:'Renseignez les informations de votre entreprise et vos certifications.', icon:'🏢'},
                   {n:'04', title:'Publiez vos produits', desc:'Ajoutez vos EPI avec fiches techniques complètes et commencez à vendre.', icon:'🚀'},
@@ -312,7 +312,7 @@ export default function AbonnementsPage() {
                 Inspirées du modèle Microsoft Learn, nos certifications attestent de vos compétences sectorielles en sécurité professionnelle. Elles sont partageables sur LinkedIn, téléchargeables en PDF et vérifiables en ligne.
               </p>
               <div style={{display:'flex',flexWrap:'wrap',gap:'12px',justifyContent:'center'}}>
-                {['Badge numérique vérifiable','PDF officiel Think Safety','Partage LinkedIn intégré','QR code d\'authenticité','Valable 2 ans'].map((f,i) => (
+                {['Badge numérique vérifiable','PDF officiel Thinks Safety','Partage LinkedIn intégré','QR code d\'authenticité','Valable 2 ans'].map((f,i) => (
                   <span key={i} style={{display:'inline-flex',alignItems:'center',gap:'5px',padding:'6px 14px',borderRadius:'99px',fontSize:'12px',fontWeight:600,color:'#8b5cf6',background:'rgba(139,92,246,0.1)',border:'1px solid rgba(139,92,246,0.2)'}}>
                     <CheckCircle size={11}/>{f}
                   </span>

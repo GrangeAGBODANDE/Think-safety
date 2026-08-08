@@ -76,7 +76,7 @@ const translations: Record<Lang, Record<string, string>> = {
     'home.market_title2': 'Services HSE',
     'home.market_desc': 'Trouvez des equipements certifies, formations et services HSE aupres de fournisseurs verifies.',
     'home.market_cta': 'EXPLORER LE MARKETPLACE',
-    'home.cta_eyebrow': 'Think Safety',
+    'home.cta_eyebrow': 'Thinks Safety',
     'home.cta_title': 'Pret a commencer ?',
     'home.cta_desc': 'Rejoignez des milliers de professionnels qui se forment gratuitement.',
     'home.cta_btn': 'CREER UN COMPTE GRATUIT',
@@ -110,7 +110,7 @@ const translations: Record<Lang, Record<string, string>> = {
     'sectors.no_content': 'Aucun contenu disponible pour ce secteur.',
 
     // Dashboard
-    'dash.welcome': 'Bienvenue sur Think Safety !',
+    'dash.welcome': 'Bienvenue sur Thinks Safety !',
     'dash.welcome_desc': "Votre compte est pret. Choisissez un secteur d'activite pour commencer votre premiere formation gratuitement.",
     'dash.choose_sector': 'Choisir mon premier secteur',
     'dash.popular': 'Secteurs populaires',
@@ -264,7 +264,7 @@ const translations: Record<Lang, Record<string, string>> = {
     'home.market_title2': 'HSE Services',
     'home.market_desc': 'Find certified equipment, training and HSE services from verified suppliers.',
     'home.market_cta': 'EXPLORE MARKETPLACE',
-    'home.cta_eyebrow': 'Think Safety',
+    'home.cta_eyebrow': 'Thinks Safety',
     'home.cta_title': 'Ready to start?',
     'home.cta_desc': 'Join thousands of professionals training for free.',
     'home.cta_btn': 'CREATE FREE ACCOUNT',
@@ -298,7 +298,7 @@ const translations: Record<Lang, Record<string, string>> = {
     'sectors.no_content': 'No content available for this sector.',
 
     // Dashboard
-    'dash.welcome': 'Welcome to Think Safety!',
+    'dash.welcome': 'Welcome to Thinks Safety!',
     'dash.welcome_desc': 'Your account is ready. Choose a sector to start your first free training.',
     'dash.choose_sector': 'Choose my first sector',
     'dash.popular': 'Popular sectors',

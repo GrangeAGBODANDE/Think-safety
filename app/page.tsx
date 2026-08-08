@@ -27,7 +27,7 @@ const STATS = [
 ]
 
 const TEMOIGNAGES = [
-  {nom:"Jean-Michel D.",titre:"Chef de chantier BTP",texte:"Grâce à Think Safety, nos équipes sont mieux préparées. Notre taux d'incidents a baissé de 40% en 6 mois.",stars:5,img:"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80"},
+  {nom:"Jean-Michel D.",titre:"Chef de chantier BTP",texte:"Grâce à Thinks Safety, nos équipes sont mieux préparées. Notre taux d'incidents a baissé de 40% en 6 mois.",stars:5,img:"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80"},
   {nom:"Marie K.",titre:"Responsable HSE Industrie",texte:"Les alertes en temps réel nous ont permis d'éviter un incident majeur. Je recommande à toutes les entreprises.",stars:5,img:"https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&q=80"},
   {nom:"Kofi A.",titre:"Directeur Opérations Transport",texte:"Les formations sont précises, adaptées à notre secteur et facilement accessibles depuis n\'importe quel appareil.",stars:5,img:"https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&q=80"},
 ]
@@ -224,7 +224,7 @@ export default function HomePage() {
       <section style={{padding:'96px 0',background:'var(--bg-main)'}}>
         <div style={{maxWidth:'1280px',margin:'0 auto',padding:'0 24px'}}>
           <Reveal style={{textAlign:'center',marginBottom:'64px'}}>
-            <p style={{fontSize:'11px',fontWeight:900,textTransform:'uppercase',letterSpacing:'0.1em',color:'var(--orange)',marginBottom:'12px'}}>Pourquoi Think Safety</p>
+            <p style={{fontSize:'11px',fontWeight:900,textTransform:'uppercase',letterSpacing:'0.1em',color:'var(--orange)',marginBottom:'12px'}}>Pourquoi Thinks Safety</p>
             <h2 style={{fontSize:'clamp(2rem,4vw,3rem)',fontWeight:900,color:'var(--text-primary)',margin:'0 0 16px 0',lineHeight:1.1}}>La sécurité, c&apos;est notre mission</h2>
             <p style={{fontSize:'1.05rem',color:'var(--text-secondary)',maxWidth:'560px',margin:'0 auto',lineHeight:1.8}}>
               Thinks Safety est une plateforme 100% gratuite et ouverte à tous. Trouvez les ressources adaptées à votre métier.
