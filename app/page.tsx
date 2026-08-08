@@ -28,7 +28,7 @@ const STATS = [
 
 const TEMOIGNAGES = [
   {nom:"Jean-Michel D.",titre:"Chef de chantier BTP",texte:"Grâce à Thinks Safety, nos équipes sont mieux préparées. Notre taux d'incidents a baissé de 40% en 6 mois.",stars:5,img:"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80"},
-  {nom:"Marie K.",titre:"Responsable HSE Industrie",texte:"Les alertes en temps réel nous ont permis d'éviter un incident majeur. Je recommande à toutes les entreprises.",stars:5,img:"https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&q=80"},
+  {nom:"Marie K.",titre:"Responsable HSE Industrie",texte:"Les alertes en temps réel nous ont permis d'éviter un incident majeur. Je recommande à toutes les entreprises.",stars:5,img:"https://images.unsplash.com/photo-1581065178047-8ee15951ede6?w=100&q=80"},
   {nom:"Kofi A.",titre:"Directeur Opérations Transport",texte:"Les formations sont précises, adaptées à notre secteur et facilement accessibles depuis n\'importe quel appareil.",stars:5,img:"https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&q=80"},
 ]
 
