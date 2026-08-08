@@ -14,7 +14,7 @@ const SECTEURS = [
   {slug:'transport-logistique',    nom:'Transport',            img:'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&q=80', emoji:'🚛',count:29},
   {slug:'agriculture',             nom:'Agriculture',          img:'https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=600&q=80', emoji:'🌾',count:31},
   {slug:'mines-carrieres',         nom:'Mines & Carrières',    img:'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=600&q=80', emoji:'⛏️',count:24},
-  {slug:'petrole-gaz',             nom:'Pétrole & Gaz',        img:'https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=600&q=80', emoji:'⚡',count:27},
+  {slug:'petrole-gaz',             nom:'Pétrole & Gaz',        img:'https://images.unsplash.com/photo-1648369000096-109763c11e8e?w=600&q=80', emoji:'⚡',count:27},
   {slug:'bureaux-services',        nom:'Bureaux & Services',   img:'https://images.unsplash.com/photo-1497366216548-37526070297c?w=600&q=80', emoji:'🏢',count:41},
   {slug:'education-formation',     nom:'Education',            img:'https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=600&q=80', emoji:'📚',count:33},
 ]
@@ -405,7 +405,7 @@ export default function HomePage() {
                 {[
                   {img:'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&q=80',label:'Mines & Carrieres'},
                   {img:'https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=400&q=80',label:'Agriculture'},
-                  {img:'https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=400&q=80',label:'Petrole & Gaz'},
+                  {img:'https://images.unsplash.com/photo-1648369000096-109763c11e8e?w=400&q=80',label:'Petrole & Gaz'},
                   {img:'https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=400&q=80',label:'Education'},
                 ].map((item,i)=>(
                   <div key={i} style={{height:'200px',borderRadius:'20px',overflow:'hidden',position:'relative',background:'#1a2a4a'}} className="hover-scale">
