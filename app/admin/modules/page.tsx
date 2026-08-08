@@ -11,6 +11,7 @@ export default function AdminModulesPage() {
   const [search,    setSearch]    = useState('')
   const [sectFilter,setSectFilter] = useState('tous')
   const [msg,       setMsg]       = useState('')
+  const [selected,  setSelected]  = useState<Set<string>>(new Set())
 
   async function load() {
     setLoading(true)
@@ -41,11 +42,38 @@ export default function AdminModulesPage() {
 
   function flash(s: string) { setMsg(s); setTimeout(() => setMsg(''), 3000) }
 
+  async function bulkSetStatut(ids: string[], statut: 'published' | 'draft') {
+    if (ids.length === 0) return
+    await supabase.from('modules').update({ statut }).in('id', ids)
+    await load()
+    setSelected(new Set())
+    flash(statut === 'published' ? `${ids.length} module(s) activé(s).` : `${ids.length} module(s) désactivé(s).`)
+  }
+
+  async function activateAll() {
+    if (!confirm(`Activer tous les modules (${modules.length}) ?`)) return
+    await bulkSetStatut(modules.map(m => m.id), 'published')
+  }
+
+  function toggleSelect(id: string) {
+    setSelected(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
   const filtered = modules.filter(m => {
     const matchSearch = m.titre?.toLowerCase().includes(search.toLowerCase()) || m.secteur_slug?.includes(search.toLowerCase())
     const matchSect   = sectFilter === 'tous' || m.secteur_slug === sectFilter
     return matchSearch && matchSect
   })
+
+  const filteredIds  = filtered.map(m => m.id)
+  const allSelected  = filteredIds.length > 0 && filteredIds.every(id => selected.has(id))
+  function toggleSelectAll() {
+    setSelected(allSelected ? new Set() : new Set(filteredIds))
+  }
 
   const grouped = SECTEURS.reduce((acc: any, s) => {
     const mods = filtered.filter(m => m.secteur_slug === s.slug)
@@ -73,10 +101,16 @@ export default function AdminModulesPage() {
             {modules.length} modules · {totalPublished} publiés · {totalLibre} gratuits
           </p>
         </div>
-        <Link href="/admin/modules/nouveau"
-          style={{display:'inline-flex',alignItems:'center',gap:'6px',padding:'10px 18px',borderRadius:'12px',background:'var(--orange)',color:'white',textDecoration:'none',fontSize:'13px',fontWeight:700}}>
-          <Plus size={14}/> Nouveau module
-        </Link>
+        <div style={{display:'flex',gap:'10px',flexWrap:'wrap'}}>
+          <button onClick={activateAll} disabled={modules.length===0}
+            style={{display:'inline-flex',alignItems:'center',gap:'6px',padding:'10px 18px',borderRadius:'12px',border:'1px solid var(--border)',background:'var(--bg-card)',color:'var(--text-primary)',cursor:modules.length===0?'default':'pointer',fontSize:'13px',fontWeight:700,opacity:modules.length===0?0.5:1}}>
+            <Eye size={14} style={{color:'#22c55e'}}/> Activer tout
+          </button>
+          <Link href="/admin/modules/nouveau"
+            style={{display:'inline-flex',alignItems:'center',gap:'6px',padding:'10px 18px',borderRadius:'12px',background:'var(--orange)',color:'white',textDecoration:'none',fontSize:'13px',fontWeight:700}}>
+            <Plus size={14}/> Nouveau module
+          </Link>
+        </div>
       </div>
 
       {/* Stats rapides */}
@@ -112,7 +146,37 @@ export default function AdminModulesPage() {
           </select>
           <ChevronDown size={12} style={{position:'absolute',right:'8px',top:'50%',transform:'translateY(-50%)',color:'var(--text-secondary)',pointerEvents:'none'}}/>
         </div>
+        {filtered.length > 0 && (
+          <label style={{display:'flex',alignItems:'center',gap:'6px',fontSize:'12px',color:'var(--text-secondary)',cursor:'pointer',whiteSpace:'nowrap'}}>
+            <input type="checkbox" checked={allSelected} onChange={toggleSelectAll}
+              style={{width:'15px',height:'15px',cursor:'pointer',accentColor:'var(--orange)'}}/>
+            Tout sélectionner
+          </label>
+        )}
       </div>
+
+      {/* Barre d'action groupée */}
+      {selected.size > 0 && (
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:'12px',flexWrap:'wrap',padding:'10px 16px',borderRadius:'12px',background:'var(--bg-secondary)',border:'1px solid var(--border)',marginBottom:'20px'}}>
+          <span style={{fontSize:'13px',fontWeight:700,color:'var(--text-primary)'}}>
+            {selected.size} module{selected.size>1?'s':''} sélectionné{selected.size>1?'s':''}
+          </span>
+          <div style={{display:'flex',gap:'8px',flexWrap:'wrap'}}>
+            <button onClick={()=>bulkSetStatut(Array.from(selected),'published')}
+              style={{padding:'7px 14px',borderRadius:'9px',border:'none',background:'#22c55e',color:'white',fontSize:'12px',fontWeight:700,cursor:'pointer'}}>
+              Activer la sélection
+            </button>
+            <button onClick={()=>bulkSetStatut(Array.from(selected),'draft')}
+              style={{padding:'7px 14px',borderRadius:'9px',border:'1px solid var(--border)',background:'var(--bg-card)',color:'var(--text-secondary)',fontSize:'12px',fontWeight:700,cursor:'pointer'}}>
+              Désactiver la sélection
+            </button>
+            <button onClick={()=>setSelected(new Set())}
+              style={{padding:'7px 10px',borderRadius:'9px',border:'1px solid var(--border)',background:'transparent',color:'var(--text-secondary)',fontSize:'12px',fontWeight:600,cursor:'pointer'}}>
+              Annuler
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Liste groupée par secteur */}
       {loading ? (
@@ -149,6 +213,9 @@ export default function AdminModulesPage() {
                   <div key={m.id} style={{display:'flex',alignItems:'center',gap:'12px',padding:'12px 16px',borderBottom:i<mods.length-1?'1px solid var(--border)':'none',background:'var(--bg-card)',transition:'background 0.2s'}}
                     onMouseEnter={e=>(e.currentTarget as HTMLElement).style.background='var(--bg-secondary)'}
                     onMouseLeave={e=>(e.currentTarget as HTMLElement).style.background='var(--bg-card)'}>
+                    {/* Sélection */}
+                    <input type="checkbox" checked={selected.has(m.id)} onChange={()=>toggleSelect(m.id)}
+                      style={{width:'16px',height:'16px',cursor:'pointer',accentColor:'var(--orange)',flexShrink:0}}/>
                     {/* Numéro */}
                     <div style={{width:'32px',height:'32px',borderRadius:'10px',background:s.couleur+'18',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
                       <span style={{fontSize:'11px',fontWeight:900,color:s.couleur}}>{m.numero||String(i+1).padStart(2,'0')}</span>
