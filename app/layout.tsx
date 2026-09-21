@@ -4,6 +4,7 @@ import './globals.css'
 import { ThemeProvider } from '@/contexts/ThemeContext'
 import { LanguageProvider } from '@/contexts/LanguageContext'
 import AutoTranslate from '@/components/AutoTranslate'
+import CompleteProfileModal from '@/components/CompleteProfileModal'
 
 const dmSans = DM_Sans({
   subsets: ['latin'],
@@ -55,6 +56,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             {children}
             {/* Traduit automatiquement tout le texte visible sans modifier les pages */}
             <AutoTranslate />
+            <CompleteProfileModal />
           </LanguageProvider>
         </ThemeProvider>
       </body>
